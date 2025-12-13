@@ -11,7 +11,7 @@
 * [ ] Create frontend and backend folders
 * [ ] Setup Next.js frontend
 * [O] Setup Node.js + Express backend
-* [ ] Configure environment variables
+* [O] Configure environment variables
 * [ ] Connect MongoDB Atlas
 
 ---
