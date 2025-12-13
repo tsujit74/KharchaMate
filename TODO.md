@@ -12,7 +12,7 @@
 * [ ] Setup Next.js frontend
 * [O] Setup Node.js + Express backend
 * [O] Configure environment variables
-* [ ] Connect MongoDB Atlas
+* [O] Connect MongoDB Atlas
 
 ---
 
@@ -20,10 +20,10 @@
 
 ### Authentication
 
-* [ ] Create User schema (MongoDB)
-* [ ] Signup API (password hashing)
-* [ ] Login API (JWT generation)
-* [ ] JWT auth middleware
+* [O] Create User schema (MongoDB)
+* [O] Signup API (password hashing)
+* [O] Login API (JWT generation)
+* [O] JWT auth middleware
 
 ### Group Management
 
