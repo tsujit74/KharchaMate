@@ -43,9 +43,9 @@
 
 ### API Testing
 
-* [ ] Test auth APIs in Postman
-* [ ] Test group APIs in Postman
-* [ ] Test expense APIs in Postman
+* [O] Test auth APIs in Postman
+* [O] Test group APIs in Postman
+* [O] Test expense APIs in Postman
 * [ ] Handle edge cases and errors
 
 ---
