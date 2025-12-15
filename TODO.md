@@ -27,16 +27,16 @@
 
 ### Group Management
 
-* [ ] Create Group schema
-* [ ] Create group API
-* [ ] Add members to group
-* [ ] Fetch user groups
+* [O] Create Group schema
+* [O] Create group API
+* [O] Add members to group
+* [O] Fetch user groups
 
 ### Expense Management (Core Feature)
 
-* [ ] Create Expense schema
-* [ ] Add expense API
-* [ ] Split amount logic
+* [O] Create Expense schema
+* [O] Add expense API
+* [O] Split amount logic
 * [ ] Store who paid and who owes
 * [ ] Calculate group balances
 * [ ] Mark expense as paid/unpaid
