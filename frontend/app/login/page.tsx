@@ -6,7 +6,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const res = await fetch("http://localhost:5000/api/auth/login", {
@@ -49,9 +49,7 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button className="w-full bg-black text-white p-2">
-          Login
-        </button>
+        <button className="w-full bg-black text-white p-2">Login</button>
       </form>
     </div>
   );
