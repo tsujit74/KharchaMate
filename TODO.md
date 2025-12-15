@@ -54,9 +54,9 @@
 
 ### Authentication UI
 
-* [ ] Signup page
-* [ ] Login page
-* [ ] Token handling
+* [O] Signup page
+* [O] Login page
+* [O] Token handling
 
 ### Core Screens
 
