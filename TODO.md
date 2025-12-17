@@ -60,8 +60,8 @@
 
 ### Core Screens
 
-* [ ] Group list page
-* [ ] Create group UI
+* [O] Group list page
+* [O] Create group UI
 * [ ] Expense list page
 * [ ] Add expense form
 
