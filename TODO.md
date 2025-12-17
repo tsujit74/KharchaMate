@@ -62,8 +62,8 @@
 
 * [O] Group list page
 * [O] Create group UI
-* [ ] Expense list page
-* [ ] Add expense form
+* [O] Expense list page
+* [O] Add expense form
 
 ### Dashboard
 
