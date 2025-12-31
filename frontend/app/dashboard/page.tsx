@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, UserPlus } from "lucide-react";
 
 type Member = {
   _id: string;
@@ -63,11 +63,7 @@ export default function DashboardPage() {
   }
 
   if (error) {
-    return (
-      <div className="p-10 text-center text-red-500">
-        {error}
-      </div>
-    );
+    return <div className="p-10 text-center text-red-500">{error}</div>;
   }
 
   return (
@@ -75,12 +71,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="max-w-7xl mx-auto flex justify-between items-center mb-10">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Your Groups
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Manage and track shared expenses
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Your Groups</h1>
+          <p className="text-gray-500 mt-1">Manage and track shared expenses</p>
         </div>
 
         <Link
@@ -113,40 +105,53 @@ export default function DashboardPage() {
       {groups.length > 0 && (
         <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {groups.map((group) => (
-            <Link
+            <div
               key={group._id}
-              href={`/groups/${group._id}`}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition p-6"
+              className="relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition p-6 group"
             >
-              <h2 className="text-lg font-semibold mb-4">
-                {group.name}
-              </h2>
+              {/* Add Member Button */}
+              <Link
+                href={`/groups/${group._id}/add-member`}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black flex items-center justify-center hover:scale-105 transition"
+                title="Add member"
+              >
+                <UserPlus className="text-white w-5 h-5" />
+              </Link>
 
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-500">
+              {/* Card Click Area */}
+              <Link href={`/groups/${group._id}`} className="block">
+                {/* Group Name */}
+                <h2 className="text-lg font-semibold mb-2 truncate">
+                  {group.name}
+                </h2>
+
+                {/* Members Count */}
+                <div className="flex items-center gap-2 text-sm text-gray-500 mb-5">
+                  <Users className="w-4 h-4" />
                   {group.members.length} members
-                </span>
-              </div>
+                </div>
 
-              {/* Members */}
-              <div className="flex -space-x-2">
-                {group.members.slice(0, 4).map((member) => (
-                  <div
-                    key={member._id}
-                    className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-700 border-2 border-white"
-                    title={member.email}
-                  >
-                    {member.name.charAt(0).toUpperCase()}
-                  </div>
-                ))}
-                {group.members.length > 4 && (
-                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-500 border-2 border-white">
-                    +{group.members.length - 4}
-                  </div>
-                )}
-              </div>
-            </Link>
+                {/* Member Avatars */}
+                <div className="flex -space-x-2">
+                  {group.members.slice(0, 4).map((member) => (
+                    <div
+                      key={member._id}
+                      className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-700 border-2 border-white"
+                      title={member.email}
+                    >
+                      {member.name.charAt(0).toUpperCase()}
+                    </div>
+                  ))}
+
+                  {group.members.length > 4 && (
+                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-500 border-2 border-white">
+                      +{group.members.length - 4}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            </div>
           ))}
         </div>
       )}
