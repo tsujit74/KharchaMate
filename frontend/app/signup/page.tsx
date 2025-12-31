@@ -54,7 +54,7 @@ const LoginPage = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#FCFCFD] flex mt-12 mx-auto">
+    <main className="min-h-screen bg-[#FCFCFD] flex mx-auto">
       {/* LEFT — LOGIN */}
       <section className="w-full lg:w-1/2 flex items-center justify-center p-4 relative mx-auto">
         {/* background blur */}
