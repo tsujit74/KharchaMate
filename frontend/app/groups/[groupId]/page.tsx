@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Users, IndianRupee, Plus, ArrowRight } from "lucide-react";
+import { formatDateTime } from "@/app/utils/formatDateTime";
 import Link from "next/link";
 
 type Expense = {
   _id: string;
   description: string;
   amount: number;
+  createdAt: string;
   paidBy: {
     name: string;
     email: string;
@@ -21,10 +23,18 @@ type Settlement = {
   amount: number;
 };
 
+type Balance = {
+  name: string;
+  email: string;
+  balance: number;
+};
+
 type SettlementResponse = {
+  group: string;
   totalSpent: number;
   perPersonShare: number;
   settlements: Settlement[];
+  balances: Balance[];
 };
 
 export default function GroupDetailsPage() {
@@ -44,9 +54,12 @@ export default function GroupDetailsPage() {
           fetch(`http://localhost:5000/api/expenses/${groupId}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch(`http://localhost:5000/api/blance/groups/${groupId}/settlement`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          fetch(
+            `http://localhost:5000/api/blance/groups/${groupId}/settlement`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          ),
         ]);
 
         const expenseData = await expenseRes.json();
@@ -73,12 +86,11 @@ export default function GroupDetailsPage() {
     <main className="min-h-screen bg-[#FCFCFD] px-4 md:px-16 py-8">
       {/* Header */}
       <div className="max-w-6xl mx-auto mb-4">
-        <h1 className="text-2xl font-bold tracking-tight mb-2">
-          Group Details 
-        </h1>
-        <p className="text-gray-500">
-          Track expenses and settle balances
-        </p>
+        <div className="text-2xl font-bold tracking-tight mb-2 flex">
+          <p className="text-gray-500">Group </p> :-{" "}
+          {settlement?.group ?? "Name"}
+        </div>
+        <p className="text-gray-500">Track expenses and settle balances</p>
       </div>
 
       {/* KPI Section */}
@@ -91,16 +103,29 @@ export default function GroupDetailsPage() {
           </div>
         </div>
 
-         <div className="bg-white rounded-2xl border p-6 flex items-center gap-4">
+        <div className="bg-white rounded-2xl border p-6 flex items-center gap-4">
           <Users className="w-8 h-8 text-gray-400" />
-          <div>
-            <p className="text-sm text-gray-500">Per Person Share</p>
-            <p className="text-2xl font-bold">
-              ₹{Math.round(settlement?.perPersonShare ?? 0)}
-            </p>
+
+          <div className="flex items-center justify-between w-full">
+            {/* Left side */}
+            <div>
+              <p className="text-sm text-gray-500">Per Person Share</p>
+              <p className="text-2xl font-bold">
+                ₹{Math.round(settlement?.perPersonShare ?? 0)}
+              </p>
+            </div>
+
+            <div className="hidden sm:block h-10 w-px bg-gray-200" />
+
+            {/* Right side */}
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Members</p>
+              <p className="text-2xl font-bold">
+                {settlement?.balances.length ?? 0}
+              </p>
+            </div>
           </div>
         </div>
-      
 
         <div className="bg-white rounded-2xl border p-6 flex items-center gap-4">
           <Users className="w-8 h-8 text-gray-400" />
@@ -116,9 +141,7 @@ export default function GroupDetailsPage() {
         <h2 className="text-lg font-semibold mb-4">Settlement</h2>
 
         {!settlement || settlement.settlements.length === 0 ? (
-          <p className="text-gray-500 text-sm">
-            🎉 Everyone is settled up!
-          </p>
+          <p className="text-gray-500 text-sm">🎉 Everyone is settled up!</p>
         ) : (
           <div className="space-y-3">
             {settlement.settlements.map((s, index) => (
@@ -157,20 +180,27 @@ export default function GroupDetailsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {expenses.map((expense) => (
-              <div
-                key={expense._id}
-                className="bg-white border rounded-xl p-4 flex justify-between items-center"
-              >
-                <div>
-                  <p className="font-medium">{expense.description}</p>
-                  <p className="text-sm text-gray-500">
-                    Paid by {expense.paidBy.name}
-                  </p>
+            {expenses.map((expense) => {
+              const { dateLabel, time } = formatDateTime(expense.createdAt);
+              return (
+                <div
+                  key={expense._id}
+                  className="bg-white border rounded-xl p-4 flex justify-between items-center"
+                >
+                  <div>
+                    <p className="font-medium">{expense.description}</p>
+                    <p className="text-sm text-gray-500">
+                      Paid by {expense.paidBy.name}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">₹{expense.amount}</p>
+                    <p className="text-sm text-gray-500">{dateLabel}</p>
+                    <p className="text-sm text-gray-500">{time}</p>
+                  </div>
                 </div>
-                <p className="font-semibold">₹{expense.amount}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
