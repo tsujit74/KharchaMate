@@ -2,14 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Users, IndianRupee, Plus } from "lucide-react";
+import { Users, IndianRupee, Plus, ArrowRight } from "lucide-react";
 import Link from "next/link";
-
-type Member = {
-  _id: string;
-  name: string;
-  email: string;
-};
 
 type Expense = {
   _id: string;
@@ -19,39 +13,54 @@ type Expense = {
     name: string;
     email: string;
   };
-  createdAt: string;
+};
+
+type Settlement = {
+  from: string;
+  to: string;
+  amount: number;
+};
+
+type SettlementResponse = {
+  totalSpent: number;
+  perPersonShare: number;
+  settlements: Settlement[];
 };
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams();
+
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [settlement, setSettlement] = useState<SettlementResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchExpenses = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
+    const fetchData = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:5000/api/expenses/${groupId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const data = await res.json();
-        setExpenses(data);
+        const [expenseRes, settlementRes] = await Promise.all([
+          fetch(`http://localhost:5000/api/expenses/${groupId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`http://localhost:5000/api/blance/groups/${groupId}/settlement`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        const expenseData = await expenseRes.json();
+        const settlementData = await settlementRes.json();
+
+        setExpenses(expenseData);
+        setSettlement(settlementData);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchExpenses();
+    fetchData();
   }, [groupId]);
-
-  const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   if (loading) {
     return (
@@ -60,13 +69,12 @@ export default function GroupDetailsPage() {
       </div>
     );
   }
-
   return (
-    <main className="min-h-screen bg-[#FCFCFD] px-6 md:px-16 py-12">
+    <main className="min-h-screen bg-[#FCFCFD] px-4 md:px-16 py-8">
       {/* Header */}
-      <div className="max-w-6xl mx-auto mb-10">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">
-          Group Details
+      <div className="max-w-6xl mx-auto mb-4">
+        <h1 className="text-2xl font-bold tracking-tight mb-2">
+          Group Details 
         </h1>
         <p className="text-gray-500">
           Track expenses and settle balances
@@ -74,14 +82,25 @@ export default function GroupDetailsPage() {
       </div>
 
       {/* KPI Section */}
-      <div className="max-w-6xl mx-auto grid sm:grid-cols-2 gap-6 mb-12">
+      <div className="max-w-6xl mx-auto grid sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-2xl border p-6 flex items-center gap-4">
           <IndianRupee className="w-8 h-8 text-gray-400" />
           <div>
             <p className="text-sm text-gray-500">Total Spent</p>
-            <p className="text-2xl font-bold">₹{totalSpent}</p>
+            <p className="text-2xl font-bold">₹{settlement?.totalSpent ?? 0}</p>
           </div>
         </div>
+
+         <div className="bg-white rounded-2xl border p-6 flex items-center gap-4">
+          <Users className="w-8 h-8 text-gray-400" />
+          <div>
+            <p className="text-sm text-gray-500">Per Person Share</p>
+            <p className="text-2xl font-bold">
+              ₹{Math.round(settlement?.perPersonShare ?? 0)}
+            </p>
+          </div>
+        </div>
+      
 
         <div className="bg-white rounded-2xl border p-6 flex items-center gap-4">
           <Users className="w-8 h-8 text-gray-400" />
@@ -92,12 +111,31 @@ export default function GroupDetailsPage() {
         </div>
       </div>
 
-      {/* Settlement Placeholder */}
+      {/* Settlement Section */}
       <div className="max-w-6xl mx-auto bg-white rounded-2xl border p-6 mb-12">
-        <h2 className="text-lg font-semibold mb-2">Settlement</h2>
-        <p className="text-gray-500 text-sm">
-          Settlement calculation will appear here (who owes whom).
-        </p>
+        <h2 className="text-lg font-semibold mb-4">Settlement</h2>
+
+        {!settlement || settlement.settlements.length === 0 ? (
+          <p className="text-gray-500 text-sm">
+            🎉 Everyone is settled up!
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {settlement.settlements.map((s, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between bg-gray-50 rounded-xl p-4"
+              >
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium">{s.from}</span>
+                  <ArrowRight className="w-4 h-4 text-gray-400" />
+                  <span className="font-medium">{s.to}</span>
+                </div>
+                <span className="font-semibold">₹{s.amount}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Expenses */}
@@ -106,9 +144,9 @@ export default function GroupDetailsPage() {
           <h2 className="text-lg font-semibold">Expenses</h2>
           <Link
             href={`/groups/${groupId}/add-expense`}
-            className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm font-semibold"
+            className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm font-semibold hover:shadow-black/20 hover:-translate-y-1 transition-all"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             Add Expense
           </Link>
         </div>
