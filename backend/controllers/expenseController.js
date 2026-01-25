@@ -3,11 +3,19 @@ import Group from "../models/Group.js";
 
 export const addExpense = async (req, res) => {
   try {
-    const { groupId, description, amount, splitBetween } = req.body;
+    const { groupId, description, amount } = req.body;
 
     const group = await Group.findById(groupId);
     if (!group)
       return res.status(404).json({ message: "Group not found" });
+
+    const members = group.members;
+    const perHeadAmount = amount / members.length;
+
+    const splitBetween = members.map((memberId) => ({
+      user: memberId,
+      amount: perHeadAmount,
+    }));
 
     const expense = await Expense.create({
       group: groupId,
