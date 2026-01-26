@@ -85,58 +85,62 @@ export default function GroupDetailsPage() {
   return (
     <main className="min-h-screen bg-[#FCFCFD] ">
       <div className="flex">
-        <aside className="hidden md:flex w-72 bg-gray-50 border-r p-6 flex-col sticky top-16 h-[calc(100vh-64px)]">
-          {/* Group Info */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold truncate">
-              {settlement?.group ?? "Group Name"}
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">
-              {settlement?.balances.length ?? 0} Members
-            </p>
-          </div>
+       <aside className="hidden md:flex w-72 bg-[#F8F9FB] border-r border-gray-200 px-6 py-7 flex-col sticky top-16 h-[calc(100vh-64px)]">
+  {/* Group Info */}
+  <div className="mb-7">
+    <h3 className="text-base font-semibold text-gray-900 truncate">
+      {settlement?.group ?? "Group Name"}
+    </h3>
+    <p className="text-xs text-gray-500 mt-1">
+      {settlement?.balances.length ?? 0} members
+    </p>
+  </div>
 
-          {/* Members */}
-          <div className="flex-1 overflow-y-auto pr-1">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">
-              Members
-            </h4>
+  <div className="h-px bg-gray-200 mb-6" />
 
-            <div className="space-y-3">
-              {settlement?.balances.map((member) => (
-                <div
-                  key={member.email}
-                  className="flex justify-between items-center text-sm"
-                >
-                  <span className="font-medium truncate">{member.name}</span>
+  {/* Members */}
+  <div className="flex-1 overflow-y-auto pr-1">
+    <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-4">
+      Members
+    </h4>
 
-                  <span
-                    className={`font-semibold ${
-                      member.balance > 0
-                        ? "text-green-600"
-                        : member.balance < 0
-                          ? "text-red-600"
-                          : "text-gray-400"
-                    }`}
-                  >
-                    ₹{member.balance}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+    <div className="space-y-3">
+      {settlement?.balances.map((member) => (
+        <div
+          key={member.email}
+          className="flex justify-between items-center text-sm"
+        >
+          <span className="text-gray-700 font-medium truncate">
+            {member.name}
+          </span>
 
-          {/* Actions */}
-          <div className="pt-6 space-y-3">
-            <Link
-              href={`/groups/${groupId}/add-expense`}
-              className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm font-semibold hover:shadow-black/20 hover:-translate-y-1 transition-all"
-            >
-              <Plus className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              Add Expense
-            </Link>
-          </div>
-        </aside>
+          <span
+            className={`text-sm font-semibold ${
+              member.balance > 0
+                ? "text-green-600"
+                : member.balance < 0
+                ? "text-red-500"
+                : "text-gray-400"
+            }`}
+          >
+            ₹{member.balance}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <div className="mt-6">
+    <Link
+      href={`/groups/${groupId}/add-expense`}
+      className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-black transition"
+    >
+      <Plus className="w-4 h-4" />
+      Add expense
+    </Link>
+  </div>
+</aside>
+
 
         <section className="flex-1 px-2 md:px-10 py-6">
           {/* Header */}
