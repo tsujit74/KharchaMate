@@ -1,5 +1,7 @@
 import Expense from "../models/Expense.js";
 import Group from "../models/Group.js";
+import Settlement from "../models/Settlement.js";
+import { validatePayment } from "../service/settlementService.js";
 
 export const getGroupSettlement = async (req, res) => {
   try {
@@ -7,63 +9,60 @@ export const getGroupSettlement = async (req, res) => {
 
     const group = await Group.findById(groupId).populate(
       "members",
-      "name email"
+      "name email",
     );
-
-    if (!group)
+    if (!group) {
       return res.status(404).json({ message: "Group not found" });
-
-    const expenses = await Expense.find({ group: groupId });
+    }
 
     const members = group.members;
-    const memberCount = members.length;
-
-    if (memberCount === 0) {
+    if (!members.length) {
       return res.json({ message: "No members in group" });
     }
 
-    //  Total spent
-    const totalSpent = expenses.reduce(
-      (sum, expense) => sum + expense.amount,
-      0
-    );
-
-    //  Per person share
-    const perPersonShare = totalSpent / memberCount;
-
-    //  Track how much each member paid
-    const paidMap = {};
-    members.forEach((m) => {
-      paidMap[m._id.toString()] = 0;
+    const expenses = await Expense.find({ group: groupId });
+    const settlementsDone = await Settlement.find({
+      group: groupId,
+      status: "COMPLETED",
     });
 
-    expenses.forEach((expense) => {
-      const payerId = expense.paidBy.toString();
-      paidMap[payerId] += expense.amount;
-    });
-
-    //  Net balance (paid - share)
+    // Initialize balances
     const balanceMap = {};
     members.forEach((m) => {
-      const userId = m._id.toString();
-      balanceMap[userId] = paidMap[userId] - perPersonShare;
+      balanceMap[m._id.toString()] = 0;
     });
 
-    // Settlement calculation
+    // Add expense payments
+    expenses.forEach((expense) => {
+      balanceMap[expense.paidBy.toString()] += expense.amount;
+    });
+
+    // Subtract equal share
+    const totalSpent = expenses.reduce((s, e) => s + e.amount, 0);
+    const perPersonShare = totalSpent / members.length;
+
+    members.forEach((m) => {
+      balanceMap[m._id.toString()] -= perPersonShare;
+    });
+
+    // Apply previous settlements
+    settlementsDone.forEach((s) => {
+      balanceMap[s.from.toString()] += s.amount;
+      balanceMap[s.to.toString()] -= s.amount;
+    });
+
+    // Prepare creditors & debtors
     const creditors = [];
     const debtors = [];
 
     members.forEach((m) => {
-      const balance = balanceMap[m._id.toString()];
-      if (balance > 0) {
-        creditors.push({ user: m, amount: balance });
-      } else if (balance < 0) {
-        debtors.push({ user: m, amount: -balance });
-      }
+      const bal = Number(balanceMap[m._id.toString()].toFixed(2));
+      if (bal > 0.01) creditors.push({ user: m, amount: bal });
+      else if (bal < -0.01) debtors.push({ user: m, amount: -bal });
     });
 
+    // Final settlement calculation
     const settlements = [];
-
     let i = 0,
       j = 0;
 
@@ -71,35 +70,67 @@ export const getGroupSettlement = async (req, res) => {
       const debtor = debtors[i];
       const creditor = creditors[j];
 
-      const settleAmount = Math.min(debtor.amount, creditor.amount);
+      const amount = Math.min(debtor.amount, creditor.amount);
 
       settlements.push({
-        from: debtor.user.name,
-        to: creditor.user.name,
-        amount: Math.round(settleAmount),
+        from: debtor.user._id,
+        fromName: debtor.user.name,
+        to: creditor.user._id,
+        toName: creditor.user.name,
+        amount: Number(amount.toFixed(2)),
       });
 
-      debtor.amount -= settleAmount;
-      creditor.amount -= settleAmount;
+      debtor.amount -= amount;
+      creditor.amount -= amount;
 
-      if (debtor.amount === 0) i++;
-      if (creditor.amount === 0) j++;
+      if (debtor.amount <= 0.01) i++;
+      if (creditor.amount <= 0.01) j++;
     }
 
-    //  Response
     res.json({
       group: group.name,
-      totalSpent,
-      perPersonShare,
+      totalSpent: Number(totalSpent.toFixed(2)),
+      perPersonShare: Number(perPersonShare.toFixed(2)),
       balances: members.map((m) => ({
+        id: m._id,
         name: m.name,
         email: m.email,
-        balance: Math.round(balanceMap[m._id.toString()]),
+        balance: Number(balanceMap[m._id.toString()].toFixed(2)),
       })),
       settlements,
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Failed to calculate settlement" });
+  }
+};
+
+export const markPaymentDone = async (req, res) => {
+  try {
+    const from = req.user.id;
+    const { to, amount } = req.body;
+    const groupId = req.group._id;
+
+    await validatePayment({
+      groupId,
+      from,
+      to,
+      amount: Number(amount),
+    });
+
+    const settlement = await Settlement.create({
+      group: groupId,
+      from,
+      to,
+      amount: Number(amount.toFixed ? amount.toFixed(2) : amount),
+      status: "COMPLETED",
+      settledAt: new Date(),
+    });
+
+    res.status(201).json({
+      message: "Payment recorded successfully",
+      settlement,
+    });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
