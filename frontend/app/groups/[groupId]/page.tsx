@@ -18,12 +18,13 @@ type Expense = {
 };
 
 type Settlement = {
-  from: string;
-  to: string;
+  fromName: string;
+  toName: string;
   amount: number;
 };
 
 type Balance = {
+  id: string;
   name: string;
   email: string;
   balance: number;
@@ -73,6 +74,80 @@ export default function GroupDetailsPage() {
     };
 
     fetchData();
+  }, [groupId]);
+
+  const fetchSettlement = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const [expenseRes, settlementRes] = await Promise.all([
+        fetch(`http://localhost:5000/api/expenses/${groupId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`http://localhost:5000/api/blance/groups/${groupId}/settlement`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      const expenseData = await expenseRes.json();
+      const settlementData = await settlementRes.json();
+
+      setExpenses(expenseData);
+      setSettlement(settlementData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSettlePayment = async (
+    fromName: string,
+    toName: string,
+    amount: number,
+  ) => {
+    const token = localStorage.getItem("token");
+    if (!token) return alert("Login first");
+
+    // Find user IDs from balances
+    const fromUser = settlement?.balances.find((b) => b.name === fromName);
+    const toUser = settlement?.balances.find((b) => b.name === toName);
+
+    if (!fromUser || !toUser) return alert("User not found");
+
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/blance/groups/${groupId}/pay`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            to: toUser.id,
+            amount,
+          }),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        return alert(data.message || "Payment failed");
+      }
+
+      alert("Payment successful!");
+      // Refresh settlement and balances
+      fetchSettlement();
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetchSettlement();
   }, [groupId]);
 
   if (loading) {
@@ -210,11 +285,21 @@ export default function GroupDetailsPage() {
                     className="flex items-center justify-between bg-gray-50 rounded-xl p-4"
                   >
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">{s.from}</span>
+                      <span className="font-medium">{s.fromName}</span>
                       <ArrowRight className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium">{s.to}</span>
+                      <span className="font-medium">{s.toName}</span>
                     </div>
-                    <span className="font-semibold">₹{s.amount}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">₹{s.amount}</span>
+                      <button
+                        onClick={() =>
+                          handleSettlePayment(s.fromName, s.toName, s.amount)
+                        }
+                        className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
+                      >
+                        Settle
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
