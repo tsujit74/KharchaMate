@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, Plus, UserPlus } from "lucide-react";
 import { formatDateTime } from "@/app/utils/formatDateTime";
+import { getMyGroups } from "../services/group.service";
+import { useAuth } from "../context/authContext";
+import { useRouter } from "next/navigation";
 
 type Member = {
   _id: string;
@@ -21,54 +24,49 @@ type Group = {
 };
 
 export default function DashboardPage() {
+  const { isAuthenticated, loading } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [groupLoading, setGroupLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const router = useRouter();
+
   useEffect(() => {
+    if (loading) return;
+
+    if (!isAuthenticated) {
+      router.push("/login")
+      setGroupLoading(false);
+      return;
+    }
+
     const fetchGroups = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Please login first.");
-        setLoading(false);
-        return;
-      }
-
       try {
-        const res = await fetch("http://localhost:5000/api/groups/my-groups", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) throw new Error("Failed to fetch groups");
-
-        const data: Group[] = await res.json();
-
-        // sort by updatedAt (recent first)
+        const data = await getMyGroups();
         const sortedGroups = data.sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() -
-            new Date(a.updatedAt).getTime()
+          (
+            a: { updatedAt: string | number | Date },
+            b: { updatedAt: string | number | Date },
+          ) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
         );
-
         setGroups(sortedGroups);
-      } catch {
+      } catch (err) {
         setError("Failed to load groups.");
       } finally {
-        setLoading(false);
+        setGroupLoading(false);
       }
     };
 
     fetchGroups();
-  }, []);
+  }, [loading, isAuthenticated]);
 
-  if (loading) {
-    return (
-      <div className="p-10 text-center text-gray-500">
-        Loading your groups...
-      </div>
-    );
+  if (loading || groupLoading) {
+    return <div className="p-10 text-center text-gray-500">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   if (error) {
@@ -77,12 +75,9 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#F7F8FA] px-6 md:px-16 py-8">
-      {/* Header */}
       <div className="max-w-7xl mx-auto flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Your Groups
-          </h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Your Groups</h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage and track shared expenses
           </p>
