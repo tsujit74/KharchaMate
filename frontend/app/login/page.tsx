@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+import React, { useState } from "react";
+import Image from "next/image";
 import {
   Mail,
   Lock,
@@ -9,47 +9,40 @@ import {
   EyeOff,
   ArrowRight,
   Github,
-  Chrome
-} from 'lucide-react';
-import { useRouter } from 'next/navigation';
+  Chrome,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/authContext";
 
 const LoginPage = () => {
   const router = useRouter();
+  const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const handleLogin = async (e: { preventDefault: () => void; }) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        }
-      );
+      // ✅ Context-based login
+      await login({ email, password });
 
-      const data = await res.json();
+      // ✅ Redirect after successful login
+      router.push("/dashboard");
+    } catch (err: any) {
+      // ✅ Proper error handling
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Something went wrong. Please try again.";
 
-      if (!res.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      // Save token
-      localStorage.setItem('token', data.token);
-
-      // Redirect to dashboard
-      router.push('/dashboard');
-    } catch (err) {
-      setError(err.message);
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -63,11 +56,9 @@ const LoginPage = () => {
         <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] bg-blue-100/40 blur-[120px]" />
 
         <div className="w-full max-w-[440px]">
-          {/* Logo */}
-
-          {/* Card */}
           <div className="bg-white border border-gray-100 p-8 md:p-10">
             <h1 className="text-2xl font-bold text-center">Welcome back</h1>
+
             <form onSubmit={handleLogin} className="space-y-5">
               {/* Email */}
               <div>
@@ -101,7 +92,7 @@ const LoginPage = () => {
                 <div className="relative mt-2">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -157,15 +148,13 @@ const LoginPage = () => {
           </div>
 
           <p className="text-center mt-4 text-sm text-gray-500">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{" "}
             <a href="/signup" className="font-bold text-black hover:underline">
               Create one
             </a>
           </p>
         </div>
       </section>
-
-      
     </main>
   );
 };
