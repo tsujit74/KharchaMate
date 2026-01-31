@@ -53,3 +53,20 @@ export const getGroupExpenses = async (groupId: string) => {
     throw new Error("FAILED_EXPENSES");
   }
 };
+
+export const addMember = async (groupId: string, email: string) => {
+  if (!groupId || !email) throw new Error("INVALID_DATA");
+
+  try {
+    const res = await axios.post(
+      `${API_URL}/api/groups/add-member`,
+      { groupId, email },
+      { headers: getAuthHeader() },
+    );
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    throw new Error("FAILED_ADD_MEMBER");
+  }
+};
