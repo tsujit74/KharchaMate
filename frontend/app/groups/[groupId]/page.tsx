@@ -134,7 +134,7 @@ export default function GroupDetailsPage() {
             <p className="text-gray-500 text-sm">Everyone is settled 🎉</p>
           ) : (
             settlement.settlements
-              // 🔹 1. Sort: logged-in user's pay first
+              //  1. Sort: logged-in user's pay first
               .sort((a: any, b: any) => {
                 const aIsMe = a.from === user?.id;
                 const bIsMe = b.from === user?.id;
@@ -146,7 +146,7 @@ export default function GroupDetailsPage() {
               .map((s: any, i: number) => {
                 const isCurrentUser = s.from === user?.id;
 
-                // 🔹 2. Use ID (not name)
+                // 2. Use ID (not name)
                 const toUser = settlement.balances.find(
                   (b: any) => b.id === s.to,
                 );
