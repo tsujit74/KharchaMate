@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   Mail,
@@ -16,7 +16,7 @@ import { useAuth } from "@/app/context/authContext";
 
 const LoginPage = () => {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -24,19 +24,22 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.replace("/dashboard");
+    }
+  }, [loading, isAuthenticated, router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
     try {
-      // ✅ Context-based login
       await login({ email, password });
 
-      // ✅ Redirect after successful login
       router.push("/dashboard");
     } catch (err: any) {
-      // ✅ Proper error handling
       const message =
         err?.response?.data?.message ||
         err?.message ||
@@ -48,11 +51,11 @@ const LoginPage = () => {
     }
   };
 
+  if (loading) return null;
+
   return (
     <main className="min-h-screen bg-[#FCFCFD] flex mx-auto">
-      {/* LEFT — LOGIN */}
       <section className="w-full lg:w-1/2 flex items-center justify-center p-4 relative mx-auto">
-        {/* background blur */}
         <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] bg-blue-100/40 blur-[120px]" />
 
         <div className="w-full max-w-[440px]">

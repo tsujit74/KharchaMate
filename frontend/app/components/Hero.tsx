@@ -1,4 +1,5 @@
-import Image from "next/image";
+"use client"
+
 import Link from "next/link";
 
 import {
@@ -10,7 +11,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import { useAuth } from "@/app/context/authContext";
+
 export default function LandingPage() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <main className="bg-[#FCFCFD] text-[#1A1A1E] overflow-x-hidden">
       {/* HERO */}
@@ -32,24 +37,23 @@ export default function LandingPage() {
 
             <div className="mt-10 flex flex-wrap gap-4">
               <Link
-                href="/signup"
+                href={isAuthenticated ? "/dashboard" : "/signup"}
                 className="group px-8 py-4 bg-black text-white font-semibold shadow-xl shadow-black/10 hover:shadow-black/20 hover:-translate-y-1 transition-all flex items-center gap-2"
               >
                 Get Start
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
+
               <Link
-                href="/login"
+                href={isAuthenticated ? "/dashboard" : "/login"}
                 className="px-8 py-4 bg-white border border-gray-200 text-gray-900 font-semibold hover:bg-gray-50 transition-all flex items-center gap-2"
               >
-                Login
+                {isAuthenticated ? "Dashboard":"Login"}
               </Link>
             </div>
           </div>
 
-          {/* Dashboard Mock */}
           <div className="relative lg:h-[450px] flex items-center justify-center mt-10">
-            {/* Abstract Dashboard Mockup */}
             <div className="relative w-full max-w-[450px] aspect-[4/5] bg-white shadow-xl border border-gray-100 p-4 overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-tr from-gray-50 to-transparent pointer-events-none" />
               <div className="h-full w-full bg-gray-50 rounded-[2rem] p-6 flex flex-col gap-6">
@@ -173,7 +177,7 @@ export default function LandingPage() {
 
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <Link
-            href="/signup"
+            href={isAuthenticated ? "/dashboard" : "/signup"}
             className="group px-8 py-4 bg-black text-white font-semibold shadow-xl shadow-black/10 hover:shadow-black/20 hover:-translate-y-1 transition-all flex items-center gap-2"
           >
             Start Free

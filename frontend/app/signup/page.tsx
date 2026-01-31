@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Mail,
@@ -13,10 +13,12 @@ import {
   User2Icon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/authContext";
 import { registerUser } from "../services/auth.service";
 
 const SignupPage = () => {
   const router = useRouter();
+    const { isAuthenticated, loading } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
@@ -24,6 +26,13 @@ const SignupPage = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  
+    useEffect(() => {
+      if (!loading && isAuthenticated) {
+        router.replace("/dashboard");
+      }
+    }, [loading, isAuthenticated, router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +50,8 @@ const SignupPage = () => {
       setIsLoading(false);
     }
   };
+
+  if (loading) return null;
 
   return (
     <main className="min-h-screen bg-[#FCFCFD] flex mx-auto">
