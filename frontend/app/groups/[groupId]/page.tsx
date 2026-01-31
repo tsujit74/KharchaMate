@@ -17,7 +17,7 @@ import { getGroupExpenses } from "@/app/services/group.service";
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
   const router = useRouter();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   const [expenses, setExpenses] = useState<any[]>([]);
   const [settlement, setSettlement] = useState<any>(null);
@@ -48,6 +48,11 @@ export default function GroupDetailsPage() {
           getGroupSettlement(groupId),
         ]);
 
+        // Sort: show payments you have to make on top
+        settlementData.settlements.sort((a: any) => {
+          return a.fromName === user?.name ? -1 : 1;
+        });
+
         setExpenses(expenseData);
         setSettlement(settlementData);
       } catch (err: any) {
@@ -62,7 +67,7 @@ export default function GroupDetailsPage() {
     };
 
     loadData();
-  }, [loading, isAuthenticated, groupId]);
+  }, [loading, isAuthenticated, groupId, user]);
 
   if (loading || pageLoading) {
     return <div className="p-10 text-center text-gray-500">Loading...</div>;
@@ -102,8 +107,16 @@ export default function GroupDetailsPage() {
 
       {/* KPIs */}
       <div className="max-w-6xl mx-auto grid sm:grid-cols-3 gap-4 mb-8">
-        <Stat icon={IndianRupee} label="Total Spent" value={`₹${settlement.totalSpent}`} />
-        <Stat icon={Users} label="Per Person" value={`₹${Math.round(settlement.perPersonShare)}`} />
+        <Stat
+          icon={IndianRupee}
+          label="Total Spent"
+          value={`₹${settlement.totalSpent}`}
+        />
+        <Stat
+          icon={Users}
+          label="Per Person"
+          value={`₹${Math.round(settlement.perPersonShare)}`}
+        />
         <Stat icon={Users} label="Members" value={settlement.balances.length} />
       </div>
 
@@ -115,26 +128,30 @@ export default function GroupDetailsPage() {
           <p className="text-gray-500 text-sm">Everyone is settled 🎉</p>
         ) : (
           settlement.settlements.map((s: any, i: number) => {
-            const toUser = settlement.balances.find(
-              (b: any) => b.name === s.toName,
-            );
+            const isOwedByMe = s.fromName === user?.name;
 
             return (
               <div
                 key={i}
-                className="flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2"
+                className={`flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 ${
+                  isOwedByMe ? "bg-red-50" : ""
+                }`}
               >
                 <div className="flex items-center gap-2 text-sm">
                   <span>{s.fromName}</span>
                   <ArrowRight className="w-4 h-4 text-gray-400" />
                   <span>{s.toName}</span>
                 </div>
-                <button
-                  onClick={() => handleSettle(toUser.id, s.amount)}
-                  className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
-                >
-                  ₹{s.amount}
-                </button>
+                {isOwedByMe ? (
+                  <button
+                    onClick={() => handleSettle(s.toId, s.amount)}
+                    className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
+                  >
+                    Pay ₹{s.amount}
+                  </button>
+                ) : (
+                  <span className="font-semibold text-gray-700">₹{s.amount}</span>
+                )}
               </div>
             );
           })
@@ -158,10 +175,7 @@ export default function GroupDetailsPage() {
           <p className="text-gray-500 text-sm">No expenses yet.</p>
         ) : (
           expenses
-            .sort(
-              (a, b) =>
-                Date.parse(b.createdAt) - Date.parse(a.createdAt),
-            )
+            .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
             .map((e) => {
               const { dateLabel } = formatDateTime(e.createdAt);
               return (
