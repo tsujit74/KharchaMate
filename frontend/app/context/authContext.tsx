@@ -9,7 +9,6 @@ type User = {
   id: string;
   name: string;
   email: string;
-  role?: string;
 };
 
 type AuthContextType = {
@@ -27,7 +26,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Add token to axios for protected requests
   const setupAxiosToken = (token: string | null) => {
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -36,7 +34,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Check user on app load
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem("accessToken");
@@ -49,7 +46,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       try {
         const res = await getMe();
-        setUser(res.data.user);
+        const u = res.data.user;
+
+        setUser({
+          id: u._id,
+          name: u.name,
+          email: u.email,
+        });
       } catch {
         setUser(null);
         localStorage.removeItem("accessToken");
@@ -61,26 +64,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initAuth();
   }, []);
 
-  // Login
   const login = async (data: { email: string; password: string }) => {
     try {
       const res = await loginUser(data);
-
       const token = res.data.token;
+
       localStorage.setItem("accessToken", token);
       setupAxiosToken(token);
 
-      // Fetch user after login
       const userRes = await getMe();
-      setUser(userRes.data.user);
+      const u = userRes.data.user;
 
-      router.push("/dashboard"); // redirect after login
+      setUser({
+        id: u._id,
+        name: u.name,
+        email: u.email,
+      });
+
+      router.push("/dashboard");
     } catch (err: any) {
       throw new Error(err?.response?.data?.message || "Login failed");
     }
   };
 
-  // Logout
   const logout = async () => {
     try {
       await logoutUser();
