@@ -1,363 +1,201 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { Users, IndianRupee, Plus, ArrowRight } from "lucide-react";
-import { formatDateTime } from "@/app/utils/formatDateTime";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Users, IndianRupee, Plus, ArrowRight } from "lucide-react";
 
-type Expense = {
-  _id: string;
-  description: string;
-  amount: number;
-  createdAt: string;
-  paidBy: {
-    name: string;
-    email: string;
-  };
-};
+import { useAuth } from "@/app/context/authContext";
+import { formatDateTime } from "@/app/utils/formatDateTime";
+import {
+  getGroupSettlement,
+  settlePayment,
+} from "@/app/services/settlement.service";
 
-type Settlement = {
-  fromName: string;
-  toName: string;
-  amount: number;
-};
-
-type Balance = {
-  id: string;
-  name: string;
-  email: string;
-  balance: number;
-};
-
-type SettlementResponse = {
-  group: string;
-  totalSpent: number;
-  perPersonShare: number;
-  settlements: Settlement[];
-  balances: Balance[];
-};
+import { getGroupExpenses } from "@/app/services/group.service";
 
 export default function GroupDetailsPage() {
-  const { groupId } = useParams();
+  const { groupId } = useParams<{ groupId: string }>();
+  const router = useRouter();
+  const { isAuthenticated, loading } = useAuth();
 
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [settlement, setSettlement] = useState<SettlementResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [settlement, setSettlement] = useState<any>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    if (loading) return;
 
-    const fetchData = async () => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    if (!groupId) {
+      setError("Invalid group");
+      setPageLoading(false);
+      return;
+    }
+
+    const loadData = async () => {
       try {
-        const [expenseRes, settlementRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/expenses/${groupId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(
-            `http://localhost:5000/api/blance/groups/${groupId}/settlement`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            },
-          ),
-        ]);
+        setPageLoading(true);
+        setError("");
 
-        const expenseData = await expenseRes.json();
-        const settlementData = await settlementRes.json();
+        const [expenseData, settlementData] = await Promise.all([
+          getGroupExpenses(groupId),
+          getGroupSettlement(groupId),
+        ]);
 
         setExpenses(expenseData);
         setSettlement(settlementData);
+      } catch (err: any) {
+        if (err.message === "FORBIDDEN") {
+          setError("You are not a member of this group.");
+        } else {
+          setError("Failed to load group details.");
+        }
       } finally {
-        setLoading(false);
+        setPageLoading(false);
       }
     };
 
-    fetchData();
-  }, [groupId]);
+    loadData();
+  }, [loading, isAuthenticated, groupId]);
 
-  const fetchSettlement = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  if (loading || pageLoading) {
+    return <div className="p-10 text-center text-gray-500">Loading...</div>;
+  }
 
-    try {
-      const [expenseRes, settlementRes] = await Promise.all([
-        fetch(`http://localhost:5000/api/expenses/${groupId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`http://localhost:5000/api/blance/groups/${groupId}/settlement`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+  if (!isAuthenticated) return null;
 
-      const expenseData = await expenseRes.json();
-      const settlementData = await settlementRes.json();
+  if (error) {
+    return <div className="p-10 text-center text-red-500">{error}</div>;
+  }
 
-      setExpenses(expenseData);
-      setSettlement(settlementData);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSettlePayment = async (
-    fromName: string,
-    toName: string,
-    amount: number,
-  ) => {
-    const token = localStorage.getItem("token");
-    if (!token) return alert("Login first");
-
-    // Find user IDs from balances
-    const fromUser = settlement?.balances.find((b) => b.name === fromName);
-    const toUser = settlement?.balances.find((b) => b.name === toName);
-
-    if (!fromUser || !toUser) return alert("User not found");
-
-    try {
-      const res = await fetch(
-        `http://localhost:5000/api/blance/groups/${groupId}/pay`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            to: toUser.id,
-            amount,
-          }),
-        },
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        return alert(data.message || "Payment failed");
-      }
-
-      alert("Payment successful!");
-      // Refresh settlement and balances
-      fetchSettlement();
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong");
-    }
-  };
-
-  useEffect(() => {
-    setLoading(true);
-    fetchSettlement();
-  }, [groupId]);
-
-  if (loading) {
+  if (!settlement) {
     return (
       <div className="p-10 text-center text-gray-500">
-        Loading group details...
+        No access to this group.
       </div>
     );
   }
+
+  const handleSettle = async (toId: string, amount: number) => {
+    try {
+      await settlePayment(groupId, toId, amount);
+      const updated = await getGroupSettlement(groupId);
+      setSettlement(updated);
+    } catch {
+      alert("Payment failed. Try again.");
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-[#FCFCFD] ">
-      <div className="flex">
-        <aside className="hidden md:flex w-72 bg-[#F8F9FB] border-r border-gray-200 px-6 py-7 flex-col sticky top-16 h-[calc(100vh-64px)]">
-          {/* Group Info */}
-          <div className="mb-7">
-            <h3 className="text-base font-semibold text-gray-900 truncate">
-              {settlement?.group ?? "Group Name"}
-            </h3>
-            <p className="text-xs text-gray-500 mt-1">
-              {settlement?.balances.length ?? 0} members
-            </p>
-          </div>
+    <main className="min-h-screen bg-[#FCFCFD] px-4 md:px-10 py-6">
+      {/* Header */}
+      <div className="max-w-6xl mx-auto mb-6">
+        <h1 className="text-2xl font-semibold">{settlement.group}</h1>
+        <p className="text-sm text-gray-500">Track expenses & settlements</p>
+      </div>
 
-          <div className="h-px bg-gray-200 mb-6" />
+      {/* KPIs */}
+      <div className="max-w-6xl mx-auto grid sm:grid-cols-3 gap-4 mb-8">
+        <Stat icon={IndianRupee} label="Total Spent" value={`₹${settlement.totalSpent}`} />
+        <Stat icon={Users} label="Per Person" value={`₹${Math.round(settlement.perPersonShare)}`} />
+        <Stat icon={Users} label="Members" value={settlement.balances.length} />
+      </div>
 
-          {/* Members */}
-          <div className="flex-1 overflow-y-auto pr-1">
-            <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-4">
-              Members
-            </h4>
+      {/* Settlement */}
+      <div className="max-w-6xl mx-auto bg-white rounded-xl border p-6 mb-10">
+        <h2 className="font-semibold mb-4">Settlement</h2>
 
-            <div className="space-y-3">
-              {settlement?.balances.map((member) => (
-                <div
-                  key={member.email}
-                  className="flex justify-between items-center text-sm"
-                >
-                  <span className="text-gray-700 font-medium truncate">
-                    {member.name}
-                  </span>
+        {settlement.settlements.length === 0 ? (
+          <p className="text-gray-500 text-sm">Everyone is settled 🎉</p>
+        ) : (
+          settlement.settlements.map((s: any, i: number) => {
+            const toUser = settlement.balances.find(
+              (b: any) => b.name === s.toName,
+            );
 
-                  <span
-                    className={`text-sm font-semibold ${
-                      member.balance > 0
-                        ? "text-green-600"
-                        : member.balance < 0
-                          ? "text-red-500"
-                          : "text-gray-400"
-                    }`}
-                  >
-                    ₹{member.balance}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <Link
-              href={`/groups/${groupId}/add-expense`}
-              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-black transition"
-            >
-              <Plus className="w-4 h-4" />
-              Add expense
-            </Link>
-          </div>
-        </aside>
-
-        <section className="flex-1 px-2 md:px-10 py-6">
-          {/* Header */}
-          <div className="max-w-6xl mx-auto mb-4">
-            <div className="text-2xl font-bold tracking-tight mb-2 flex">
-              <p className="text-gray-500">Group </p> :-{" "}
-              {settlement?.group ?? "Name"}
-            </div>
-            <p className="text-gray-500">Track expenses and settle balances</p>
-          </div>
-
-          {/* KPI Section */}
-          <div className="max-w-6xl mx-auto grid sm:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-2xl border p-6 flex items-center gap-4">
-              <IndianRupee className="w-8 h-8 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Total Spent</p>
-                <p className="text-2xl font-bold">
-                  ₹{settlement?.totalSpent ?? 0}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border p-6 flex items-center gap-4">
-              <Users className="w-8 h-8 text-gray-400" />
-
-              <div className="flex items-center justify-between w-full">
-                {/* Left side */}
-                <div>
-                  <p className="text-sm text-gray-500">Per Person Share</p>
-                  <p className="text-2xl font-bold">
-                    ₹{Math.round(settlement?.perPersonShare ?? 0)}
-                  </p>
-                </div>
-
-                <div className="hidden sm:block h-10 w-px bg-gray-200" />
-
-                {/* Right side */}
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Members</p>
-                  <p className="text-2xl font-bold">
-                    {settlement?.balances.length ?? 0}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border p-6 flex items-center gap-4">
-              <Users className="w-8 h-8 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Expenses</p>
-                <p className="text-2xl font-bold">{expenses.length}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Settlement Section */}
-          <div className="max-w-6xl mx-auto bg-white rounded-2xl border p-6 mb-12">
-            <h2 className="text-lg font-semibold mb-4">Settlement</h2>
-
-            {!settlement || settlement.settlements.length === 0 ? (
-              <p className="text-gray-500 text-sm">Everyone is settled up!</p>
-            ) : (
-              <div className="space-y-3">
-                {settlement.settlements.map((s, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between bg-gray-50 rounded-xl p-4"
-                  >
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">{s.fromName}</span>
-                      <ArrowRight className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium">{s.toName}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">₹{s.amount}</span>
-                      <button
-                        onClick={() =>
-                          handleSettlePayment(s.fromName, s.toName, s.amount)
-                        }
-                        className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition"
-                      >
-                        Settle
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Expenses */}
-          <div className="max-w-6xl mx-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Expenses</h2>
-              <Link
-                href={`/groups/${groupId}/add-expense`}
-                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm font-semibold hover:shadow-black/20 hover:-translate-y-1 transition-all"
+            return (
+              <div
+                key={i}
+                className="flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2"
               >
-                <Plus className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                Add Expense
-              </Link>
-            </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span>{s.fromName}</span>
+                  <ArrowRight className="w-4 h-4 text-gray-400" />
+                  <span>{s.toName}</span>
+                </div>
+                <button
+                  onClick={() => handleSettle(toUser.id, s.amount)}
+                  className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
+                >
+                  ₹{s.amount}
+                </button>
+              </div>
+            );
+          })
+        )}
+      </div>
 
-            {expenses.length === 0 ? (
-              <div className="bg-white border rounded-2xl p-8 text-center text-gray-500">
-                No expenses added yet.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {expenses
-                  .slice()
-                  .sort(
-                    (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
-                  )
-                  .map((expense) => {
-                    const { dateLabel, time } = formatDateTime(
-                      expense.createdAt,
-                    );
-                    return (
-                      <div
-                        key={expense._id}
-                        className="bg-white border rounded-xl p-4 flex justify-between items-center"
-                      >
-                        <div>
-                          <p className="font-medium">{expense.description}</p>
-                          <p className="text-sm text-gray-500">
-                            Paid by {expense.paidBy.name}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">₹{expense.amount}</p>
-                          <p className="text-sm text-gray-500">{dateLabel}</p>
-                          <p className="text-sm text-gray-500">{time}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-          </div>
-        </section>
+      {/* Expenses */}
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between mb-4">
+          <h2 className="font-semibold">Expenses</h2>
+          <Link
+            href={`/groups/${groupId}/add-expense`}
+            className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Add Expense
+          </Link>
+        </div>
+
+        {expenses.length === 0 ? (
+          <p className="text-gray-500 text-sm">No expenses yet.</p>
+        ) : (
+          expenses
+            .sort(
+              (a, b) =>
+                Date.parse(b.createdAt) - Date.parse(a.createdAt),
+            )
+            .map((e) => {
+              const { dateLabel } = formatDateTime(e.createdAt);
+              return (
+                <div
+                  key={e._id}
+                  className="bg-white border rounded-lg p-4 mb-2 flex justify-between"
+                >
+                  <div>
+                    <p className="font-medium">{e.description}</p>
+                    <p className="text-xs text-gray-500">
+                      Paid by {e.paidBy.name}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">₹{e.amount}</p>
+                    <p className="text-xs text-gray-500">{dateLabel}</p>
+                  </div>
+                </div>
+              );
+            })
+        )}
       </div>
     </main>
+  );
+}
+
+function Stat({ icon: Icon, label, value }: any) {
+  return (
+    <div className="bg-white border rounded-xl p-5 flex gap-4 items-center">
+      <Icon className="w-7 h-7 text-gray-400" />
+      <div>
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-xl font-bold">{value}</p>
+      </div>
+    </div>
   );
 }

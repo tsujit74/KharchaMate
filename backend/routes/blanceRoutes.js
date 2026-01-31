@@ -11,6 +11,7 @@ const router = express.Router();
 router.get(
   "/groups/:groupId/settlement",
   authMiddleware,
+  groupContext,
   getGroupSettlement
 );
 

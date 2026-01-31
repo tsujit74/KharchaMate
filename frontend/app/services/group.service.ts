@@ -1,33 +1,55 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL; 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+const getAuthHeader = () => {
+  const token = localStorage.getItem("accessToken");
+  if (!token) throw new Error("UNAUTHORIZED");
+  return { Authorization: `Bearer ${token}` };
+};
 
 export const getMyGroups = async () => {
-  const token = localStorage.getItem("accessToken");
-  if (!token) throw new Error("No token found");
+  try {
+    const res = await axios.get(`${API_URL}/api/groups/my-groups`, {
+      headers: getAuthHeader(),
+    });
 
-  const res = await axios.get(`${API_URL}/api/groups/my-groups`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return res.data;
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    throw new Error("FAILED_GROUPS");
+  }
 };
 
 export const createGroup = async (name: string) => {
-  const token = localStorage.getItem("accessToken");
-  if (!token) throw new Error("No token found");
+  if (!name?.trim()) throw new Error("INVALID_NAME");
 
-  const res = await axios.post(
-    `${API_URL}/api/groups`,
-    { name },
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  try {
+    const res = await axios.post(
+      `${API_URL}/api/groups`,
+      { name: name.trim() },
+      { headers: getAuthHeader() },
+    );
 
-  return res.data;
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    throw new Error("FAILED_CREATE_GROUP");
+  }
 };
 
+export const getGroupExpenses = async (groupId: string) => {
+  if (!groupId) throw new Error("INVALID_GROUP");
 
+  try {
+    const res = await axios.get(`${API_URL}/api/expenses/${groupId}`, {
+      headers: getAuthHeader(),
+    });
+
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err: any) {
+    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    throw new Error("FAILED_EXPENSES");
+  }
+};
