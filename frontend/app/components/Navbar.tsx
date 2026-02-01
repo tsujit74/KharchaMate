@@ -44,7 +44,7 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href="/activity"
+              href="/"
               className="flex items-center gap-1 text-gray-600 hover:text-black"
             >
               <Activity size={16} />
@@ -89,6 +89,12 @@ export default function Navbar() {
                       className="block px-4 py-2 text-sm hover:bg-gray-50"
                     >
                       Profile
+                    </Link>
+                    <Link
+                      href="/dashboard"
+                      className="block px-4 py-2 text-sm hover:bg-gray-50"
+                    >
+                      Dashboard
                     </Link>
                     <button
                       onClick={logout}

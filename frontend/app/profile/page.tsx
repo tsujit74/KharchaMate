@@ -45,7 +45,8 @@ export default function ProfilePage() {
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  const [activeTab, setActiveTab] = useState<"all" | "paid" | "pending">("all");
+  const [activeTab, setActiveTab] =
+    useState<"all" | "paid" | "pending">("all");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -93,7 +94,8 @@ export default function ProfilePage() {
     const d = new Date(date);
     const [year, month] = selectedMonth.split("-");
     return (
-      d.getFullYear() === Number(year) && d.getMonth() + 1 === Number(month)
+      d.getFullYear() === Number(year) &&
+      d.getMonth() + 1 === Number(month)
     );
   };
 
@@ -113,14 +115,14 @@ export default function ProfilePage() {
       : expenses.filter((e) => e.paidBy._id === user.id);
 
   const monthFiltered = baseItems.filter((e) =>
-    e.createdAt ? filterByMonth(e.createdAt) : true,
+    e.createdAt ? filterByMonth(e.createdAt) : true
   );
 
   const totalPages = Math.ceil(monthFiltered.length / ITEMS_PER_PAGE);
 
   const paginatedItems = monthFiltered.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
 
   /* ------------------ UI ------------------ */
@@ -134,7 +136,9 @@ export default function ProfilePage() {
             <Users className="w-6 h-6 text-gray-500" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">{user.name}</h1>
+            <h1 className="text-lg font-semibold text-gray-900">
+              {user.name}
+            </h1>
             <p className="text-sm text-gray-500">{user.email}</p>
           </div>
         </div>
@@ -176,57 +180,58 @@ export default function ProfilePage() {
             </div>
             <div>
               <p className="text-xs text-gray-500">{kpi.label}</p>
-              <p className="text-xl font-semibold text-gray-900">{kpi.value}</p>
+              <p className="text-xl font-semibold text-gray-900">
+                {kpi.value}
+              </p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Month Filter */}
+     
 
       {/* Tabs */}
-      <div className="max-w-7xl mx-auto mb-6 flex items-center justify-between gap-4">
-        {/* Tabs */}
-        <div className="inline-flex bg-gray-100 p-1 rounded-xl">
-          {["all", "paid", "pending"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab as any);
-                setCurrentPage(1);
-              }}
-              className={`px-4 py-2 text-sm rounded-lg transition-all
+      <div className="max-w-7xl mx-auto mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  
+  {/* Tabs */}
+  <div className="inline-flex bg-gray-100 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
+    {["all", "paid", "pending"].map((tab) => (
+      <button
+        key={tab}
+        onClick={() => {
+          setActiveTab(tab as any);
+          setCurrentPage(1);
+        }}
+        className={`flex-1 sm:flex-none px-3 py-2 text-sm rounded-lg transition-all whitespace-nowrap
           ${
             activeTab === tab
               ? "bg-white shadow text-gray-900 font-medium"
               : "text-gray-500 hover:text-gray-700 hover:bg-white/60"
           }`}
-            >
-              {tab === "all"
-                ? "All"
-                : tab === "paid"
-                  ? "Paid by me"
-                  : "Pending"}
-            </button>
-          ))}
-        </div>
+      >
+        {tab === "all"
+          ? "All"
+          : tab === "paid"
+          ? "Paid by me"
+          : "Pending"}
+      </button>
+    ))}
+  </div>
 
-        {/* Month Filter (Right side) */}
-        <div className="flex items-center gap-3">
-          <label className="text-sm text-gray-600 whitespace-nowrap">
-            Filter by month:
-          </label>
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => {
-              setSelectedMonth(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-      </div>
+  <div className="w-full sm:w-auto sm:ml-4">
+    <input
+      type="month"
+      value={selectedMonth}
+      onChange={(e) => {
+        setSelectedMonth(e.target.value);
+        setCurrentPage(1);
+      }}
+      className="border rounded-lg px-3 py-2 text-sm w-full sm:w-auto"
+    />
+  </div>
+</div>
+
 
       {/* List */}
       <div className="max-w-7xl mx-auto space-y-3">
@@ -240,7 +245,9 @@ export default function ProfilePage() {
             : "";
 
           const paidByText =
-            activeTab === "pending" ? `You owe ${item.to}` : "Paid by you";
+            activeTab === "pending"
+              ? `You owe ${item.to}`
+              : "Paid by you";
 
           return (
             <div
@@ -271,7 +278,9 @@ export default function ProfilePage() {
               <p
                 className={`text-sm font-semibold tabular-nums
                   ${
-                    activeTab === "pending" ? "text-red-600" : "text-gray-900"
+                    activeTab === "pending"
+                      ? "text-red-600"
+                      : "text-gray-900"
                   }`}
               >
                 ₹{item.amount}
