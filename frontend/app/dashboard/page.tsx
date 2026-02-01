@@ -7,6 +7,7 @@ import { formatDateTime } from "@/app/utils/formatDateTime";
 import { getMyGroups } from "../services/group.service";
 import { useAuth } from "../context/authContext";
 import { useRouter } from "next/navigation";
+import { getRecentExpenses } from "../services/expense.service";
 
 type Member = {
   _id: string;
@@ -23,11 +24,29 @@ type Group = {
   updatedAt: string;
 };
 
+type RecentExpense = {
+  _id: string;
+  description: string;
+  amount: number;
+  createdAt: string;
+  group: {
+    _id: string;
+    name: string;
+  };
+  paidBy: {
+    _id: string;
+    name: string;
+  };
+};
+
 export default function DashboardPage() {
   const { isAuthenticated, loading } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupLoading, setGroupLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [recentExpenses, setRecentExpenses] = useState<RecentExpense[]>([]);
+  const [recentLoading, setRecentLoading] = useState(true);
 
   const router = useRouter();
 
@@ -35,8 +54,9 @@ export default function DashboardPage() {
     if (loading) return;
 
     if (!isAuthenticated) {
-      router.push("/login")
+      router.push("/login");
       setGroupLoading(false);
+      setRecentLoading(false);
       return;
     }
 
@@ -44,22 +64,31 @@ export default function DashboardPage() {
       try {
         const data = await getMyGroups();
         const sortedGroups = data.sort(
-          (
-            a: { updatedAt: string | number | Date },
-            b: { updatedAt: string | number | Date },
-          ) =>
+          (a: { updatedAt: string }, b: { updatedAt: string }) =>
             new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
         );
         setGroups(sortedGroups);
-      } catch (err) {
+      } catch {
         setError("Failed to load groups.");
       } finally {
         setGroupLoading(false);
       }
     };
 
+    const fetchRecentExpenses = async () => {
+      try {
+        const data = await getRecentExpenses();
+        setRecentExpenses(data);
+      } catch {
+        console.error("Failed to load recent expenses");
+      } finally {
+        setRecentLoading(false);
+      }
+    };
+
     fetchGroups();
-  }, [loading, isAuthenticated]);
+    fetchRecentExpenses();
+  }, [loading, isAuthenticated, router]);
 
   if (loading || groupLoading) {
     return <div className="p-10 text-center text-gray-500">Loading...</div>;
@@ -77,7 +106,7 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-[#F7F8FA] px-6 md:px-16 py-8">
       <div className="max-w-7xl mx-auto flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Your Groups</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Active Groups</h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage and track shared expenses
           </p>
@@ -166,6 +195,51 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+
+      {/* Recent Expenses */}
+      <div className="max-w-7xl mx-auto mb-8 mt-4">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          Recent Expenses
+        </h2>
+
+        {recentLoading && (
+          <p className="text-sm text-gray-500">Loading recent expenses...</p>
+        )}
+
+        {!recentLoading && recentExpenses.length === 0 && (
+          <p className="text-sm text-gray-500">No recent expenses</p>
+        )}
+
+        {!recentLoading && recentExpenses.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 divide-y">
+            {recentExpenses.map((expense) => (
+              <Link
+                key={expense._id}
+                href={`/groups/${expense.group._id}`}
+                className="flex justify-between items-center p-4 hover:bg-gray-50 transition"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {expense.description}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {expense.group.name} • Paid by {expense.paidBy.name}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-gray-900">
+                    ₹{expense.amount}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {formatDateTime(expense.createdAt).dateLabel}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 }

@@ -32,8 +32,7 @@ export const addExpense = async ({
   description: string;
   amount: number;
 }) => {
-  if (!groupId || !description || !amount)
-    throw new Error("INVALID_DATA");
+  if (!groupId || !description || !amount) throw new Error("INVALID_DATA");
 
   try {
     const res = await axios.post(
@@ -51,5 +50,18 @@ export const addExpense = async ({
     if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
     if (err.response?.status === 403) throw new Error("FORBIDDEN");
     throw new Error("FAILED_ADD_EXPENSE");
+  }
+};
+
+export const getRecentExpenses = async () => {
+  try {
+    const res = await axios.get(`${API_URL}/api/expenses/recent`, {
+      headers: getAuthHeader(),
+    });
+
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    throw new Error("FAILED_RECENT_EXPENSES");
   }
 };
