@@ -28,24 +28,30 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        
+        <meta name="color-scheme" content="light" />
+      </head>
+
       <body
         className={`
           ${geistSans.variable}
           ${geistMono.variable}
           antialiased
-          bg-white
+          bg-[#FCFCFD]
           text-gray-900
         `}
       >
         <Providers>
           <Navbar />
-          <main className="min-h-screen pt-14 bg-[#FCFCFD]">
+
+          <main className="min-h-screen pt-14">
             {children}
           </main>
+
           <Footer />
         </Providers>
       </body>
     </html>
   );
 }
-  
