@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, Plus, UserPlus } from "lucide-react";
+import { Users, Plus, UserPlus, ArrowRight } from "lucide-react";
 import { formatDateTime } from "@/app/utils/formatDateTime";
 import { getMyGroups } from "../services/group.service";
 import { useAuth } from "../context/authContext";
 import { useRouter } from "next/navigation";
 import { getRecentExpenses } from "../services/expense.service";
+import { getPendingSettlements } from "../services/settlement.service";
 
 type Member = {
   _id: string;
@@ -39,6 +40,20 @@ type RecentExpense = {
   };
 };
 
+type PendingSettlement = {
+  _id: string;
+  groupId: string;
+  groupName: string;
+
+  from: string;
+  fromName: string;
+
+  to: string;
+  toName: string;
+
+  amount: number;
+};
+
 export default function DashboardPage() {
   const { isAuthenticated, loading } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
@@ -47,6 +62,9 @@ export default function DashboardPage() {
 
   const [recentExpenses, setRecentExpenses] = useState<RecentExpense[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
+
+  const [pendingSettlements, setPendingSettlements] = useState<any[]>([]);
+  const [pendingLoading, setPendingLoading] = useState(true);
 
   const router = useRouter();
 
@@ -90,6 +108,20 @@ export default function DashboardPage() {
     fetchRecentExpenses();
   }, [loading, isAuthenticated, router]);
 
+  useEffect(() => {
+    const fetchPending = async () => {
+      try {
+        const data = await getPendingSettlements();
+        setPendingSettlements(data);
+      } catch (err) {
+        console.error("Failed to fetch pending settlements");
+      } finally {
+        setPendingLoading(false);
+      }
+    };
+    fetchPending();
+  }, []);
+
   if (loading || groupLoading) {
     return <div className="p-10 text-center text-gray-500">Loading...</div>;
   }
@@ -106,7 +138,9 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-[#F7F8FA] px-6 md:px-16 py-8">
       <div className="max-w-7xl mx-auto flex justify-between items-center mb-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Active Groups</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Active Groups
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage and track shared expenses
           </p>
@@ -168,9 +202,14 @@ export default function DashboardPage() {
                   {group.members.length} members
                 </div>
 
-                {/* formatted date */}
-                <p className="text-xs text-gray-400 mb-4">
+                {/* Updated date */}
+                <p className="text-xs text-gray-400 mb-1">
                   Updated {formatDateTime(group.updatedAt).dateLabel}
+                </p>
+
+                {/* Created date */}
+                <p className="text-xs text-gray-400 mb-4">
+                  Created {formatDateTime(group.createdAt).dateLabel}
                 </p>
 
                 <div className="flex -space-x-2">
@@ -238,6 +277,51 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
+        )}
+      </div>
+
+      <div className="max-w-7xl mx-auto mb-8 mt-4">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          Pending Settlements
+        </h2>
+
+        {pendingLoading ? (
+          <p className="text-gray-500 text-sm">Loading...</p>
+        ) : pendingSettlements.length === 0 ? (
+          <p className="text-gray-500 text-sm">No pending settlements 🎉</p>
+        ) : (
+          pendingSettlements.map((s, i) => (
+            <Link
+              key={i}
+              href={`/groups/${s.groupId}`}
+              className="
+  flex justify-between items-center
+  rounded-lg p-3 mb-2
+  bg-red-50 border border-red-200
+  transition-all duration-200
+  hover:bg-red-100
+  hover:border-red-300
+  hover:shadow-sm
+  hover:-translate-y-[1px]
+"
+            >
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 text-sm text-gray-800">
+                  <span>{s.fromName}</span>
+                  <ArrowRight className="w-4 h-4 text-gray-400" />
+                  <span>{s.toName}</span>
+                </div>
+
+                <span className="text-xs uppercase text-gray-400 mt-0.5 truncate">
+                  {s.groupName}
+                </span>
+              </div>
+
+              <span className="text-sm font-semibold text-gray-600">
+                ₹{s.amount}
+              </span>
+            </Link>
+          ))
         )}
       </div>
     </main>
