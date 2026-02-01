@@ -26,7 +26,7 @@ export const createGroup = async (name: string) => {
 
   try {
     const res = await axios.post(
-      `${API_URL}/api/groups`,
+      `${API_URL}/api/groups/create`,
       { name: name.trim() },
       { headers: getAuthHeader() },
     );
