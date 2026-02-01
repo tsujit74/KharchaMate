@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/app/context/authContext";
-import {
-  User2,
-  Bell,
-  Plus,
-  Users,
-  Activity,
-  ChevronDown,
-} from "lucide-react";
+import { User2, Bell, Plus, Users, Activity, ChevronDown } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout, loading } = useAuth();
@@ -28,7 +21,10 @@ export default function Navbar() {
     <nav className="w-full fixed top-0 z-50 bg-white border-b shadow-sm">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
         {/* Logo */}
-        <Link href="/dashboard" className="text-xl font-bold">
+        <Link
+          href="/dashboard"
+          className="text-xl font-bold text-gray-900 tracking-tight"
+        >
           KharchaMate
         </Link>
 
@@ -61,13 +57,12 @@ export default function Navbar() {
           </div>
         )}
 
-      
         <div className="flex items-center gap-4">
           {loading ? (
             <span className="text-gray-400 text-sm">Loading...</span>
           ) : isAuthenticated && user ? (
             <>
-              <button className="relative p-2 rounded-full hover:bg-gray-100">
+              <button className="p-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition">
                 <Bell size={20} />
               </button>
 
@@ -83,22 +78,39 @@ export default function Navbar() {
                 </button>
 
                 {openMenu && (
-                  <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-md overflow-hidden">
+                  <div
+                    className="absolute right-0 mt-2 w-44
+  bg-white border border-gray-200
+  rounded-xl shadow-lg
+  overflow-hidden
+  z-50
+  animate-in fade-in slide-in-from-top-1"
+                  >
                     <Link
                       href="/profile"
-                      className="block px-4 py-2 text-sm hover:bg-gray-50"
+                      className="block px-4 py-2.5 text-sm text-gray-700
+    hover:bg-gray-100 hover:text-gray-900
+    transition"
                     >
                       Profile
                     </Link>
+
                     <Link
                       href="/dashboard"
-                      className="block px-4 py-2 text-sm hover:bg-gray-50"
+                      className="block px-4 py-2.5 text-sm text-gray-700
+    hover:bg-gray-100 hover:text-gray-900
+    transition"
                     >
                       Dashboard
                     </Link>
+
+                    <div className="border-t" />
+
                     <button
                       onClick={logout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                      className="w-full text-left px-4 py-2.5 text-sm
+    text-red-600 hover:bg-red-50
+    transition"
                     >
                       Logout
                     </button>
