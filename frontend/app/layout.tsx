@@ -29,14 +29,23 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`
+          ${geistSans.variable}
+          ${geistMono.variable}
+          antialiased
+          bg-white
+          text-gray-900
+        `}
       >
         <Providers>
           <Navbar />
-          <main className="min-h-screen pt-14">{children}</main>
+          <main className="min-h-screen pt-14 bg-[#FCFCFD]">
+            {children}
+          </main>
           <Footer />
         </Providers>
       </body>
     </html>
   );
 }
+  
