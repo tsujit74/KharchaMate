@@ -55,7 +55,7 @@ type PendingSettlement = {
 };
 
 export default function DashboardPage() {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupLoading, setGroupLoading] = useState(true);
   const [error, setError] = useState("");
@@ -261,8 +261,12 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-gray-900">
                     {expense.description}
                   </p>
+
                   <p className="text-xs text-gray-500">
-                    {expense.group.name} • Paid by {expense.paidBy.name}
+                    {expense.group.name} • Paid by{" "}
+                    {expense.paidBy._id === user?.id
+                      ? "YOU"
+                      : expense.paidBy.name}
                   </p>
                 </div>
 
