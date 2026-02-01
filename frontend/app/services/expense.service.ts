@@ -65,3 +65,17 @@ export const getRecentExpenses = async () => {
     throw new Error("FAILED_RECENT_EXPENSES");
   }
 };
+
+export const getMyExpenses = async (month?: string) => {
+  try {
+    const res = await axios.get(`${API_URL}/api/expenses/my/expenses`, {
+      headers: getAuthHeader(),
+      params: month ? { month } : {},
+    });
+
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    throw new Error("FAILED_MY_EXPENSES");
+  }
+};
