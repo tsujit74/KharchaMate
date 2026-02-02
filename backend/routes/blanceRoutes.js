@@ -2,6 +2,7 @@ import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import {
   getGroupSettlement,
+  getMySettlementHistory,
   getPendingSettlements,
   markPaymentDone,
 } from "../controllers/settlementController.js";
@@ -22,6 +23,8 @@ router.post(
   groupContext,
   markPaymentDone
 );
+
+router.get("/my-history", authMiddleware, getMySettlementHistory);
 
 router.get("/pending", authMiddleware, getPendingSettlements);
 

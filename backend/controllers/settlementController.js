@@ -236,3 +236,22 @@ export const getPendingSettlements = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch pending settlements" });
   }
 };
+
+export const getMySettlementHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const settlements = await Settlement.find({
+      $or: [{ from: userId }, { to: userId }],
+    })
+      .populate("from", "name email")    
+      .populate("to", "name email")      
+      .populate("group", "name")         
+      .sort({ createdAt: -1 });          
+
+    res.json(settlements);
+  } catch (err) {
+    console.error("Error fetching settlement history:", err);
+    res.status(500).json({ message: "Failed to fetch settlement history" });
+  }
+};

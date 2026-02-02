@@ -8,28 +8,22 @@ const settlementSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    from: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    to: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    amount: {
-      type: Number,
-      required: true,
-      min: 0.01,
-    },
+    from: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    to: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    amount: { type: Number, required: true, min: 0.01 },
     status: {
       type: String,
-      enum: ["PENDING", "COMPLETED", "CANCELLED"],
+      enum: ["PENDING", "COMPLETED", "CANCELLED", "INITIATED"],
       default: "PENDING",
+    },
+    transactionRef: {
+      type: String,
+      default: () => crypto.randomUUID(),
+      unique: true,
     },
     note: String,
     settledAt: Date,
+    expiresAt: Date,
   },
   { timestamps: true },
 );
