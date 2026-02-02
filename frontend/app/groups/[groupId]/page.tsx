@@ -96,7 +96,8 @@ export default function GroupDetailsPage() {
       <aside className="w-72 hidden md:block border-r bg-white p-4 sticky top-0 h-screen">
         <GroupMembersSidebar
           balances={settlement.balances}
-          currentUserId={user?.id} groupId={groupId}          
+          currentUserId={user?.id}
+          groupId={groupId}
         />
       </aside>
 
@@ -168,7 +169,11 @@ export default function GroupDetailsPage() {
 
                     {isCurrentUser ? (
                       <button
-                        onClick={() => handleSettle(toUser.id, s.amount)}
+                        onClick={() =>
+                          router.push(
+                            `/groups/${groupId}/settle?to=${toUser.id}&amount=${s.amount}`,
+                          )
+                        }
                         className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
                       >
                         Pay ₹{s.amount}
@@ -236,7 +241,7 @@ function GroupMembersSidebar({
 }: {
   balances: any[];
   currentUserId?: string;
-   groupId: string;
+  groupId: string;
 }) {
   return (
     <>
