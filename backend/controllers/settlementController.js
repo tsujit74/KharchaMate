@@ -1,6 +1,7 @@
 import Expense from "../models/Expense.js";
 import Group from "../models/Group.js";
 import Settlement from "../models/Settlement.js";
+import { notifyUser } from "../service/notify.js";
 import { validatePayment } from "../service/settlementService.js";
 
 export const getGroupSettlement = async (req, res) => {
@@ -121,9 +122,20 @@ export const markPaymentDone = async (req, res) => {
       group: groupId,
       from,
       to,
-      amount: Number(amount.toFixed ? amount.toFixed(2) : amount),
+      amount: Number(Number(amount).toFixed(2)),
       status: "COMPLETED",
       settledAt: new Date(),
+    });
+
+    // Notify receiver
+    await notifyUser({
+      userId: to,
+      actor: from,
+      title: "Payment received",
+      message: `paid you ₹${Number(amount).toFixed(2)}`,
+      type: "SETTLEMENT",
+      link: `/groups/${groupId}`,
+      relatedId: settlement._id,
     });
 
     res.status(201).json({
@@ -135,7 +147,6 @@ export const markPaymentDone = async (req, res) => {
   }
 };
 
-
 export const getPendingSettlements = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -143,7 +154,7 @@ export const getPendingSettlements = async (req, res) => {
     //  Fetch all groups where user is a member
     const groups = await Group.find({ members: userId }).populate(
       "members",
-      "name email"
+      "name email",
     );
 
     const result = [];
@@ -182,7 +193,6 @@ export const getPendingSettlements = async (req, res) => {
         balanceMap[m._id.toString()] -= perPersonShare;
       });
 
-      
       settlementsDone.forEach((s) => {
         balanceMap[s.from.toString()] += s.amount;
         balanceMap[s.to.toString()] -= s.amount;
@@ -197,7 +207,6 @@ export const getPendingSettlements = async (req, res) => {
         else if (bal < -0.01) debtors.push({ user: m, amount: -bal });
       });
 
-    
       let i = 0,
         j = 0;
       const settlements = [];
@@ -226,7 +235,9 @@ export const getPendingSettlements = async (req, res) => {
 
       //Filter only settlements related to current user
       settlements
-        .filter((s) => s.from.toString() === userId || s.to.toString() === userId)
+        .filter(
+          (s) => s.from.toString() === userId || s.to.toString() === userId,
+        )
         .forEach((s) => result.push(s));
     }
 
@@ -244,10 +255,10 @@ export const getMySettlementHistory = async (req, res) => {
     const settlements = await Settlement.find({
       $or: [{ from: userId }, { to: userId }],
     })
-      .populate("from", "name email")    
-      .populate("to", "name email")      
-      .populate("group", "name")         
-      .sort({ createdAt: -1 });          
+      .populate("from", "name email")
+      .populate("to", "name email")
+      .populate("group", "name")
+      .sort({ createdAt: -1 });
 
     res.json(settlements);
   } catch (err) {

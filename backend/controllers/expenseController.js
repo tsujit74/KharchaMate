@@ -1,12 +1,15 @@
 import Expense from "../models/Expense.js";
 import Group from "../models/Group.js";
+import { notifyUser } from "../service/notify.js";
 
 export const addExpense = async (req, res) => {
   try {
     const { groupId, description, amount } = req.body;
 
     const group = await Group.findById(groupId);
-    if (!group) return res.status(404).json({ message: "Group not found" });
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
 
     const members = group.members;
     const perHeadAmount = amount / members.length;
@@ -24,8 +27,26 @@ export const addExpense = async (req, res) => {
       splitBetween,
     });
 
+    // Notify all group members except payer
+    const notifyPromises = members
+      .filter((memberId) => memberId.toString() !== req.user.id)
+      .map((memberId) =>
+        notifyUser({
+          userId: memberId,
+          actor: req.user.id,
+          title: "New expense added",
+          message: `added ₹${amount} for "${description}"`,
+          type: "EXPENSE",
+          link: `/groups/${group._id}`,
+          relatedId: expense._id,
+        }),
+      );
+
+    await Promise.all(notifyPromises);
+
     res.status(201).json(expense);
   } catch (error) {
+    console.error("ADD EXPENSE ERROR:", error);
     res.status(500).json({ message: "Failed to add expense" });
   }
 };
@@ -66,7 +87,7 @@ export const getRecentExpenses = async (req, res) => {
 
 // GET /expenses/my-expense
 export const getMyExpenses = async (req, res) => {
-   try {
+  try {
     const userId = req.user.id;
 
     const expenses = await Expense.find({
@@ -83,4 +104,3 @@ export const getMyExpenses = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch recent expenses" });
   }
 };
-

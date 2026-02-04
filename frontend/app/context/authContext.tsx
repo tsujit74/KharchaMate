@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { getMe, loginUser, logoutUser } from "@/app/services/auth.service";
+import { getMe, loginUser } from "@/app/services/auth.service";
+import { getUnreadNotificationCount } from "@/app/services/notification.service";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -13,17 +14,21 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
+  unreadNotifications: number;
+  setUnreadNotifications: React.Dispatch<React.SetStateAction<number>>;
   isAuthenticated: boolean;
   loading: boolean;
   login: (data: { email: string; password: string }) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [loading, setLoading] = useState(true);
+
   const router = useRouter();
 
   const setupAxiosToken = (token: string | null) => {
@@ -34,6 +39,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // 🔁 Init auth
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem("accessToken");
@@ -53,9 +59,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           name: u.name,
           email: u.email,
         });
+
+        const unread = await getUnreadNotificationCount();
+        setUnreadNotifications(unread);
       } catch {
-        setUser(null);
         localStorage.removeItem("accessToken");
+        setupAxiosToken(null);
+        setUser(null);
+        setUnreadNotifications(0);
       } finally {
         setLoading(false);
       }
@@ -64,46 +75,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initAuth();
   }, []);
 
+  // 🔐 Login
   const login = async (data: { email: string; password: string }) => {
-    try {
-      const res = await loginUser(data);
-      const token = res.data.token;
+    const res = await loginUser(data);
+    const token = res.data.token;
 
-      localStorage.setItem("accessToken", token);
-      setupAxiosToken(token);
+    localStorage.setItem("accessToken", token);
+    setupAxiosToken(token);
 
-      const userRes = await getMe();
-      const u = userRes.data.user;
+    const userRes = await getMe();
+    const u = userRes.data.user;
 
-      setUser({
-        id: u._id,
-        name: u.name,
-        email: u.email,
-      });
+    setUser({
+      id: u._id,
+      name: u.name,
+      email: u.email,
+    });
 
-      router.push("/dashboard");
-    } catch (err: any) {
-      throw new Error(err?.response?.data?.message || "Login failed");
-    }
+    const unread = await getUnreadNotificationCount();
+    setUnreadNotifications(unread);
+
+    router.push("/dashboard");
   };
 
-  const logout = async () => {
-    try {
-      
-    } catch (err) {
-      console.error("Logout failed", err);
-    } finally {
-      localStorage.removeItem("accessToken");
-      setupAxiosToken(null);
-      setUser(null);
-      router.push("/login");
-    }
+  // 🚪 Logout
+  const logout = () => {
+    localStorage.removeItem("accessToken");
+    setupAxiosToken(null);
+    setUser(null);
+    setUnreadNotifications(0);
+    router.push("/login");
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        unreadNotifications,
+        setUnreadNotifications,
         isAuthenticated: !!user,
         loading,
         login,

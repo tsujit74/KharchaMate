@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import groupRoutes from "./routes/groupRoutes.js";
 import expenseRoutes from "./routes/expenseRoutes.js";
 import blanceRoutes from "./routes/blanceRoutes.js";
+import notificationToutes from "./routes/notificationRoutes.js"
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/blance", blanceRoutes);
+app.use("/api/notifications",notificationToutes);
 
 app.get("/", (req, res) => {
   res.send("KharchaMate Backend Running");
