@@ -124,7 +124,7 @@ const LoginPage = () => {
                 className="w-full bg-black text-white py-4 font-bold flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-all disabled:opacity-70"
               >
                 {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white animate-spin" />
+                  <span className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 ) : (
                   <>
                     Sign In
