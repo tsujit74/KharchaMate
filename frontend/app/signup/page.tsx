@@ -25,7 +25,7 @@ const SignupPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -33,17 +33,37 @@ const SignupPage = () => {
     }
   }, [loading, isAuthenticated, router]);
 
+  const validate = () => {
+    if (!name.trim()) return "Name is required";
+    if (!email.trim()) return "Email is required";
+    if (!/^\S+@\S+\.\S+$/.test(email))
+      return "Please enter a valid email";
+    if (!password.trim()) return "Password is required";
+    if (password.length < 6)
+      return "Password must be at least 6 characters";
+    return "";
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setIsLoading(true);
-    setError(null);
+    setError("");
 
     try {
       await registerUser({ name, email, password });
       router.push("/login");
     } catch (err: any) {
       setError(
-        err?.response?.data?.message || err?.message || "Something went wrong",
+        err?.response?.data?.message ||
+          err?.message ||
+          "Signup failed. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -55,15 +75,13 @@ const SignupPage = () => {
   return (
     <main className="min-h-screen bg-[#FCFCFD] flex mx-auto">
       <section className="w-full lg:w-1/2 flex items-center justify-center p-4 relative mx-auto">
-        <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] bg-blue-100/40 blur-[120px]" />
-
         <div className="w-full max-w-[440px]">
           <div className="bg-white border border-gray-100 p-8 md:p-10">
             <h1 className="text-xl font-bold text-center mb-6">
               Create Account
             </h1>
 
-            <form onSubmit={handleSignup} className="space-y-5">
+            <form onSubmit={handleSignup} noValidate className="space-y-5">
               {/* Name */}
               <div>
                 <label className="text-xs font-bold uppercase text-gray-400 ml-1">
@@ -73,9 +91,11 @@ const SignupPage = () => {
                   <User2Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
-                    required
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setError("");
+                    }}
                     className="w-full pl-11 pr-4 py-4 bg-gray-50 border text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
                     placeholder="Full name"
                   />
@@ -90,10 +110,12 @@ const SignupPage = () => {
                 <div className="relative mt-2">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    type="email"
-                    required
+                    type="text"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setError("");
+                    }}
                     className="w-full pl-11 pr-4 py-4 bg-gray-50 border text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
                     placeholder="name@example.com"
                   />
@@ -109,11 +131,13 @@ const SignupPage = () => {
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type={showPassword ? "text" : "password"}
-                    required
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError("");
+                    }}
                     className="w-full pl-11 pr-12 py-4 bg-gray-50 border text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
-                    placeholder="********"
+                    placeholder="Password"
                   />
                   <button
                     type="button"
@@ -125,10 +149,12 @@ const SignupPage = () => {
                 </div>
               </div>
 
+              {/* Error */}
               {error && (
                 <p className="text-sm text-red-500 font-medium">{error}</p>
               )}
 
+              {/* Submit */}
               <button
                 type="submit"
                 disabled={isLoading}
@@ -138,8 +164,7 @@ const SignupPage = () => {
                   <span className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 ) : (
                   <>
-                    Sign Up
-                    <ArrowRight className="w-4 h-4" />
+                    Sign Up <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -161,10 +186,7 @@ const SignupPage = () => {
 
           <p className="text-center mt-4 text-sm text-gray-500">
             Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-bold text-black hover:underline"
-            >
+            <Link href="/login" className="font-bold text-black hover:underline">
               Login
             </Link>
           </p>

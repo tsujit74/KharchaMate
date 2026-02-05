@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import {
   Mail,
   Lock,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authContext";
+import Link from "next/link";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -30,22 +30,37 @@ const LoginPage = () => {
     }
   }, [loading, isAuthenticated, router]);
 
+  const validate = () => {
+    if (!email.trim()) return "Email is required";
+    if (!/^\S+@\S+\.\S+$/.test(email))
+      return "Please enter a valid email";
+    if (!password.trim()) return "Password is required";
+    if (password.length < 6)
+      return "Password must be at least 6 characters";
+    return "";
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setIsLoading(true);
     setError("");
 
     try {
       await login({ email, password });
-
       router.push("/dashboard");
     } catch (err: any) {
-      const message =
+      setError(
         err?.response?.data?.message ||
-        err?.message ||
-        "Something went wrong. Please try again.";
-
-      setError(message);
+          err?.message ||
+          "Login failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -56,25 +71,27 @@ const LoginPage = () => {
   return (
     <main className="min-h-screen bg-[#FCFCFD] flex mx-auto">
       <section className="w-full lg:w-1/2 flex items-center justify-center p-4 relative mx-auto">
-        <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] bg-blue-100/40 blur-[120px]" />
-
         <div className="w-full max-w-[440px]">
           <div className="bg-white border border-gray-100 p-8 md:p-10">
-            <h1 className="text-2xl font-bold text-center">Welcome back</h1>
+            <h1 className="text-2xl font-bold text-center mb-6">
+              Welcome back
+            </h1>
 
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleLogin} noValidate className="space-y-5">
               {/* Email */}
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-1">
+                <label className="text-xs font-bold uppercase text-gray-400 ml-1">
                   Email
                 </label>
                 <div className="relative mt-2">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    type="email"
-                    required
+                    type="text"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setError("");
+                    }}
                     className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
                     placeholder="name@example.com"
                   />
@@ -83,24 +100,20 @@ const LoginPage = () => {
 
               {/* Password */}
               <div>
-                <div className="flex justify-between items-center ml-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                    Password
-                  </label>
-                  <a className="text-xs font-bold hover:underline cursor-pointer">
-                    Forgot?
-                  </a>
-                </div>
-
+                <label className="text-xs font-bold uppercase text-gray-400 ml-1">
+                  Password
+                </label>
                 <div className="relative mt-2">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type={showPassword ? "text" : "password"}
-                    required
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError("");
+                    }}
                     className="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
-                    placeholder="password"
+                    placeholder="Password"
                   />
                   <button
                     type="button"
@@ -117,7 +130,7 @@ const LoginPage = () => {
                 <p className="text-sm text-red-500 font-medium">{error}</p>
               )}
 
-              {/* Button */}
+              {/* Submit */}
               <button
                 type="submit"
                 disabled={isLoading}
@@ -127,19 +140,17 @@ const LoginPage = () => {
                   <span className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 ) : (
                   <>
-                    Sign In
-                    <ArrowRight className="w-4 h-4" />
+                    Sign In <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Divider */}
+            {/* Social */}
             <div className="my-4 text-center text-xs text-gray-400 uppercase">
               Or continue with
             </div>
 
-            {/* Social */}
             <div className="grid grid-cols-2 gap-4">
               <button className="border py-3 flex justify-center gap-2 font-semibold text-sm">
                 <Chrome className="w-4 h-4" /> Google
@@ -152,9 +163,9 @@ const LoginPage = () => {
 
           <p className="text-center mt-4 text-sm text-gray-500">
             Don&apos;t have an account?{" "}
-            <a href="/signup" className="font-bold text-black hover:underline">
+            <Link href="/signup" className="font-bold text-black hover:underline">
               Create one
-            </a>
+            </Link>
           </p>
         </div>
       </section>
