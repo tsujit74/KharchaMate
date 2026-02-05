@@ -2,47 +2,69 @@ import Expense from "../models/Expense.js";
 import Group from "../models/Group.js";
 import { notifyUser } from "../service/notify.js";
 
+const round = (n) => Math.round(n * 100) / 100;
+
 export const addExpense = async (req, res) => {
   try {
-    const { groupId, description, amount } = req.body;
+    const { groupId, description, amount, splitBetween } = req.body;
 
     const group = await Group.findById(groupId);
     if (!group) {
       return res.status(404).json({ message: "Group not found" });
     }
 
-    const members = group.members;
-    const perHeadAmount = amount / members.length;
+    let finalSplit = [];
 
-    const splitBetween = members.map((memberId) => ({
-      user: memberId,
-      amount: perHeadAmount,
-    }));
+    // CUSTOM SPLIT
+    if (Array.isArray(splitBetween) && splitBetween.length > 0) {
+      const totalSplit = splitBetween.reduce(
+        (sum, s) => sum + Number(s.amount),
+        0,
+      );
+
+      if (round(totalSplit) !== round(Number(amount))) {
+        return res
+          .status(400)
+          .json({ message: "Split total must equal amount" });
+      }
+
+      finalSplit = splitBetween;
+    }
+    // EQUAL SPLIT
+    else {
+      const members = group.members;
+      const perHead = round(amount / members.length);
+
+      finalSplit = members.map((memberId) => ({
+        user: memberId,
+        amount: perHead,
+      }));
+    }
 
     const expense = await Expense.create({
       group: groupId,
       description,
       amount,
       paidBy: req.user.id,
-      splitBetween,
+      splitBetween: finalSplit,
     });
 
-    // Notify all group members except payer
-    const notifyPromises = members
-      .filter((memberId) => memberId.toString() !== req.user.id)
-      .map((memberId) =>
-        notifyUser({
-          userId: memberId,
-          actor: req.user.id,
-          title: "New expense added",
-          message: `added ₹${amount} for "${description}"`,
-          type: "EXPENSE",
-          link: `/groups/${group._id}`,
-          relatedId: expense._id,
-        }),
-      );
-
-    await Promise.all(notifyPromises);
+    // Notify members except payer
+    await Promise.all(
+      group.members
+        .filter((m) => m.toString() !== req.user.id)
+        .map((memberId) =>
+          notifyUser({
+            userId: memberId,
+            actor: req.user.id,
+            title: "New expense added",
+            message: `added ₹${amount} for "${description}"`,
+            type: "EXPENSE",
+            link: `/groups/${group._id}`,
+            relatedId: expense._id,
+          }),
+        ),
+    );
 
     res.status(201).json(expense);
   } catch (error) {

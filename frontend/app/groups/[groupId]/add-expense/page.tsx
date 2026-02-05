@@ -6,6 +6,12 @@ import { IndianRupee, FileText, Plus } from "lucide-react";
 
 import { useAuth } from "@/app/context/authContext";
 import { addExpense } from "@/app/services/expense.service";
+import { getGroupById } from "@/app/services/group.service";
+
+type Member = {
+  _id: string;
+  name: string;
+};
 
 export default function AddExpensePage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -14,44 +20,82 @@ export default function AddExpensePage() {
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [members, setMembers] = useState<Member[]>([]);
+  const [splitType, setSplitType] = useState<"EQUAL" | "CUSTOM">("EQUAL");
+  const [customSplit, setCustomSplit] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // 🔐 Auth check
   useEffect(() => {
-    if (loading) return;
-    if (!isAuthenticated) router.push("/login");
+    if (!loading && !isAuthenticated) {
+      router.push("/login");
+    }
   }, [loading, isAuthenticated, router]);
+
+  // 👥 Load group members
+  useEffect(() => {
+    if (!groupId) return;
+
+    getGroupById(groupId)
+      .then((res) => setMembers(res.members))
+      .catch(() => setError("Failed to load group members"));
+  }, [groupId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!groupId) {
-      setError("Invalid group.");
+    if (!description.trim() || !amount) {
+      setError("All fields are required");
       return;
     }
 
-    if (!description.trim() || !amount) {
-      setError("All fields are required.");
-      return;
+    const totalAmount = Number(amount);
+
+    const payload: any = {
+      groupId,
+      description: description.trim(),
+      amount: totalAmount,
+    };
+
+    // ✅ CUSTOM SPLIT
+    if (splitType === "CUSTOM") {
+      const splitArray = [];
+
+      for (const m of members) {
+        const value = customSplit[m._id];
+
+        if (!value || value <= 0) {
+          setError(`Enter valid amount for ${m.name}`);
+          return;
+        }
+
+        splitArray.push({
+          user: m._id,
+          amount: Number(value),
+        });
+      }
+
+      const totalSplit = splitArray.reduce(
+        (sum, s) => sum + s.amount,
+        0
+      );
+
+      if (totalSplit !== totalAmount) {
+        setError("Split total must equal expense amount");
+        return;
+      }
+
+      payload.splitBetween = splitArray;
     }
 
     try {
       setSubmitting(true);
-
-      await addExpense({
-        groupId,
-        description: description.trim(),
-        amount: Number(amount),
-      });
-
+      await addExpense(payload);
       router.push(`/groups/${groupId}`);
     } catch (err: any) {
-      if (err.message === "UNAUTHORIZED") {
-        router.push("/login");
-      } else {
-        setError("Failed to add expense. Try again.");
-      }
+      setError(err.message || "Failed to add expense");
     } finally {
       setSubmitting(false);
     }
@@ -61,12 +105,13 @@ export default function AddExpensePage() {
 
   return (
     <main className="min-h-screen bg-[#FCFCFD] flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white border border-gray-100 p-8">
-        {/* Header */}
+      <div className="w-full max-w-md bg-white border p-8">
         <div className="mb-6 text-center">
           <h1 className="text-xl font-bold">Add Expense</h1>
           <p className="text-sm text-gray-500">
-            Expense will be split equally
+            {splitType === "EQUAL"
+              ? "Expense will be split equally"
+              : "Custom split enabled"}
           </p>
         </div>
 
@@ -77,37 +122,74 @@ export default function AddExpensePage() {
             </p>
           )}
 
-          {/* Description */}
           <div className="relative">
             <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
-              required
               placeholder="Dinner, Taxi, Hotel..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 focus:outline-none focus:border-black"
+              className="w-full pl-12 pr-4 py-4 bg-gray-50 border"
             />
           </div>
 
-          {/* Amount */}
           <div className="relative">
             <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="number"
-              required
               placeholder="0"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 focus:outline-none focus:border-black"
+              className="w-full pl-12 pr-4 py-4 bg-gray-50 border"
             />
           </div>
 
-          {/* Submit */}
+          <div className="flex gap-4 text-sm">
+            <button
+              type="button"
+              onClick={() => setSplitType("EQUAL")}
+              className={`flex-1 py-2 border ${
+                splitType === "EQUAL" ? "bg-black text-white" : ""
+              }`}
+            >
+              Equal
+            </button>
+            <button
+              type="button"
+              onClick={() => setSplitType("CUSTOM")}
+              className={`flex-1 py-2 border ${
+                splitType === "CUSTOM" ? "bg-black text-white" : ""
+              }`}
+            >
+              Custom
+            </button>
+          </div>
+
+          {splitType === "CUSTOM" && (
+            <div className="space-y-3">
+              {members.map((m) => (
+                <div key={m._id} className="flex justify-between gap-3">
+                  <span className="text-sm">{m.name}</span>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    className="w-24 px-2 py-1 border text-sm"
+                    onChange={(e) =>
+                      setCustomSplit((prev) => ({
+                        ...prev,
+                        [m._id]: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
           <button
             disabled={submitting}
-            className="w-full bg-black text-white py-4 font-semibold flex items-center justify-center gap-2 disabled:opacity-70"
+            className="w-full bg-black text-white py-4 font-semibold"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="inline w-4 h-4 mr-2" />
             {submitting ? "Adding..." : "Add Expense"}
           </button>
         </form>

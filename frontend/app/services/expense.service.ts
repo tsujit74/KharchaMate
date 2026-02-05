@@ -27,23 +27,35 @@ export const addExpense = async ({
   groupId,
   description,
   amount,
+  splitBetween,
 }: {
   groupId: string;
   description: string;
   amount: number;
+  splitBetween?: {
+    user: string;
+    amount: number;
+  }[];
 }) => {
-  if (!groupId || !description || !amount) throw new Error("INVALID_DATA");
+  if (!groupId || !description || !amount) {
+    throw new Error("INVALID_DATA");
+  }
 
   try {
-    const res = await axios.post(
-      `${API_URL}/api/expenses/add`,
-      {
-        groupId,
-        description: description.trim(),
-        amount,
-      },
-      { headers: getAuthHeader() },
-    );
+    const payload: any = {
+      groupId,
+      description: description.trim(),
+      amount,
+    };
+
+    //ONLY attach when custom split is used
+    if (Array.isArray(splitBetween) && splitBetween.length > 0) {
+      payload.splitBetween = splitBetween;
+    }
+
+    const res = await axios.post(`${API_URL}/api/expenses/add`, payload, {
+      headers: getAuthHeader(),
+    });
 
     return res.data;
   } catch (err: any) {

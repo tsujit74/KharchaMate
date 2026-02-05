@@ -70,3 +70,21 @@ export const addMember = async (groupId: string, email: string) => {
     throw new Error("FAILED_ADD_MEMBER");
   }
 };
+
+export const getGroupById = async (groupId: string) => {
+  if (!groupId) throw new Error("INVALID_GROUP");
+
+  try {
+    const res = await axios.get(
+      `${API_URL}/api/groups/${groupId}`,
+      { headers: getAuthHeader() }
+    );
+
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    throw new Error("FAILED_GROUP");
+  }
+};
+

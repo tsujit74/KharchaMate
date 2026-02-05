@@ -38,7 +38,7 @@ export const addMember = async (req, res) => {
     group.members.push(user._id);
     await group.save();
 
-    // Notification to added member (NEW MODEL SUPPORT)
+    // Notification to added member
     await notifyUser({
       userId: user._id, // receiver
       actor: req.user.id, // who added
@@ -65,5 +65,29 @@ export const getMyGroups = async (req, res) => {
     res.json(groups);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch groups" });
+  }
+};
+
+export const getGroupById = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    const group = await Group.findById(groupId)
+      .populate("members", "name email");
+
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    if (!group.members.some(
+      (m) => m._id.toString() === req.user.id
+    )) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    res.status(200).json(group);
+  } catch (err) {
+    console.error("GET GROUP ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch group" });
   }
 };
