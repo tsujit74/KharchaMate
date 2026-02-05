@@ -12,6 +12,7 @@ import {
   settlePayment,
 } from "@/app/services/settlement.service";
 import { getGroupExpenses } from "@/app/services/group.service";
+import ExpenseCard from "@/app/components/Expenses/ExpenseCard";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -117,9 +118,10 @@ export default function GroupDetailsPage() {
           />
           <Stat
             icon={Users}
-            label="Per Person"
-            value={`₹${Math.round(settlement.perPersonShare)}`}
+            label="Your Share"
+            value={`₹${settlement.yourShare}`}
           />
+
           <Stat
             icon={Users}
             label="Members"
@@ -207,26 +209,9 @@ export default function GroupDetailsPage() {
           ) : (
             expenses
               .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
-              .map((e) => {
-                const { dateLabel } = formatDateTime(e.createdAt);
-                return (
-                  <div
-                    key={e._id}
-                    className="bg-white border rounded-lg p-4 mb-2 flex justify-between"
-                  >
-                    <div>
-                      <p className="font-medium">{e.description}</p>
-                      <p className="text-xs text-gray-500">
-                        Paid by {e.paidBy.name}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">₹{e.amount}</p>
-                      <p className="text-xs text-gray-500">{dateLabel}</p>
-                    </div>
-                  </div>
-                );
-              })
+              .map((e) => (
+                <ExpenseCard key={e._id} expense={e} currentUserId={user?.id} />
+              ))
           )}
         </div>
       </section>

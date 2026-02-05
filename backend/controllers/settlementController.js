@@ -6,20 +6,17 @@ import { validatePayment } from "../service/settlementService.js";
 
 export const getGroupSettlement = async (req, res) => {
   try {
+    const currentUserId = req.user.id;
     const { groupId } = req.params;
 
     const group = await Group.findById(groupId).populate(
       "members",
       "name email",
     );
-    if (!group) {
-      return res.status(404).json({ message: "Group not found" });
-    }
+    if (!group) return res.status(404).json({ message: "Group not found" });
 
     const members = group.members;
-    if (!members.length) {
-      return res.json({ message: "No members in group" });
-    }
+    if (!members.length) return res.json({ message: "No members" });
 
     const expenses = await Expense.find({ group: groupId });
     const settlementsDone = await Settlement.find({
@@ -27,71 +24,95 @@ export const getGroupSettlement = async (req, res) => {
       status: "COMPLETED",
     });
 
-    // Initialize balances
+    let yourShare = 0;
+
+    expenses.forEach((expense) => {
+      if (
+        Array.isArray(expense.splitBetween) &&
+        expense.splitBetween.length > 0
+      ) {
+        const mySplit = expense.splitBetween.find(
+          (s) => s.user.toString() === currentUserId,
+        );
+        if (mySplit) {
+          yourShare += mySplit.amount;
+        }
+      } else {
+        yourShare += expense.amount / members.length;
+      }
+    });
+
+    //  init balances
     const balanceMap = {};
     members.forEach((m) => {
       balanceMap[m._id.toString()] = 0;
     });
 
-    // Add expense payments
-    expenses.forEach((expense) => {
-      balanceMap[expense.paidBy.toString()] += expense.amount;
+    //  apply expenses using splitBetween
+    expenses.forEach((exp) => {
+      const paidBy = exp.paidBy.toString();
+
+      // payer paid full amount
+      balanceMap[paidBy] += exp.amount;
+
+      if (exp.splitBetween?.length) {
+        exp.splitBetween.forEach((s) => {
+          balanceMap[s.user.toString()] -= s.amount;
+        });
+      } else {
+        // fallback equal split
+        const share = exp.amount / members.length;
+        members.forEach((m) => {
+          balanceMap[m._id.toString()] -= share;
+        });
+      }
     });
 
-    // Subtract equal share
-    const totalSpent = expenses.reduce((s, e) => s + e.amount, 0);
-    const perPersonShare = totalSpent / members.length;
-
-    members.forEach((m) => {
-      balanceMap[m._id.toString()] -= perPersonShare;
-    });
-
-    // Apply previous settlements
+    //  apply completed settlements
     settlementsDone.forEach((s) => {
       balanceMap[s.from.toString()] += s.amount;
       balanceMap[s.to.toString()] -= s.amount;
     });
 
-    // Prepare creditors & debtors
+    //  prepare debtors & creditors
     const creditors = [];
     const debtors = [];
 
     members.forEach((m) => {
       const bal = Number(balanceMap[m._id.toString()].toFixed(2));
       if (bal > 0.01) creditors.push({ user: m, amount: bal });
-      else if (bal < -0.01) debtors.push({ user: m, amount: -bal });
+      if (bal < -0.01) debtors.push({ user: m, amount: -bal });
     });
 
-    // Final settlement calculation
+    //  settlement matching
     const settlements = [];
     let i = 0,
       j = 0;
 
     while (i < debtors.length && j < creditors.length) {
-      const debtor = debtors[i];
-      const creditor = creditors[j];
-
-      const amount = Math.min(debtor.amount, creditor.amount);
+      const amount = Math.min(debtors[i].amount, creditors[j].amount);
 
       settlements.push({
-        from: debtor.user._id,
-        fromName: debtor.user.name,
-        to: creditor.user._id,
-        toName: creditor.user.name,
+        from: debtors[i].user._id,
+        fromName: debtors[i].user.name,
+        to: creditors[j].user._id,
+        toName: creditors[j].user.name,
         amount: Number(amount.toFixed(2)),
       });
 
-      debtor.amount -= amount;
-      creditor.amount -= amount;
+      debtors[i].amount -= amount;
+      creditors[j].amount -= amount;
 
-      if (debtor.amount <= 0.01) i++;
-      if (creditor.amount <= 0.01) j++;
+      if (debtors[i].amount <= 0.01) i++;
+      if (creditors[j].amount <= 0.01) j++;
     }
+
+    const totalSpent = expenses.reduce((s, e) => s + e.amount, 0);
 
     res.json({
       group: group.name,
       totalSpent: Number(totalSpent.toFixed(2)),
-      perPersonShare: Number(perPersonShare.toFixed(2)),
+      yourShare: Number(yourShare.toFixed(2)),
       balances: members.map((m) => ({
         id: m._id,
         name: m.name,
@@ -100,8 +121,8 @@ export const getGroupSettlement = async (req, res) => {
       })),
       settlements,
     });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to calculate settlement" });
+  } catch (err) {
+    res.status(500).json({ message: "Settlement failed" });
   }
 };
 
