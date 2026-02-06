@@ -6,13 +6,13 @@ import Link from "next/link";
 import { Users, IndianRupee, Plus, ArrowRight, UserPlus } from "lucide-react";
 
 import { useAuth } from "@/app/context/authContext";
-import { formatDateTime } from "@/app/utils/formatDateTime";
 import {
   getGroupSettlement,
   settlePayment,
 } from "@/app/services/settlement.service";
 import { getGroupExpenses } from "@/app/services/group.service";
 import ExpenseCard from "@/app/components/Expenses/ExpenseCard";
+import ReminderButton from "@/app/components/Reminder/ReminderButton";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -137,54 +137,78 @@ export default function GroupDetailsPage() {
             <p className="text-gray-500 text-sm">Everyone is settled 🎉</p>
           ) : (
             settlement.settlements
-              //  1. Sort: logged-in user's pay first
+              //logged-in user's payments first
               .sort((a: any, b: any) => {
                 const aIsMe = a.from === user?.id;
                 const bIsMe = b.from === user?.id;
-
-                if (aIsMe && !bIsMe) return -1;
-                if (!aIsMe && bIsMe) return 1;
-                return 0;
+                return Number(bIsMe) - Number(aIsMe);
               })
-              .map((s: any, i: number) => {
-                const isCurrentUser = s.from === user?.id;
+              .map((s: any) => {
+                const youOwe = s.from === user?.id;
+                const someoneOwesYou = s.to === user?.id;
+                const isViewer = !youOwe && !someoneOwesYou;
 
-                // 2. Use ID (not name)
-                const toUser = settlement.balances.find(
+                const debtor = settlement.balances.find(
+                  (b: any) => b.id === s.from,
+                );
+
+                const creditor = settlement.balances.find(
                   (b: any) => b.id === s.to,
                 );
 
+                // avoid crashes if data mismatches
+                if (!debtor || !creditor) return null;
+
                 return (
                   <div
-                    key={i}
-                    className={`flex justify-between items-center rounded-lg p-3 mb-2 ${
-                      isCurrentUser
-                        ? "bg-red-50 border border-red-200"
-                        : "bg-gray-50"
+                    key={`${s.from}-${s.to}`}
+                    className={`flex justify-between items-center rounded-lg p-3 mb-2 border ${
+                      youOwe
+                        ? "bg-red-50 border-red-200"
+                        : someoneOwesYou
+                          ? "bg-green-50 border-green-200"
+                          : "bg-gray-50 border-gray-200"
                     }`}
                   >
                     <div className="flex items-center gap-2 text-sm">
-                      <span>{s.fromName}</span>
+                      <span className="font-medium">{s.fromName}</span>
                       <ArrowRight className="w-4 h-4 text-gray-400" />
-                      <span>{s.toName}</span>
+                      <span className="font-medium">{s.toName}</span>
                     </div>
 
-                    {isCurrentUser ? (
-                      <button
-                        onClick={() =>
-                          router.push(
-                            `/groups/${groupId}/settle?to=${toUser.id}&amount=${s.amount}`,
-                          )
-                        }
-                        className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
-                      >
-                        Pay ₹{s.amount}
-                      </button>
-                    ) : (
-                      <span className="text-sm font-semibold text-gray-600">
-                        ₹{s.amount}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {youOwe && (
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `/groups/${groupId}/settle?to=${creditor.id}&amount=${s.amount}`,
+                            )
+                          }
+                          className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
+                        >
+                          Pay ₹{s.amount}
+                        </button>
+                      )}
+
+                      {someoneOwesYou && (
+                        <>
+                          <span className="text-sm font-semibold text-gray-700">
+                            ₹{s.amount}
+                          </span>
+                          <ReminderButton
+                            groupId={groupId}
+                            toUserId={debtor.id}
+                            amount={s.amount}
+                          />
+                        </>
+                      )}
+
+                      {isViewer && (
+                        <span className="text-sm font-semibold text-gray-500">
+                          ₹{s.amount}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })
