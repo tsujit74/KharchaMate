@@ -59,3 +59,29 @@ export const sendReminder = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const checkReminder = async (req, res) => {
+  try {
+    const fromUserId = req.user.id;
+    const { groupId, toUserId, amount } = req.query;
+
+    if (!groupId || !toUserId || !amount) {
+      return res.status(400).json({ message: "Missing params" });
+    }
+
+    const reminder = await Reminder.findOne({
+      group: groupId,
+      fromUser: fromUserId,
+      toUser: toUserId,
+      status: "SENT",
+    });
+
+    return res.json({
+      sent: !!reminder,
+      sentAt: reminder?.sentAt || null,
+    });
+  } catch (err) {
+    console.error("CHECK REMINDER ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

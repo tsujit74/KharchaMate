@@ -7,7 +7,7 @@ import groupRoutes from "./routes/groupRoutes.js";
 import expenseRoutes from "./routes/expenseRoutes.js";
 import blanceRoutes from "./routes/blanceRoutes.js";
 import notificationToutes from "./routes/notificationRoutes.js";
-import reminderRoutes from "./routes/sendReminder.js";
+import reminderRoutes from "./routes/sendReminder.js"
 
 dotenv.config();
 

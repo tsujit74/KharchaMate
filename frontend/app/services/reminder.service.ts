@@ -32,3 +32,25 @@ export const sendReminder = async ({
     throw new Error("FAILED_SEND_REMINDER");
   }
 };
+
+export const checkReminder = async ({
+  groupId,
+  toUserId,
+  amount,
+}: {
+  groupId: string;
+  toUserId: string;
+  amount: number;
+}) => {
+  try {
+    const res = await axios.get(`${API_URL}/api/reminders/check`, {
+      params: { groupId, toUserId, amount },
+      headers: getAuthHeader(),
+    });
+
+    return res.data as { sent: boolean; sentAt: string | null };
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    throw new Error("FAILED_CHECK_REMINDER");
+  }
+};

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { sendReminder } from "@/app/services/reminder.service";
+import { sendReminder, checkReminder } from "@/app/services/reminder.service";
 
 export default function ReminderButton({
   groupId,
@@ -24,7 +24,16 @@ export default function ReminderButton({
   const [sent, setSent] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // close on outside click
+  // 🔹 check if reminder already sent
+  useEffect(() => {
+    checkReminder({ groupId, toUserId, amount })
+      .then((res) => {
+        if (res.sent) setSent(true);
+      })
+      .catch(() => {});
+  }, [groupId, toUserId, amount]);
+
+  // 🔹 close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -64,14 +73,12 @@ export default function ReminderButton({
       groupName ? ` for "${groupName}"` : ""
     }.`;
 
-    const url = `https://wa.me/91${toUserPhone}?text=${encodeURIComponent(
-      msg,
-    )}`;
-
+    const url = `https://wa.me/91${toUserPhone}?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank");
     setOpen(false);
   };
 
+  // ✅ FINAL STATE: already sent
   if (sent) {
     return (
       <span className="ml-2 text-green-600 text-sm flex items-center gap-1">
@@ -83,9 +90,11 @@ export default function ReminderButton({
   return (
     <div ref={ref} className="relative inline-block ml-2">
       <button
-        onClick={() => setOpen((p) => !p)}
-        disabled={loading}
-        className="flex items-center gap-1 px-3 py-1 bg-yellow-500 text-white rounded-md text-sm"
+        onClick={() => !sent && setOpen((p) => !p)}
+        disabled={loading || sent}
+        className={`flex items-center gap-1 px-3 py-1 rounded-md text-sm
+          ${sent ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-500 text-white"}
+        `}
       >
         Remind
         {open ? (
@@ -95,7 +104,7 @@ export default function ReminderButton({
         )}
       </button>
 
-      {open && (
+      {open && !sent && (
         <div className="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-20 overflow-hidden">
           <button
             onClick={handleInAppReminder}
