@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/context/authContext";
 import { User2, Bell, Plus, Users, Activity, ChevronDown } from "lucide-react";
+import Image from "next/image";
 
 export default function Navbar() {
   const { user, unreadNotifications, isAuthenticated, logout, loading } =
@@ -33,14 +34,18 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="w-full fixed top-0 z-50 bg-white border-b shadow-sm">
-      <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-        {/* Logo */}
-        <Link
-          href="/dashboard"
-          className="text-xl font-bold text-gray-900 tracking-tight"
-        >
-          KharchaMate
+    <nav className="w-full fixed top-0 z-50 bg-white border-b shadow-sm h-16">
+      <div className="max-w-6xl mx-auto flex items-center justify-between px-4 h-full">
+        <Link href="/dashboard" className="flex items-center">
+          <div className="relative h-64 w-48">
+            <Image
+              src="/logo.png"
+              alt="KharchaMate Logo"
+              fill
+              priority
+              className="object-contain"
+            />
+          </div>
         </Link>
 
         {/* Center Nav */}

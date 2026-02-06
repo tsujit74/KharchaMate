@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Outer circle -->
+  <circle cx="50" cy="50" r="48" fill="#0f172a"></circle>
+
+  <!-- Split line -->
+  <line x1="50" y1="20" x2="50" y2="80" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"></line>
+
+  <!-- Left dot -->
+  <circle cx="32" cy="50" r="8" fill="#ffffff"></circle>
+
+  <!-- Right dot -->
+  <circle cx="68" cy="50" r="8" fill="#ffffff"></circle>
+</svg>

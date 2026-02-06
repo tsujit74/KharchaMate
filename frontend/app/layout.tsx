@@ -19,7 +19,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "KharchaMate",
   description: "Smart expense splitting for groups",
+  icons: {
+    icon: "/kms.svg",
+  },
 };
+
 
 export default function RootLayout({
   children,
