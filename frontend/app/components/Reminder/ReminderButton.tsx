@@ -3,37 +3,62 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { sendReminder, checkReminder } from "@/app/services/reminder.service";
+import { getGroupById } from "@/app/services/group.service";
+
+type Member = {
+  _id: string;
+  name: string;
+  email: string;
+  mobile?: string | null;
+};
 
 export default function ReminderButton({
   groupId,
   toUserId,
   amount,
   toUserName,
-  toUserPhone,
   groupName,
 }: {
   groupId: string;
   toUserId: string;
   amount: number;
   toUserName?: string;
-  toUserPhone?: string;
   groupName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [toUserPhone, setToUserPhone] = useState<string | null>(null);
+
   const ref = useRef<HTMLDivElement>(null);
 
-  // 🔹 check if reminder already sent
+  // ✅ Check reminder already sent
   useEffect(() => {
     checkReminder({ groupId, toUserId, amount })
-      .then((res) => {
-        if (res.sent) setSent(true);
-      })
+      .then((res) => res.sent && setSent(true))
       .catch(() => {});
   }, [groupId, toUserId, amount]);
 
-  // 🔹 close dropdown on outside click
+  // ✅ Fetch group → find member → get mobile
+  useEffect(() => {
+    const loadPhone = async () => {
+      try {
+        const group = await getGroupById(groupId);
+
+        const member: Member | undefined = group.members.find(
+          (m: Member) => m._id === toUserId,
+        );
+
+        setToUserPhone(member?.mobile ?? null);
+      } catch {
+        setToUserPhone(null);
+      }
+    };
+
+    loadPhone();
+  }, [groupId, toUserId]);
+
+  // ✅ Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -65,7 +90,7 @@ export default function ReminderButton({
 
   const handleWhatsAppReminder = () => {
     if (!toUserPhone) {
-      alert("User does not have WhatsApp number");
+      alert("This user has not added a mobile number");
       return;
     }
 
@@ -78,7 +103,7 @@ export default function ReminderButton({
     setOpen(false);
   };
 
-  // ✅ FINAL STATE: already sent
+  // Final state
   if (sent) {
     return (
       <span className="ml-2 text-green-600 text-sm flex items-center gap-1">
@@ -90,11 +115,9 @@ export default function ReminderButton({
   return (
     <div ref={ref} className="relative inline-block ml-2">
       <button
-        onClick={() => !sent && setOpen((p) => !p)}
-        disabled={loading || sent}
-        className={`flex items-center gap-1 px-3 py-1 rounded-md text-sm
-          ${sent ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-500 text-white"}
-        `}
+        onClick={() => setOpen((p) => !p)}
+        disabled={loading}
+        className="flex items-center gap-1 px-3 py-1 rounded-md text-sm bg-yellow-500 text-white"
       >
         Remind
         {open ? (
@@ -104,21 +127,22 @@ export default function ReminderButton({
         )}
       </button>
 
-      {open && !sent && (
-        <div className="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-20 overflow-hidden">
+      {open && (
+        <div className="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-20">
           <button
             onClick={handleInAppReminder}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
           >
-            🔔 In-app reminder
+            <span>🔔</span>
+            <span>In-app reminder</span>
           </button>
 
           <button
             onClick={handleWhatsAppReminder}
-            className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-gray-100"
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
           >
             <WhatsAppIcon />
-            WhatsApp
+            <span>WhatsApp</span>
           </button>
         </div>
       )}
