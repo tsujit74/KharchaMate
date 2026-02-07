@@ -15,8 +15,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    mobile: {
+      type: String,
+      required: false,
+      trim: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("User", userSchema);
