@@ -8,6 +8,7 @@ import { getMyExpenses } from "../services/expense.service";
 import { getPendingSettlements, getMySettlementHistory } from "../services/settlement.service";
 import { formatDateTime } from "../utils/formatDateTime";
 import { Users, CreditCard, Clock, Repeat } from "lucide-react";
+import MonthlyExpenseSummary from "../components/Profile/MonthlyExpenses";
 
 /* ------------------ TYPES ------------------ */
 
@@ -156,22 +157,33 @@ export default function ProfilePage() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  /* ------------------ UI ------------------ */
+
 
   return (
     <main className="min-h-screen bg-[#F7F8FA] px-6 md:px-16 py-8">
       {/* User Card */}
       <div className="max-w-7xl mx-auto mb-8">
-        <div className="bg-white border rounded-2xl p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-            <Users className="w-6 h-6 text-gray-500" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">{user.name}</h1>
-            <p className="text-sm text-gray-500">{user.email}</p>
-          </div>
-        </div>
-      </div>
+  <div className="bg-gradient-to-r from-gray-50 to-white border rounded-2xl p-6 flex items-center gap-5">
+    <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
+      <Users className="w-6 h-6 text-blue-600" />
+    </div>
+
+    <div>
+      <h1 className="text-xl font-semibold text-gray-900">
+        {user.name}
+      </h1>
+      <p className="text-sm text-gray-500">
+        {user.email}
+      </p>
+    </div>
+  </div>
+</div>
+
+       <div className="max-w-7xl mx-auto mb-8">
+  <div className="bg-white border rounded-2xl p-6">
+    <MonthlyExpenseSummary />
+  </div>
+</div>
 
       {/* KPIs */}
       <div className="max-w-7xl mx-auto grid sm:grid-cols-4 gap-4 mb-8">

@@ -91,3 +91,20 @@ export const getMyExpenses = async (month?: string) => {
     throw new Error("FAILED_MY_EXPENSES");
   }
 };
+
+export const getMonthlySummary = async ({
+  month,
+  year,
+}: {
+  month: number;
+  year: number;
+}) => {
+  const monthString = `${year}-${String(month).padStart(2, "0")}`;
+
+  const res = await axios.get(`${API_URL}/api/expenses/my/monthly-summary`, {
+    headers: getAuthHeader(),
+    params: { month: monthString },
+  });
+
+  return res.data;
+};

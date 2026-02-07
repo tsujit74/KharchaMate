@@ -126,3 +126,49 @@ export const getMyExpenses = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch recent expenses" });
   }
 };
+
+export const getMonthlySummary = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { month } = req.query;
+
+    const start = new Date(`${month}-01`);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+
+    const expenses = await Expense.find({
+      createdAt: { $gte: start, $lt: end },
+      $or: [{ paidBy: userId }, { "splitBetween.user": userId }],
+    }).lean();
+
+    let paidByYou = 0;
+    let yourExpense = 0;
+
+    for (const expense of expenses) {
+      // A) Paid by you
+      if (expense.paidBy.toString() === userId) {
+        paidByYou += expense.amount;
+      }
+
+      // B) Your share
+      const yourSplit = expense.splitBetween.find(
+        (s) => s.user.toString() === userId,
+      );
+
+      if (yourSplit) {
+        yourExpense += yourSplit.amount;
+      }
+    }
+
+    const netBalance = paidByYou - yourExpense;
+
+    res.json({
+      paidByYou: Math.round(paidByYou * 100) / 100,
+      yourExpense: Math.round(yourExpense * 100) / 100,
+      netBalance: Math.round(netBalance * 100) / 100,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "FAILED_MONTHLY_SUMMARY" });
+  }
+};
