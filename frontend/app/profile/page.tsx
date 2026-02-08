@@ -339,7 +339,10 @@ export default function ProfilePage() {
 
           return (
             <div
-              key={item._id}
+              key={
+                item._id ||
+                `${item.group._id}-${item.from._id}-${item.to._id}-${item.amount}`
+              }
               className={`rounded-2xl border p-4 flex justify-between items-center transition-all duration-200 ease-out hover:shadow-md hover:-translate-y-[2px] ${activeTab === "pending" ? "bg-red-50/80 border-red-200 hover:border-red-300" : "bg-white border-gray-200 hover:border-gray-300"}`}
             >
               <div>
