@@ -3,6 +3,14 @@ import Group from "../models/Group.js";
 import { notifyUser } from "../service/notify.js";
 
 const round = (n) => Math.round(n * 100) / 100;
+const FIVE_HOURS = 5 * 60 * 60 * 1000;
+
+const canModifyExpense = (expense) => {
+  const now = Date.now();
+  const createdAt = new Date(expense.createdAt).getTime();
+  return now - createdAt <= FIVE_HOURS;
+};
+
 
 export const addExpense = async (req, res) => {
   try {
@@ -72,6 +80,7 @@ export const addExpense = async (req, res) => {
     res.status(500).json({ message: "Failed to add expense" });
   }
 };
+
 
 export const getGroupExpenses = async (req, res) => {
   try {
@@ -172,3 +181,84 @@ export const getMonthlySummary = async (req, res) => {
     res.status(500).json({ message: "FAILED_MONTHLY_SUMMARY" });
   }
 };
+
+export const updateExpense = async (req, res) => {
+  try {
+    const { expenseId } = req.params;
+    const userId = req.user.id;
+    const { description, amount, splitBetween } = req.body;
+
+    const expense = await Expense.findById(expenseId);
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    if (expense.paidBy.toString() !== userId) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    if (!canModifyExpense(expense)) {
+      return res
+        .status(400)
+        .json({ message: "Expense can only be modified within 5 hours" });
+    }
+
+    if (Array.isArray(splitBetween) && splitBetween.length > 0) {
+      const totalSplit = splitBetween.reduce(
+        (sum, s) => sum + Number(s.amount),
+        0
+      );
+
+      if (round(totalSplit) !== round(Number(amount))) {
+        return res
+          .status(400)
+          .json({ message: "Split total must equal amount" });
+      }
+
+      expense.splitBetween = splitBetween;
+    }
+
+    if (description) expense.description = description;
+    if (amount) expense.amount = amount;
+
+    await expense.save();
+
+    res.json(expense);
+  } catch (error) {
+    console.error("UPDATE EXPENSE ERROR:", error);
+    res.status(500).json({ message: "Failed to update expense" });
+  }
+};
+
+export const deleteExpense = async (req, res) => {
+  try {
+    const { expenseId } = req.params;
+    const userId = req.user.id;
+
+    const expense = await Expense.findById(expenseId);
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+  
+    if (expense.paidBy.toString() !== userId) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    
+    if (!canModifyExpense(expense)) {
+      return res
+        .status(400)
+        .json({ message: "Expense can only be deleted within 5 hours" });
+    }
+
+    await expense.deleteOne();
+
+    res.json({ message: "Expense deleted successfully" });
+  } catch (error) {
+    console.error("DELETE EXPENSE ERROR:", error);
+    res.status(500).json({ message: "Failed to delete expense" });
+  }
+};
+
+

@@ -82,6 +82,20 @@ export default function GroupDetailsPage() {
     );
   }
 
+  const refreshExpenses = async () => {
+    try {
+      const [updatedExpenses, updatedSettlement] = await Promise.all([
+        getGroupExpenses(groupId),
+        getGroupSettlement(groupId),
+      ]);
+
+      setExpenses(updatedExpenses);
+      setSettlement(updatedSettlement);
+    } catch (err) {
+      console.error("Failed to refresh data", err);
+    }
+  };
+
   const handleSettle = async (toId: string, amount: number) => {
     try {
       await settlePayment(groupId, toId, amount);
@@ -234,7 +248,13 @@ export default function GroupDetailsPage() {
             expenses
               .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
               .map((e) => (
-                <ExpenseCard key={e._id} expense={e} currentUserId={user?.id} />
+                <ExpenseCard
+                  key={e._id}
+                  expense={e}
+                  currentUserId={user?.id}
+                  onDeleted={refreshExpenses}
+                  onUpdated={refreshExpenses}
+                />
               ))
           )}
         </div>

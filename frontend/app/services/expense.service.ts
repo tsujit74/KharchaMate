@@ -108,3 +108,74 @@ export const getMonthlySummary = async ({
 
   return res.data;
 };
+
+export const updateExpense = async ({
+  expenseId,
+  description,
+  amount,
+  splitBetween,
+}: {
+  expenseId: string;
+  description: string;
+  amount: number;
+  splitBetween?: { user: string; amount: number }[];
+}) => {
+  if (!expenseId) throw new Error("INVALID_EXPENSE");
+  if (!description || !amount) throw new Error("INVALID_DATA");
+
+  try {
+    const payload: any = {
+      description: description.trim(),
+      amount,
+    };
+
+    if (splitBetween && splitBetween.length > 0) {
+      payload.splitBetween = splitBetween;
+    }
+
+    const res = await axios.put(
+      `${API_URL}/api/expenses/${expenseId}`,
+      payload,
+      {
+        headers: getAuthHeader(),
+      },
+    );
+
+    return res.data;
+  } catch (err: any) {
+    console.error("Update expense error:", err.response?.data || err.message);
+
+    if (err.response) {
+      const status = err.response.status;
+      if (status === 401) throw new Error("UNAUTHORIZED");
+      if (status === 403) throw new Error("FORBIDDEN");
+      if (status === 400)
+        throw new Error(err.response.data?.message || "UPDATE_NOT_ALLOWED");
+      if (status === 404) throw new Error("EXPENSE_NOT_FOUND");
+    }
+
+    throw new Error("FAILED_UPDATE_EXPENSE");
+  }
+};
+
+export const deleteExpense = async (expenseId: string) => {
+  if (!expenseId) throw new Error("INVALID_EXPENSE");
+
+  try {
+    const res = await axios.delete(`${API_URL}/api/expenses/${expenseId}`, {
+      headers: getAuthHeader(),
+    });
+
+    return res.data;
+  } catch (err: any) {
+    const status = err.response?.status;
+    const message = err.response?.data?.message || err.message;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 400) throw new Error(message || "Cannot delete this expense");
+
+    throw new Error("FAILED_DELETE_EXPENSE");
+  }
+};
+
