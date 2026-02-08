@@ -11,6 +11,7 @@ import {
   Github,
   Chrome,
   User2Icon,
+  Smartphone,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/authContext";
@@ -24,6 +25,7 @@ const SignupPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mobile, setMobile] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,11 +38,9 @@ const SignupPage = () => {
   const validate = () => {
     if (!name.trim()) return "Name is required";
     if (!email.trim()) return "Email is required";
-    if (!/^\S+@\S+\.\S+$/.test(email))
-      return "Please enter a valid email";
+    if (!/^\S+@\S+\.\S+$/.test(email)) return "Please enter a valid email";
     if (!password.trim()) return "Password is required";
-    if (password.length < 6)
-      return "Password must be at least 6 characters";
+    if (password.length < 6) return "Password must be at least 6 characters";
     return "";
   };
 
@@ -57,13 +57,13 @@ const SignupPage = () => {
     setError("");
 
     try {
-      await registerUser({ name, email, password });
+      await registerUser({ name, email, password, mobile });
       router.push("/login");
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
           err?.message ||
-          "Signup failed. Please try again."
+          "Signup failed. Please try again.",
       );
     } finally {
       setIsLoading(false);
@@ -149,6 +149,26 @@ const SignupPage = () => {
                 </div>
               </div>
 
+              {/* Mobile */}
+              <div>
+                <label className="text-xs font-bold uppercase text-gray-400 ml-1">
+                  Mobile
+                </label>
+                <div className="relative mt-2">
+                  <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={mobile}
+                    onChange={(e) => {
+                      setMobile(e.target.value);
+                      setError("");
+                    }}
+                    className="w-full pl-11 pr-12 py-4 bg-gray-50 border text-sm focus:outline-none focus:ring-2 focus:ring-black/10"
+                    placeholder="Mobile number"
+                  />
+                </div>
+              </div>
+
               {/* Error */}
               {error && (
                 <p className="text-sm text-red-500 font-medium">{error}</p>
@@ -186,7 +206,10 @@ const SignupPage = () => {
 
           <p className="text-center mt-4 text-sm text-gray-500">
             Already have an account?{" "}
-            <Link href="/login" className="font-bold text-black hover:underline">
+            <Link
+              href="/login"
+              className="font-bold text-black hover:underline"
+            >
               Login
             </Link>
           </p>

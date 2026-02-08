@@ -7,7 +7,9 @@ export const registerUser = (data: {
   name: string;
   email: string;
   password: string;
+  mobile?: string;
 }) => api.post("/auth/signup", data);
+
 
 export const getMe = () => api.get("/auth/me");
 
