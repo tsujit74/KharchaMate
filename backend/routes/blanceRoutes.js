@@ -4,6 +4,7 @@ import {
   getGroupSettlement,
   getMySettlementHistory,
   getPendingSettlements,
+  getUserNetBalance,
   markPaymentDone,
 } from "../controllers/settlementController.js";
 import { groupContext } from "../middleware/groupContext.js";
@@ -25,6 +26,8 @@ router.post(
 );
 
 router.get("/my-history", authMiddleware, getMySettlementHistory);
+
+router.get("/my-net-balance", authMiddleware, getUserNetBalance);
 
 router.get("/pending", authMiddleware, getPendingSettlements);
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getMonthlySummary } from "@/app/services/expense.service";
+import { getMyNetBalance } from "@/app/services/settlement.service";
 
 const SummaryCard = ({ label, value, color }: any) => {
   return (
@@ -69,12 +70,17 @@ export default function MonthlyExpenseSummary() {
   const [summary, setSummary] = useState<any>(null);
 
   useEffect(() => {
-    getMonthlySummary({
-      month,
-      year,
-    }).then((data) => {
-      setSummary(data);
-    });
+    const fetchData = async () => {
+      const monthly = await getMonthlySummary({ month, year });
+      const net = await getMyNetBalance();
+
+      setSummary({
+        ...monthly,
+        netBalance: net.netBalance,
+      });
+    };
+
+    fetchData();
   }, [month, year]);
 
   const changeMonth = (dir: number) => {

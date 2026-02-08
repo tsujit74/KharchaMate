@@ -59,3 +59,15 @@ export const getMySettlementHistory = async () => {
     throw new Error(err?.response?.data?.message || "FAILED_FETCH_HISTORY");
   }
 };
+
+export const getMyNetBalance = async () => {
+  try {
+    const res = await axios.get(`${API_URL}/api/blance/my-net-balance`, {
+      headers: getAuthHeader(),
+    });
+    return res.data;
+  } catch (err: any) {
+    throw new Error(err?.response?.data?.message || "FAILED_FETCH_NET_BALANCE");
+  }
+};
+

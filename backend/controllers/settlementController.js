@@ -287,3 +287,62 @@ export const getMySettlementHistory = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch settlement history" });
   }
 };
+
+export const getUserNetBalance = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const expenses = await Expense.find({
+      $or: [{ paidBy: userId }, { "splitBetween.user": userId }],
+    }).lean();
+
+    let expenseBalance = 0;
+
+    for (const expense of expenses) {
+      if (expense.paidBy.toString() === userId) {
+        expenseBalance += expense.amount;
+      }
+
+      const split = expense.splitBetween.find(
+        (s) => s.user.toString() === userId,
+      );
+
+      if (split) {
+        expenseBalance -= split.amount;
+      }
+    }
+
+    const settlements = await Settlement.find({
+      status: "COMPLETED",
+      $or: [{ from: userId }, { to: userId }],
+    }).lean();
+
+    let settlementBalance = 0;
+
+    for (const settlement of settlements) {
+      if (settlement.from.toString() === userId) {
+        settlementBalance += settlement.amount;
+      }
+
+      if (settlement.to.toString() === userId) {
+        settlementBalance -= settlement.amount;
+      }
+    }
+
+    const netBalance = expenseBalance + settlementBalance;
+
+    res.json({
+      netBalance: Math.round(netBalance * 100) / 100,
+      status:
+        netBalance > 0
+          ? "You will receive"
+          : netBalance < 0
+            ? "You need to pay"
+            : "Settled",
+      absoluteAmount: Math.abs(netBalance),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "FAILED_NET_BALANCE" });
+  }
+};
