@@ -13,7 +13,7 @@ import {
 import { getGroupById, getGroupExpenses } from "@/app/services/group.service";
 import ExpenseCard from "@/app/components/Expenses/ExpenseCard";
 import ReminderButton from "@/app/components/Reminder/ReminderButton";
-import GroupInfoDrawer from "@/app/components/GroupsDetails/GroupInfoDrawer";
+import GroupInfoDrawer from "@/app/components/Groups/GroupInfoDrawer";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
