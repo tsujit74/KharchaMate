@@ -38,6 +38,79 @@ export const createGroup = async (name: string) => {
   }
 };
 
+export const getGroupById = async (groupId: string) => {
+  if (!groupId) throw new Error("INVALID_GROUP");
+
+  try {
+    const res = await axios.get(`${API_URL}/api/groups/${groupId}`, {
+      headers: getAuthHeader(),
+    });
+
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    throw new Error("FAILED_GROUP");
+  }
+};
+
+export const addMember = async (groupId: string, email: string) => {
+  if (!groupId || !email) throw new Error("INVALID_DATA");
+
+  try {
+    const res = await axios.post(
+      `${API_URL}/api/groups/add-member`,
+      { groupId, email },
+      { headers: getAuthHeader() },
+    );
+
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    throw new Error("FAILED_ADD_MEMBER");
+  }
+};
+
+export const removeMember = async (groupId: string, userId: string) => {
+  if (!groupId || !userId) throw new Error("INVALID_DATA");
+
+  try {
+    const res = await axios.post(
+      `${API_URL}/api/groups/remove-member`,
+      { groupId, userId },
+      { headers: getAuthHeader() },
+    );
+
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    if (err.response?.status === 400)
+      throw new Error(err.response.data?.message || "REMOVE_NOT_ALLOWED");
+
+    throw new Error("FAILED_REMOVE_MEMBER");
+  }
+};
+
+export const toggleGroupStatus = async (groupId: string, p0: boolean) => {
+  if (!groupId) throw new Error("INVALID_GROUP");
+
+  try {
+    const res = await axios.patch(
+      `${API_URL}/api/groups/${groupId}/toggle-status`,
+      {},
+      { headers: getAuthHeader() },
+    );
+
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    throw new Error("FAILED_TOGGLE_GROUP");
+  }
+};
+
 export const getGroupExpenses = async (groupId: string) => {
   if (!groupId) throw new Error("INVALID_GROUP");
 
@@ -53,38 +126,3 @@ export const getGroupExpenses = async (groupId: string) => {
     throw new Error("FAILED_EXPENSES");
   }
 };
-
-export const addMember = async (groupId: string, email: string) => {
-  if (!groupId || !email) throw new Error("INVALID_DATA");
-
-  try {
-    const res = await axios.post(
-      `${API_URL}/api/groups/add-member`,
-      { groupId, email },
-      { headers: getAuthHeader() },
-    );
-    return res.data;
-  } catch (err: any) {
-    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
-    if (err.response?.status === 403) throw new Error("FORBIDDEN");
-    throw new Error("FAILED_ADD_MEMBER");
-  }
-};
-
-export const getGroupById = async (groupId: string) => {
-  if (!groupId) throw new Error("INVALID_GROUP");
-
-  try {
-    const res = await axios.get(
-      `${API_URL}/api/groups/${groupId}`,
-      { headers: getAuthHeader() }
-    );
-
-    return res.data;
-  } catch (err: any) {
-    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
-    if (err.response?.status === 403) throw new Error("FORBIDDEN");
-    throw new Error("FAILED_GROUP");
-  }
-};
-

@@ -3,16 +3,17 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, IndianRupee, Plus, ArrowRight, UserPlus } from "lucide-react";
+import { Users, IndianRupee, Plus, ArrowRight, UserPlus, Info } from "lucide-react";
 
 import { useAuth } from "@/app/context/authContext";
 import {
   getGroupSettlement,
   settlePayment,
 } from "@/app/services/settlement.service";
-import { getGroupExpenses } from "@/app/services/group.service";
+import { getGroupById, getGroupExpenses } from "@/app/services/group.service";
 import ExpenseCard from "@/app/components/Expenses/ExpenseCard";
 import ReminderButton from "@/app/components/Reminder/ReminderButton";
+import GroupInfoDrawer from "@/app/components/GroupsDetails/GroupInfoDrawer";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -23,6 +24,8 @@ export default function GroupDetailsPage() {
   const [settlement, setSettlement] = useState<any>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [group, setGroup] = useState<any>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -43,13 +46,15 @@ export default function GroupDetailsPage() {
         setPageLoading(true);
         setError("");
 
-        const [expenseData, settlementData] = await Promise.all([
+        const [expenseData, settlementData, groupData] = await Promise.all([
           getGroupExpenses(groupId),
           getGroupSettlement(groupId),
+          getGroupById(groupId),
         ]);
 
         setExpenses(expenseData);
         setSettlement(settlementData);
+        setGroup(groupData);
       } catch (err: any) {
         if (err.message === "FORBIDDEN") {
           setError("You are not a member of this group.");
@@ -83,18 +88,25 @@ export default function GroupDetailsPage() {
   }
 
   const refreshExpenses = async () => {
-    try {
-      const [updatedExpenses, updatedSettlement] = await Promise.all([
-        getGroupExpenses(groupId),
-        getGroupSettlement(groupId),
-      ]);
+  try {
+    const [
+      updatedGroup,
+      updatedExpenses,
+      updatedSettlement,
+    ] = await Promise.all([
+      getGroupById(groupId),          
+      getGroupExpenses(groupId),
+      getGroupSettlement(groupId),
+    ]);
 
-      setExpenses(updatedExpenses);
-      setSettlement(updatedSettlement);
-    } catch (err) {
-      console.error("Failed to refresh data", err);
-    }
-  };
+    setGroup(updatedGroup);        
+    setExpenses(updatedExpenses);
+    setSettlement(updatedSettlement);
+  } catch (err) {
+    console.error("Failed to refresh data", err);
+  }
+};
+
 
   const handleSettle = async (toId: string, amount: number) => {
     try {
@@ -117,10 +129,39 @@ export default function GroupDetailsPage() {
       </aside>
 
       <section className="flex-1 px-4 md:px-10 py-6">
-        {/* Header */}
-        <div className="max-w-6xl mx-auto mb-6">
-          <h1 className="text-2xl font-semibold">{settlement.group}</h1>
-          <p className="text-sm text-gray-500">Track expenses & settlements</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">{settlement.group}</h1>
+            <p className="text-sm text-gray-500">
+              Track expenses & settlements
+            </p>
+          </div>
+
+         <button
+  onClick={() => setInfoOpen(true)}
+  className="
+    group
+    flex items-center gap-2
+    px-4 py-2
+    border rounded-lg
+    text-sm font-medium
+    transition-all duration-200
+    hover:bg-gray-50
+    hover:border-gray-300
+    active:scale-[0.98]
+  "
+>
+  <Info
+    className="
+      w-4 h-4
+      text-gray-500
+      transition-transform duration-200
+      group-hover:translate-x-0.5
+    "
+  />
+  Group Info
+</button>
+
         </div>
 
         {/* KPIs */}
@@ -259,6 +300,13 @@ export default function GroupDetailsPage() {
           )}
         </div>
       </section>
+      <GroupInfoDrawer
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        group={group}
+        currentUserId={user?.id}
+        onRefresh={refreshExpenses}
+      />
     </main>
   );
 }
