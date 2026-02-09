@@ -13,7 +13,7 @@ import { groupContext } from "../middleware/groupContext.js";
 
 const router = express.Router();
 
-router.post("/add", authMiddleware, addExpense);
+router.post("/add", authMiddleware,groupContext, addExpense);
 router.get("/recent", authMiddleware, getRecentExpenses);
 router.get("/my/expenses", authMiddleware, getMyExpenses);
 router.get("/my/monthly-summary", authMiddleware, getMonthlySummary);
