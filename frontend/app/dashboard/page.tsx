@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { getRecentExpenses } from "../services/expense.service";
 import { getPendingSettlements } from "../services/settlement.service";
 
+// ---------------- Types ----------------
 type Member = {
   _id: string;
   name: string;
@@ -23,6 +24,7 @@ type Group = {
   members: Member[];
   createdAt: string;
   updatedAt: string;
+  isActive?: boolean;
 };
 
 type RecentExpense = {
@@ -30,304 +32,227 @@ type RecentExpense = {
   description: string;
   amount: number;
   createdAt: string;
-  group: {
-    _id: string;
-    name: string;
-  };
-  paidBy: {
-    _id: string;
-    name: string;
-  };
+  group: { _id: string; name: string };
+  paidBy: { _id: string; name: string };
 };
 
-type PendingSettlement = {
-  _id: string;
-  groupId: string;
-  groupName: string;
-
-  from: string;
-  fromName: string;
-
-  to: string;
-  toName: string;
-
-  amount: number;
-};
-
+// ---------------- Page ----------------
 export default function DashboardPage() {
   const { user, isAuthenticated, loading } = useAuth();
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [groupLoading, setGroupLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const [recentExpenses, setRecentExpenses] = useState<RecentExpense[]>([]);
-  const [recentLoading, setRecentLoading] = useState(true);
-
-  const [pendingSettlements, setPendingSettlements] = useState<any[]>([]);
-  const [pendingLoading, setPendingLoading] = useState(true);
-
   const router = useRouter();
 
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [recentExpenses, setRecentExpenses] = useState<RecentExpense[]>([]);
+  const [pendingSettlements, setPendingSettlements] = useState<any[]>([]);
+
+  const [groupLoading, setGroupLoading] = useState(true);
+  const [recentLoading, setRecentLoading] = useState(true);
+  const [pendingLoading, setPendingLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // ---------------- Fetch ----------------
   useEffect(() => {
     if (loading) return;
-
     if (!isAuthenticated) {
       router.push("/login");
-      setGroupLoading(false);
-      setRecentLoading(false);
       return;
     }
 
-    const fetchGroups = async () => {
+    const fetchAll = async () => {
       try {
-        const data = await getMyGroups();
-        const sortedGroups = data.sort(
-          (a: { updatedAt: string }, b: { updatedAt: string }) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        const groupsData = await getMyGroups();
+
+        // ✅ keep backend isActive value
+        setGroups(
+          groupsData.sort(
+            (a: Group, b: Group) =>
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+          ),
         );
-        setGroups(sortedGroups);
-      } catch {
-        setError("Failed to load groups.");
+
+        setRecentExpenses(await getRecentExpenses());
+        setPendingSettlements(await getPendingSettlements());
+      } catch (err) {
+        setError("Failed to load dashboard data");
       } finally {
         setGroupLoading(false);
-      }
-    };
-
-    const fetchRecentExpenses = async () => {
-      try {
-        const data = await getRecentExpenses();
-        setRecentExpenses(data);
-      } catch {
-        console.error("Failed to load recent expenses");
-      } finally {
         setRecentLoading(false);
-      }
-    };
-
-    fetchGroups();
-    fetchRecentExpenses();
-  }, [loading, isAuthenticated, router]);
-
-  useEffect(() => {
-    const fetchPending = async () => {
-      try {
-        const data = await getPendingSettlements();
-        setPendingSettlements(data);
-      } catch (err) {
-        console.error("Failed to fetch pending settlements");
-      } finally {
         setPendingLoading(false);
       }
     };
-    fetchPending();
-  }, []);
 
-  if (loading || groupLoading) {
-    return <div className="p-10 text-center text-gray-500">Loading...</div>;
-  }
+    fetchAll();
+  }, [loading, isAuthenticated, router]);
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  if (error) {
-    return <div className="p-10 text-center text-red-500">{error}</div>;
-  }
+  if (loading || groupLoading)
+    return <p className="p-10 text-center">Loading…</p>;
+  if (error) return <p className="p-10 text-center text-red-500">{error}</p>;
 
   return (
-    <main className="min-h-screen bg-[#F7F8FA] px-6 md:px-16 py-8">
-      <div className="max-w-7xl mx-auto flex justify-between items-center mb-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-6 md:px-16 py-8">
+      {/* Header */}
+      <div className="max-w-7xl mx-auto flex justify-between items-center mb-6 gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Active Groups
+          <h1 className="text-2xl sm:text-2xl text-lg font-semibold text-gray-900">
+            Dashboard
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage and track shared expenses
+
+          <p className="text-sm sm:text-sm text-xs text-gray-500">
+            Your expense ecosystem at a glance
           </p>
         </div>
 
         <Link
           href="/groups/create"
-          className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-black transition"
+          className="btn-primary text-sm sm:text-sm text-xs px-3 sm:px-4 py-2 sm:py-2.5"
         >
-          <Plus className="w-4 h-4" />
-          New group
+          <Plus className="w-4 h-4 sm:w-4 sm:h-4 w-3 h-3" />
+          <span className="hidden xs:inline">New Group</span>
         </Link>
       </div>
 
-      {/* Empty State */}
-      {groups.length === 0 && (
-        <div className="max-w-md mx-auto text-center bg-white p-8 rounded-xl border border-gray-200">
-          <Users className="mx-auto w-10 h-10 text-gray-300 mb-4" />
-          <h3 className="text-base font-semibold mb-1 text-gray-900">
-            No groups yet
-          </h3>
-          <p className="text-sm text-gray-500 mb-6">
-            Create a group to start splitting expenses.
-          </p>
-          <Link
-            href="/groups/create"
-            className="inline-flex px-4 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium"
-          >
-            Create group
-          </Link>
-        </div>
-      )}
+      {/* Groups */}
+      <section className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {groups.map((group) => {
+          const isClosed = !group.isActive;
 
-      {/* Groups Grid */}
-      {groups.length > 0 && (
-        <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {groups.map((group) => (
+          return (
             <div
               key={group._id}
-              className="relative bg-white rounded-xl border border-gray-200 p-5 hover:border-gray-300 hover:shadow-sm transition"
+              onClick={() => {
+                if (!isClosed) {
+                  router.push(`/groups/${group._id}`);
+                } else {
+                  router.push(`/groups/${group._id}?mode=readonly`);
+                }
+              }}
+              className={`
+          card hover-lift cursor-pointer relative
+          ${isClosed ? "opacity-80 ring-red-200" : "ring-green-200"}
+        `}
+              title={
+                isClosed ? "This group is closed (read-only)" : "Open group"
+              }
             >
-              {/* Add Member */}
-              <Link
-                href={`/groups/${group._id}/add-member`}
-                onClick={(e) => e.stopPropagation()}
-                className="absolute top-4 right-4 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
-                title="Add member"
+              {/* Status badge */}
+              <span
+                className={`status-badge ${isClosed ? "inactive" : "active"}`}
               >
-                <UserPlus className="w-4 h-4 text-gray-600" />
-              </Link>
+                {isClosed ? "CLOSED" : "ACTIVE"}
+              </span>
 
-              <Link href={`/groups/${group._id}`} className="block">
-                <h2 className="text-base font-semibold text-gray-900 truncate mb-1">
-                  {group.name}
-                </h2>
+              {/* Group name */}
+              <h2 className="font-semibold text-gray-900 truncate mb-1 flex items-center gap-2">
+                {group.name}
+                {isClosed && (
+                  <span className="text-xs text-red-500 font-medium">
+                    (Read-only)
+                  </span>
+                )}
+              </h2>
 
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                  <Users className="w-4 h-4" />
-                  {group.members.length} members
-                </div>
+              {/* Members */}
+              <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                <Users className="w-4 h-4" />
+                {group.members.length} members
+              </div>
 
-                {/* Updated date */}
-                <p className="text-xs text-gray-400 mb-1">
-                  Updated {formatDateTime(group.updatedAt).dateLabel}
-                </p>
+              {/* Updated */}
+              <p className="text-xs text-gray-400">
+                Updated {formatDateTime(group.updatedAt).dateLabel}
+              </p>
 
-                {/* Created date */}
-                <p className="text-xs text-gray-400 mb-4">
-                  Created {formatDateTime(group.createdAt).dateLabel}
-                </p>
+              {/* Avatars */}
+              <div className="flex -space-x-2 mt-4">
+                {group.members.slice(0, 4).map((m) => (
+                  <div key={m._id} className="avatar" title={m.email}>
+                    {m.name[0].toUpperCase()}
+                  </div>
+                ))}
+              </div>
 
-                <div className="flex -space-x-2">
-                  {group.members.slice(0, 4).map((member) => (
-                    <div
-                      key={member._id}
-                      className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-700 border border-white"
-                      title={member.email}
-                    >
-                      {member.name.charAt(0).toUpperCase()}
-                    </div>
-                  ))}
-
-                  {group.members.length > 4 && (
-                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-xs font-semibold text-gray-500 border border-white">
-                      +{group.members.length - 4}
-                    </div>
-                  )}
-                </div>
-              </Link>
+              {/* Add member (only if active) */}
+              {!isClosed && (
+                <Link
+                  href={`/groups/${group._id}/add-member`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="add-member"
+                  title="Add member"
+                >
+                  <UserPlus className="w-4 h-4" />
+                </Link>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </section>
 
       {/* Recent Expenses */}
-      <div className="max-w-7xl mx-auto mb-8 mt-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
-          Recent Expenses
-        </h2>
+      <section className="max-w-7xl mx-auto mt-10">
+        <h2 className="section-title text-base sm:text-lg">Recent Expenses</h2>
 
-        {recentLoading && (
-          <p className="text-sm text-gray-500">Loading recent expenses...</p>
-        )}
-
-        {!recentLoading && recentExpenses.length === 0 && (
-          <p className="text-sm text-gray-500">No recent expenses</p>
-        )}
-
-        {!recentLoading && recentExpenses.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 divide-y">
-            {recentExpenses.map((expense) => (
+        {recentLoading ? (
+          <p className="muted text-xs sm:text-sm">Loading…</p>
+        ) : recentExpenses.length === 0 ? (
+          <p className="muted text-xs sm:text-sm">No recent expenses</p>
+        ) : (
+          <div className="card divide-y">
+            {recentExpenses.map((e) => (
               <Link
-                key={expense._id}
-                href={`/groups/${expense.group._id}`}
-                className="flex justify-between items-center p-4 hover:bg-gray-50 transition"
+                key={e._id}
+                href={`/groups/${e.group._id}`}
+                className="
+    row hover:bg-slate-50
+    px-2 py-2
+    sm:px-4 sm:py-3
+  "
               >
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {expense.description}
+                {/* Left */}
+                <div className="min-w-0">
+                  <p className="font-medium text-sm sm:text-base truncate">
+                    {e.description}
                   </p>
 
-                  <p className="text-xs text-gray-500">
-                    {expense.group.name} • Paid by{" "}
-                    {expense.paidBy._id === user?.id
-                      ? "YOU"
-                      : expense.paidBy.name}
-                  </p>
+                  <p className="muted-xs sm:text-sm">{e.group.name}</p>
                 </div>
 
+                {/* Right */}
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">
-                    ₹{expense.amount}
+                  <p className="font-semibold text-sm sm:text-base">
+                    ₹{e.amount}
                   </p>
-                  <p className="text-xs text-gray-400">
-                    {formatDateTime(expense.createdAt).dateLabel}
+                  <p className="muted-xs mt-0.5">
+                    {new Date(e.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </Link>
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="max-w-7xl mx-auto mb-8 mt-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
-          Pending Settlements
-        </h2>
-
+      {/* Pending Settlements */}
+      <section className="max-w-7xl mx-auto mt-10">
+        <h2 className="section-title">Pending Settlements</h2>
         {pendingLoading ? (
-          <p className="text-gray-500 text-sm">Loading...</p>
+          <p className="muted">Loading…</p>
         ) : pendingSettlements.length === 0 ? (
-          <p className="text-gray-500 text-sm">No pending settlements 🎉</p>
+          <p className="muted">No pending settlements 🎉</p>
         ) : (
           pendingSettlements.map((s, i) => (
             <Link
               key={i}
               href={`/groups/${s.groupId}`}
-              className="
-  flex justify-between items-center
-  rounded-lg p-3 mb-2
-  bg-red-50 border border-red-200
-  transition-all duration-200
-  hover:bg-red-100
-  hover:border-red-300
-  hover:shadow-sm
-  hover:-translate-y-[1px]
-"
+              className="settlement-card"
             >
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2 text-sm text-gray-800">
-                  <span>{s.fromName}</span>
-                  <ArrowRight className="w-4 h-4 text-gray-400" />
-                  <span>{s.toName}</span>
-                </div>
-
-                <span className="text-xs uppercase text-gray-400 mt-0.5 truncate">
-                  {s.groupName}
-                </span>
+              <div className="flex items-center gap-2">
+                {s.fromName} <ArrowRight className="w-4 h-4" /> {s.toName}
               </div>
-
-              <span className="text-sm font-semibold text-gray-600">
-                ₹{s.amount}
-              </span>
+              <strong>₹{s.amount}</strong>
             </Link>
           ))
         )}
-      </div>
+      </section>
     </main>
   );
 }

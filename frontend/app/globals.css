@@ -21,3 +21,82 @@ body {
 svg {
   color: currentColor;
 }
+
+/* Buttons */
+.btn-primary {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-md
+  bg-gray-900 text-white text-sm font-medium
+  hover:bg-gray-800 active:scale-[0.98]
+  transition;
+}
+
+/* Cards */
+.card {
+  @apply relative bg-white rounded-xl
+  border border-gray-100 p-5
+  shadow-sm hover:shadow-md
+  transition-all duration-200;
+}
+
+/* Status badge */
+.status-badge {
+  @apply absolute top-4 right-4
+  text-[11px] px-2 py-0.5
+  rounded-full font-medium tracking-wide;
+}
+
+.status-badge.active {
+  @apply bg-emerald-50 text-emerald-700;
+}
+
+.status-badge.inactive {
+  @apply bg-rose-50 text-rose-700;
+}
+
+/* Avatars */
+.avatar {
+  @apply w-8 h-8 rounded-full
+  bg-gray-100 text-gray-700
+  flex items-center justify-center
+  text-xs font-semibold
+  border border-white shadow-sm;
+}
+
+/* Add member */
+.add-member {
+  @apply absolute bottom-4 right-4
+  p-2 rounded-md
+  border border-gray-200
+  bg-white text-gray-600
+  hover:bg-gray-50 hover:text-gray-900
+  transition;
+}
+
+/* Typography */
+.section-title {
+  @apply text-lg font-semibold text-gray-900 mb-3;
+}
+
+.muted {
+  @apply text-sm text-gray-500;
+}
+
+.muted-xs {
+  @apply text-xs text-gray-400;
+}
+
+/* Rows */
+.row {
+  @apply flex justify-between items-center
+  px-4 py-3 rounded-lg
+  hover:bg-gray-50 transition;
+}
+
+/* Settlement */
+.settlement-card {
+  @apply flex justify-between items-center
+  rounded-lg p-3 mb-2
+  bg-gray-50 border border-gray-200
+  hover:bg-gray-100 hover:shadow-sm
+  transition;
+}
