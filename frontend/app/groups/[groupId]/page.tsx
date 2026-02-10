@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, IndianRupee, Plus, ArrowRight, UserPlus, Info } from "lucide-react";
+import {
+  Users,
+  IndianRupee,
+  Plus,
+  ArrowRight,
+  UserPlus,
+  Info,
+} from "lucide-react";
 
 import { useAuth } from "@/app/context/authContext";
 import {
@@ -69,6 +76,8 @@ export default function GroupDetailsPage() {
     loadData();
   }, [loading, isAuthenticated, groupId, router]);
 
+  const isActive = group?.isActive !== false;
+
   if (loading || pageLoading) {
     return <div className="p-10 text-center text-gray-500">Loading...</div>;
   }
@@ -88,25 +97,21 @@ export default function GroupDetailsPage() {
   }
 
   const refreshExpenses = async () => {
-  try {
-    const [
-      updatedGroup,
-      updatedExpenses,
-      updatedSettlement,
-    ] = await Promise.all([
-      getGroupById(groupId),          
-      getGroupExpenses(groupId),
-      getGroupSettlement(groupId),
-    ]);
+    try {
+      const [updatedGroup, updatedExpenses, updatedSettlement] =
+        await Promise.all([
+          getGroupById(groupId),
+          getGroupExpenses(groupId),
+          getGroupSettlement(groupId),
+        ]);
 
-    setGroup(updatedGroup);        
-    setExpenses(updatedExpenses);
-    setSettlement(updatedSettlement);
-  } catch (err) {
-    console.error("Failed to refresh data", err);
-  }
-};
-
+      setGroup(updatedGroup);
+      setExpenses(updatedExpenses);
+      setSettlement(updatedSettlement);
+    } catch (err) {
+      console.error("Failed to refresh data", err);
+    }
+  };
 
   const handleSettle = async (toId: string, amount: number) => {
     try {
@@ -125,6 +130,7 @@ export default function GroupDetailsPage() {
           balances={settlement.balances}
           currentUserId={user?.id}
           groupId={groupId}
+          isActive={group.isActive}
         />
       </aside>
 
@@ -137,31 +143,35 @@ export default function GroupDetailsPage() {
             </p>
           </div>
 
-         <button
-  onClick={() => setInfoOpen(true)}
-  className="
+          <button
+            onClick={() => setInfoOpen(true)}
+            className={`
     group
     flex items-center gap-2
     px-4 py-2
-    border rounded-lg
+    rounded-lg
     text-sm font-medium
+    border
     transition-all duration-200
-    hover:bg-gray-50
-    hover:border-gray-300
-    active:scale-[0.98]
-  "
->
-  <Info
-    className="
-      w-4 h-4
-      text-gray-500
-      transition-transform duration-200
-      group-hover:translate-x-0.5
-    "
-  />
-  Group Info
-</button>
+    active:scale-[0.97]
 
+    ${
+      isActive
+        ? "bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+        : "bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
+    }
+  `}
+          >
+            <Info
+              className={`
+      w-4 h-4
+      transition-all duration-200
+      group-hover:translate-x-0.5
+      ${isActive ? "text-emerald-600" : "text-red-600"}
+    `}
+            />
+            Group Info
+          </button>
         </div>
 
         {/* KPIs */}
@@ -274,13 +284,24 @@ export default function GroupDetailsPage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between mb-4">
             <h2 className="font-semibold">Expenses</h2>
-            <Link
-              href={`/groups/${groupId}/add-expense`}
-              className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add Expense
-            </Link>
+
+            {isActive ? (
+              <Link
+                href={`/groups/${groupId}/add-expense`}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Expense
+              </Link>
+            ) : (
+              <button
+                disabled
+                className="flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-600 rounded-lg text-sm cursor-not-allowed"
+              >
+                <Plus className="w-4 h-4" />
+                Group Closed
+              </button>
+            )}
           </div>
 
           {expenses.length === 0 ? (
@@ -315,28 +336,64 @@ function GroupMembersSidebar({
   balances,
   currentUserId,
   groupId,
+  isActive,
 }: {
-  balances: any[];
+  balances: {
+    id: string;
+    name: string;
+    email: string;
+    balance: number;
+    role?: "ADMIN" | "MEMBER";
+  }[];
   currentUserId?: string;
   groupId: string;
+  isActive: boolean;
 }) {
   return (
-    <>
-      <h3 className="font-semibold mb-4">Group Members</h3>
+    <div className="relative flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold">Group Members</h3>
 
-      <div className="space-y-3">
+        <span
+          className={`px-2 py-0.5 rounded-full text-xs font-semibold border transition
+            ${
+              isActive
+                ? "bg-emerald-100 text-emerald-700 border-emerald-300"
+                : "bg-red-100 text-red-700 border-red-300"
+            }`}
+        >
+          {isActive ? "Active" : "Closed"}
+        </span>
+      </div>
+
+      {/* Members */}
+      <div className="space-y-3 flex-1">
         {balances.map((m) => {
           const isYou = m.id === currentUserId;
           const isOwed = m.balance > 0;
+          const isAdmin = m.role === "ADMIN";
 
           return (
             <div
               key={m.id}
-              className="flex justify-between items-center bg-gray-50 rounded-lg p-3"
+              className={`flex justify-between items-center rounded-lg p-3 border transition
+                ${
+                  isAdmin
+                    ? "bg-indigo-50 border-indigo-200"
+                    : isOwed
+                      ? "bg-green-50 border-green-200"
+                      : "bg-red-50 border-red-200"
+                }`}
             >
               <div>
-                <p className="text-sm font-medium">
+                <p className="text-sm font-medium flex items-center gap-2">
                   {m.name} {isYou && "(You)"}
+                  {isAdmin && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-600 text-white">
+                      ADMIN
+                    </span>
+                  )}
                 </p>
                 <p className="text-xs text-gray-500">{m.email}</p>
               </div>
@@ -353,15 +410,29 @@ function GroupMembersSidebar({
         })}
       </div>
 
+      {/* Add Member Button (Full Width Bottom) */}
       <Link
-        href={`/groups/${groupId}/add-member`}
-        onClick={(e) => e.stopPropagation()}
-        className="absolute top-4 right-4 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
-        title="Add member"
+        href={isActive ? `/groups/${groupId}/add-member` : "#"}
+        onClick={(e) => {
+          if (!isActive) e.preventDefault();
+        }}
+        className={`mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition
+          ${
+            isActive
+              ? "border-gray-300 text-gray-700 hover:bg-gray-50"
+              : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+          }`}
       >
-        <UserPlus className="w-4 h-4 text-gray-600" />
+        <UserPlus className="w-4 h-4" />
+        Add Member
       </Link>
-    </>
+
+      {/* Bottom Info */}
+      <p className="mt-3 text-xs text-gray-500 border-t pt-2">
+        ℹ️ Only <span className="font-semibold text-indigo-600">ADMIN</span> can
+        activate or close this group.
+      </p>
+    </div>
   );
 }
 

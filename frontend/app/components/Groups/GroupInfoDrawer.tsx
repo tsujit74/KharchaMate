@@ -1,18 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  X,
-  Shield,
-  UserMinus,
-  UserPlus,
-  Power,
-} from "lucide-react";
+import { X, Shield, UserMinus, UserPlus, Crown } from "lucide-react";
 import Link from "next/link";
-import {
-  removeMember,
-  toggleGroupStatus,
-} from "@/app/services/group.service";
+import { removeMember, toggleGroupStatus } from "@/app/services/group.service";
 
 type Message = {
   type: "success" | "error";
@@ -50,15 +41,49 @@ export default function GroupInfoDrawer({
   const members = Array.isArray(group.members) ? group.members : [];
 
   const isAdmin = admins.some((a: any) => a?._id === currentUserId);
-  const hasExpenses = (group?.expenseCount ?? 0) > 0;
   const isActive = group?.isActive !== false;
+  const hasExpenses = (group?.expenseCount ?? 0) > 0;
 
-  /* ---- Member Remove ---- */
+  /* ---- Toggle Group Status ---- */
+  const handleToggleStatus = async () => {
+    if (!isAdmin || statusLoading) return;
+
+    if (isActive) {
+      const ok = confirm(
+        "Closing this group will lock all actions.\nContinue?",
+      );
+      if (!ok) return;
+    }
+
+    try {
+      setStatusLoading(true);
+      setMessage(null);
+
+      await toggleGroupStatus(group._id, !isActive);
+      await onRefresh();
+
+      setMessage({
+        type: "success",
+        text: isActive
+          ? "Group closed successfully."
+          : "Group reactivated successfully.",
+      });
+    } catch (err: any) {
+      setMessage({
+        type: "error",
+        text: err.message || "Failed to update group status.",
+      });
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  /* ---- Remove Member ---- */
   const handleRemove = async (userId: string) => {
     if (!isActive) {
       setMessage({
         type: "error",
-        text: "This group is closed. No actions allowed.",
+        text: "This group is closed.",
       });
       return;
     }
@@ -66,7 +91,7 @@ export default function GroupInfoDrawer({
     if (hasExpenses) {
       setMessage({
         type: "error",
-        text: "Members cannot be removed after expenses are added.",
+        text: "Cannot remove members after expenses are added.",
       });
       return;
     }
@@ -94,62 +119,20 @@ export default function GroupInfoDrawer({
     }
   };
 
-  /* ---- Toggle Group Status ---- */
-  const handleToggleStatus = async () => {
-    if (!isAdmin) return;
-
-    if (isActive) {
-      const ok = confirm(
-        "Closing this group will lock all actions.\nExpenses & members cannot be modified.\n\nContinue?"
-      );
-      if (!ok) return;
-    }
-
-    try {
-      setStatusLoading(true);
-      setMessage(null);
-
-      await toggleGroupStatus(group._id, !isActive);
-      await onRefresh();
-
-      setMessage({
-        type: "success",
-        text: isActive
-          ? "Group has been closed successfully."
-          : "Group has been reactivated.",
-      });
-    } catch (err: any) {
-      setMessage({
-        type: "error",
-        text: err.message || "Failed to update group status.",
-      });
-    } finally {
-      setStatusLoading(false);
-    }
-  };
-
   return (
     <>
-      {/* Overlay (keeps page visible below) */}
+      {/* Overlay */}
       <div
         onClick={onClose}
-        className={`
-          fixed inset-x-0 top-16 bottom-0 z-40
-          bg-black/40
-          transition-opacity duration-300
-          ${open ? "opacity-100" : "opacity-0 pointer-events-none"}
-        `}
+        className={`fixed inset-x-0 top-16 bottom-0 z-40 bg-black/40 transition-opacity
+          ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       />
 
       {/* Drawer */}
       <div
-        className={`
-          fixed top-16 right-0 bottom-0 z-50
-          w-full sm:w-[420px]
-          bg-white shadow-2xl
-          transform transition-transform duration-300 ease-in-out
-          ${open ? "translate-x-0" : "translate-x-full"}
-        `}
+        className={`fixed top-16 right-0 bottom-0 z-50 w-full sm:w-[420px]
+          bg-white shadow-2xl transition-transform duration-300
+          ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         <div className="p-6 overflow-y-auto h-full">
           {/* Header */}
@@ -161,12 +144,10 @@ export default function GroupInfoDrawer({
                 <Link
                   href={`/groups/${group._id}/add-member`}
                   className="p-2 rounded-lg border hover:bg-gray-50"
-                  title="Add member"
                 >
                   <UserPlus className="w-4 h-4 text-gray-600" />
                 </Link>
               )}
-
               <button onClick={onClose}>
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -176,51 +157,65 @@ export default function GroupInfoDrawer({
           {/* Message */}
           {message && (
             <div
-              className={`mb-4 rounded-md border px-4 py-3 text-sm ${
-                message.type === "success"
-                  ? "border-green-300 bg-green-50 text-green-700"
-                  : "border-red-300 bg-red-50 text-red-700"
-              }`}
+              className={`mb-4 rounded-md border px-4 py-3 text-sm transition-all
+                ${
+                  message.type === "success"
+                    ? "border-green-300 bg-green-50 text-green-700"
+                    : "border-red-300 bg-red-50 text-red-700"
+                }`}
             >
               {message.text}
             </div>
           )}
 
-          {/* Group Meta */}
-          <div className="mb-6">
+          {/* Group Name */}
+          <div className="mb-4">
             <p className="text-xs text-gray-500">Group Name</p>
             <p className="font-medium">{group.name}</p>
           </div>
 
-          {/* Group Status */}
-          <div className="mb-6 border rounded-lg p-4">
+          {/* Status + Toggle */}
+          <div
+            className={`mb-6 rounded-xl p-4 border transition-all duration-300
+              ${
+                isActive
+                  ? "bg-emerald-50 border-emerald-200"
+                  : "bg-gray-50 border-gray-300"
+              }`}
+          >
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-semibold">Group Status</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-600 mt-1">
                   {isActive
-                    ? "Group is active. Members can add expenses."
-                    : "Group is closed. View only."}
+                    ? "Active - members can add expenses"
+                    : "Closed - view only"}
                 </p>
               </div>
 
+              {/* Toggle Switch */}
               {isAdmin && (
                 <button
-                  disabled={statusLoading}
                   onClick={handleToggleStatus}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border
-                    ${
-                      isActive
-                        ? "border-red-300 text-red-600 hover:bg-red-50"
-                        : "border-green-300 text-green-600 hover:bg-green-50"
-                    }`}
+                  disabled={statusLoading}
+                  className={`relative w-14 h-7 rounded-full transition-colors duration-300
+                    ${isActive ? "bg-emerald-500" : "bg-gray-400"}`}
                 >
-                  <Power className="w-4 h-4" />
-                  {isActive ? "Close" : "Activate"}
+                  <span
+                    className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow
+                      transition-transform duration-300
+                      ${isActive ? "translate-x-7" : "translate-x-0"}`}
+                  />
                 </button>
               )}
             </div>
           </div>
+
+          {!isActive && (
+            <div className="mb-4 rounded-md bg-yellow-50 border border-yellow-300 px-4 py-3 text-sm text-yellow-800">
+              🔒 This group is closed. All actions are disabled.
+            </div>
+          )}
 
           {/* Members */}
           <div>
@@ -231,17 +226,23 @@ export default function GroupInfoDrawer({
             <div className="space-y-3">
               {members.map((m: any) => {
                 const isCreator = group?.createdBy?._id === m._id;
-                const isMemberAdmin = admins.some(
-                  (a: any) => a?._id === m._id
-                );
+                const isMemberAdmin = admins.some((a: any) => a?._id === m._id);
+
+                const roleStyles = isCreator
+                  ? "border-purple-300 bg-purple-50"
+                  : isMemberAdmin
+                    ? "border-blue-300 bg-blue-50"
+                    : "border-gray-200 bg-white";
 
                 return (
                   <div
                     key={m._id}
-                    className="flex justify-between items-center border rounded-lg p-3"
+                    className={`flex justify-between items-center border rounded-lg p-3 transition
+                      ${roleStyles}
+                      ${!isActive ? "opacity-70" : ""}`}
                   >
                     <div>
-                      <p className="text-sm font-medium">
+                      <p className="text-sm font-medium flex items-center gap-1">
                         {m.name}
                         {m._id === currentUserId && " (You)"}
                       </p>
@@ -249,7 +250,10 @@ export default function GroupInfoDrawer({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {isMemberAdmin && (
+                      {isCreator && (
+                        <Crown className="w-4 h-4 text-purple-500" />
+                      )}
+                      {isMemberAdmin && !isCreator && (
                         <Shield className="w-4 h-4 text-blue-500" />
                       )}
 
@@ -270,6 +274,16 @@ export default function GroupInfoDrawer({
                 );
               })}
             </div>
+          </div>
+          <div className="mt-8 pt-4 border-t">
+            <p className="text-xs text-gray-500 flex items-start gap-2">
+              <Shield className="w-4 h-4 text-gray-400 mt-0.5" />
+              Only{" "}
+              <span className="font-medium text-gray-600">
+                group admins
+              </span>{" "}
+              can activate or close this group.
+            </p>
           </div>
         </div>
       </div>
