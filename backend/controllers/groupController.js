@@ -2,7 +2,6 @@ import Group from "../models/Group.js";
 import User from "../models/User.js";
 import Expense from "../models/Expense.js";
 import { notifyUser } from "../service/notify.js";
-import { isAdmin, isMember } from "../service/groupUtils.js";
 
 export const createGroup = async (req, res) => {
   try {
@@ -13,7 +12,7 @@ export const createGroup = async (req, res) => {
       createdBy: req.user.id,
       admins: [req.user.id],
       members: [req.user.id],
-      isActive:true,
+      isActive: true,
     });
 
     res.status(201).json(group);
@@ -22,26 +21,15 @@ export const createGroup = async (req, res) => {
   }
 };
 
+
 export const addMember = async (req, res) => {
   try {
-    const { groupId, email } = req.body;
+    const { email } = req.body;
+    const group = req.group;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    const group = await Group.findById(groupId);
-    if (!group) return res.status(404).json({ message: "Group not found" });
-
-    if (!group.isActive) {
-      return res.status(400).json({
-        message: "Group is closed",
-      });
-    }
-
-    if (!isAdmin(group, req.user.id)) {
-      return res.status(403).json({
-        message: "Admin access required",
-      });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
     if (group.members.includes(user._id)) {
@@ -69,6 +57,7 @@ export const addMember = async (req, res) => {
   }
 };
 
+
 export const getMyGroups = async (req, res) => {
   try {
     const groups = await Group.find({
@@ -81,55 +70,32 @@ export const getMyGroups = async (req, res) => {
   }
 };
 
+
 export const getGroupById = async (req, res) => {
   try {
-    const { groupId } = req.params;
-
-    const group = await Group.findById(groupId)
+    const group = await Group.findById(req.group._id)
       .populate("members", "name email mobile")
       .populate("admins", "name email")
       .populate("createdBy", "name email");
 
-    if (!group) {
-      return res.status(404).json({ message: "Group not found" });
-    }
-
-    if (!group.members.some((m) => m._id.toString() === req.user.id)) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
     const expenseCount = await Expense.countDocuments({
-      group: groupId,
+      group: req.group._id,
     });
 
     res.status(200).json({
       ...group.toObject(),
       expenseCount,
     });
-  } catch (err) {
-    console.error("GET GROUP ERROR:", err);
+  } catch (error) {
     res.status(500).json({ message: "Failed to fetch group" });
   }
 };
 
+
 export const removeMember = async (req, res) => {
   try {
-    const { groupId, userId } = req.body;
-
-    const group = await Group.findById(groupId);
-    if (!group) return res.status(404).json({ message: "Group not found" });
-
-    if (!group.isActive) {
-      return res.status(400).json({
-        message: "Group is closed",
-      });
-    }
-
-    if (!isAdmin(group, req.user.id)) {
-      return res.status(403).json({
-        message: "Admin access required",
-      });
-    }
+    const { userId } = req.body;
+    const group = req.group;
 
     if (group.createdBy.toString() === userId) {
       return res.status(400).json({
@@ -138,7 +104,7 @@ export const removeMember = async (req, res) => {
     }
 
     const expenseCount = await Expense.countDocuments({
-      group: groupId,
+      group: group._id,
     });
 
     if (expenseCount > 0) {
@@ -147,21 +113,19 @@ export const removeMember = async (req, res) => {
       });
     }
 
-   
     group.members = group.members.filter(
-      (m) => m.toString() !== userId
+      (id) => id.toString() !== userId
     );
 
     group.admins = group.admins.filter(
-      (a) => a.toString() !== userId
+      (id) => id.toString() !== userId
     );
 
     await group.save();
 
-    
     await notifyUser({
-      userId,                
-      actor: req.user.id,    
+      userId,
+      actor: req.user.id,
       title: "Removed from group",
       message: `removed you from "${group.name}"`,
       type: "GROUP",
@@ -175,17 +139,10 @@ export const removeMember = async (req, res) => {
   }
 };
 
+
 export const toggleGroupStatus = async (req, res) => {
   try {
-    const { groupId } = req.params;
-
-    const group = await Group.findById(groupId);
-    if (!group) return res.status(404).json({ message: "Group not found" });
-
-    if (!isAdmin(group, req.user.id))
-      return res.status(403).json({
-        message: "Admin access required",
-      });
+    const group = req.group;
 
     group.isActive = !group.isActive;
     await group.save();
