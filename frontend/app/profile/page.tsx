@@ -13,7 +13,6 @@ import { formatDateTime } from "../utils/formatDateTime";
 import { Users, CreditCard, Clock, Repeat } from "lucide-react";
 import MonthlyExpenseSummary from "../components/Profile/MonthlyExpenses";
 
-/* ------------------ TYPES ------------------ */
 
 type Group = { _id: string; name: string };
 
@@ -60,7 +59,6 @@ type Item = {
   status?: string;
 };
 
-/* ------------------ COMPONENT ------------------ */
 
 export default function ProfilePage() {
   const ITEMS_PER_PAGE = 10;
