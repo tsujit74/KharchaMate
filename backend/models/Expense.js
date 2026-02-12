@@ -22,6 +22,12 @@ const expenseSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    category: {
+      type: String,
+      enum: ["FOOD", "TRAVEL", "RENT", "SHOPPING", "OTHER"],
+      default: "OTHER",
+    },
+
     splitBetween: [
       {
         user: {

@@ -14,7 +14,7 @@ const canModifyExpense = (expense) => {
 
 export const addExpense = async (req, res) => {
   try {
-    const { groupId, description, amount, splitBetween } = req.body;
+    const { groupId, description, amount, splitBetween, category } = req.body;
 
     const group = await Group.findById(groupId);
     if (!group) {
@@ -54,10 +54,10 @@ export const addExpense = async (req, res) => {
       description,
       amount,
       paidBy: req.user.id,
+      category, 
       splitBetween: finalSplit,
     });
 
-    // Notify members except payer
     await Promise.all(
       group.members
         .filter((m) => m.toString() !== req.user.id)
@@ -80,6 +80,7 @@ export const addExpense = async (req, res) => {
     res.status(500).json({ message: "Failed to add expense" });
   }
 };
+
 
 
 export const getGroupExpenses = async (req, res) => {

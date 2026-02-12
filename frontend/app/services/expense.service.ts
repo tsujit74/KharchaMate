@@ -28,6 +28,7 @@ export const addExpense = async ({
   description,
   amount,
   splitBetween,
+  category, 
 }: {
   groupId: string;
   description: string;
@@ -36,6 +37,7 @@ export const addExpense = async ({
     user: string;
     amount: number;
   }[];
+  category?: string; 
 }) => {
   if (!groupId || !description || !amount) {
     throw new Error("INVALID_DATA");
@@ -48,7 +50,12 @@ export const addExpense = async ({
       amount,
     };
 
-    //ONLY attach when custom split is used
+    // attach category only if provided
+    if (category) {
+      payload.category = category;
+    }
+
+    // ONLY attach when custom split is used
     if (Array.isArray(splitBetween) && splitBetween.length > 0) {
       payload.splitBetween = splitBetween;
     }
@@ -64,6 +71,7 @@ export const addExpense = async ({
     throw new Error("FAILED_ADD_EXPENSE");
   }
 };
+
 
 export const getRecentExpenses = async () => {
   try {

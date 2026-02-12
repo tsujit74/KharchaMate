@@ -23,17 +23,17 @@ export default function AddExpensePage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [splitType, setSplitType] = useState<"EQUAL" | "CUSTOM">("EQUAL");
   const [customSplit, setCustomSplit] = useState<Record<string, number>>({});
+  const [category, setCategory] = useState<string>("");
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // 🔐 Auth check
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push("/login");
     }
   }, [loading, isAuthenticated, router]);
 
-  // 👥 Load group members
   useEffect(() => {
     if (!groupId) return;
 
@@ -46,8 +46,13 @@ export default function AddExpensePage() {
     e.preventDefault();
     setError("");
 
-    if (!description.trim() || !amount) {
-      setError("All fields are required");
+    if (!description.trim()) {
+      setError("Description is required");
+      return;
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      setError("Enter a valid expense amount");
       return;
     }
 
@@ -59,8 +64,24 @@ export default function AddExpensePage() {
       amount: totalAmount,
     };
 
+    // ✅ CATEGORY (Optional)
+    const allowedCategories = ["FOOD", "TRAVEL", "RENT", "SHOPPING", "OTHER"];
+
+    if (category) {
+      if (!allowedCategories.includes(category)) {
+        setError("Invalid category selected");
+        return;
+      }
+      payload.category = category;
+    }
+
     // ✅ CUSTOM SPLIT
     if (splitType === "CUSTOM") {
+      if (!members.length) {
+        setError("No group members found");
+        return;
+      }
+
       const splitArray = [];
 
       for (const m of members) {
@@ -77,12 +98,12 @@ export default function AddExpensePage() {
         });
       }
 
-      const totalSplit = splitArray.reduce(
-        (sum, s) => sum + s.amount,
-        0
-      );
+      const totalSplit = splitArray.reduce((sum, s) => sum + s.amount, 0);
 
-      if (totalSplit !== totalAmount) {
+      if (
+        Math.round(totalSplit * 100) / 100 !==
+        Math.round(totalAmount * 100) / 100
+      ) {
         setError("Split total must equal expense amount");
         return;
       }
@@ -141,6 +162,22 @@ export default function AddExpensePage() {
               onChange={(e) => setAmount(e.target.value)}
               className="w-full pl-12 pr-4 py-4 bg-gray-50 border"
             />
+          </div>
+
+          {/* Category (Optional) */}
+          <div>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-4 bg-gray-50 border text-sm"
+            >
+              <option value="">Select category (Optional)</option>
+              <option value="FOOD">Food</option>
+              <option value="TRAVEL">Travel</option>
+              <option value="RENT">Rent</option>
+              <option value="SHOPPING">Shopping</option>
+              <option value="OTHER">Other</option>
+            </select>
           </div>
 
           <div className="flex gap-4 text-sm">
