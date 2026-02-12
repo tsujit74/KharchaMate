@@ -70,6 +70,13 @@ export default function Navbar() {
             </Link>
 
             <Link
+              href="/dashboard/insights"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm rounded-lg hover:bg-slate-100"
+            >
+              Insights
+            </Link>
+
+            <Link
               href="/groups/create"
               className="flex items-center gap-1 bg-black text-white
                          px-3 py-1.5 rounded-md text-sm

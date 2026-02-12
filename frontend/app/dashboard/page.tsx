@@ -102,13 +102,22 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <Link
-          href="/groups/create"
-          className="btn-primary text-sm sm:text-sm text-xs px-3 sm:px-4 py-2 sm:py-2.5"
-        >
-          <Plus className="w-4 h-4 sm:w-4 sm:h-4 w-3 h-3" />
-          <span className="hidden xs:inline">New Group</span>
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/insights"
+            className="border px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm rounded-lg hover:bg-slate-100"
+          >
+            Insights
+          </Link>
+
+          <Link
+            href="/groups/create"
+            className="btn-primary text-sm sm:text-sm text-xs px-3 sm:px-4 py-2 sm:py-2.5"
+          >
+            <Plus className="w-4 h-4 sm:w-4 sm:h-4 w-3 h-3" />
+            <span className="hidden xs:inline">New Group</span>
+          </Link>
+        </div>
       </div>
 
       {/* Groups */}
