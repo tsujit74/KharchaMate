@@ -187,3 +187,38 @@ export const deleteExpense = async (expenseId: string) => {
   }
 };
 
+export const getMyInsights = async ({
+  filter,
+  start,
+  end,
+}: {
+  filter?: "this-month" | "last-month";
+  start?: string;
+  end?: string;
+}) => {
+  try {
+    const params: any = {};
+
+    if (filter) {
+      params.filter = filter;
+    }
+
+    if (start && end) {
+      params.start = start;
+      params.end = end;
+    }
+
+    const res = await axios.get(`${API_URL}/api/expenses/my/insights`, {
+      headers: getAuthHeader(),
+      params,
+    });
+
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response?.status === 400)
+      throw new Error(err.response?.data?.message || "INVALID_FILTER");
+
+    throw new Error("FAILED_FETCH_INSIGHTS");
+  }
+};

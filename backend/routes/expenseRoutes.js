@@ -7,6 +7,7 @@ import {
   getGroupExpenses,
   getMonthlySummary,
   getMyExpenses,
+  getMyInsights,
   getRecentExpenses,
   updateExpense,
 } from "../controllers/expenseController.js";
@@ -28,6 +29,7 @@ router.post("/add", authMiddleware, groupContext, checkGroupActive, addExpense);
 router.get("/recent", authMiddleware, getRecentExpenses);
 router.get("/my/expenses", authMiddleware, getMyExpenses);
 router.get("/my/monthly-summary", authMiddleware, getMonthlySummary);
+router.get("/my/insights", authMiddleware, getMyInsights); 
 router.get("/:groupId", authMiddleware, groupContext, getGroupExpenses);
 
 

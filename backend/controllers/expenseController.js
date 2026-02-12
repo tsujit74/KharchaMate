@@ -1,5 +1,6 @@
 import Expense from "../models/Expense.js";
 import Group from "../models/Group.js";
+import mongoose from "mongoose";
 import { notifyUser } from "../service/notify.js";
 
 const round = (n) => Math.round(n * 100) / 100;
@@ -10,7 +11,6 @@ const canModifyExpense = (expense) => {
   const createdAt = new Date(expense.createdAt).getTime();
   return now - createdAt <= FIVE_HOURS;
 };
-
 
 export const addExpense = async (req, res) => {
   try {
@@ -54,7 +54,7 @@ export const addExpense = async (req, res) => {
       description,
       amount,
       paidBy: req.user.id,
-      category, 
+      category,
       splitBetween: finalSplit,
     });
 
@@ -80,8 +80,6 @@ export const addExpense = async (req, res) => {
     res.status(500).json({ message: "Failed to add expense" });
   }
 };
-
-
 
 export const getGroupExpenses = async (req, res) => {
   try {
@@ -207,7 +205,7 @@ export const updateExpense = async (req, res) => {
     if (Array.isArray(splitBetween) && splitBetween.length > 0) {
       const totalSplit = splitBetween.reduce(
         (sum, s) => sum + Number(s.amount),
-        0
+        0,
       );
 
       if (round(totalSplit) !== round(Number(amount))) {
@@ -241,12 +239,10 @@ export const deleteExpense = async (req, res) => {
       return res.status(404).json({ message: "Expense not found" });
     }
 
-  
     if (expense.paidBy.toString() !== userId) {
       return res.status(403).json({ message: "Not allowed" });
     }
 
-    
     if (!canModifyExpense(expense)) {
       return res
         .status(400)
@@ -262,4 +258,108 @@ export const deleteExpense = async (req, res) => {
   }
 };
 
+export const getMyInsights = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { filter, start, end } = req.query;
 
+    let startDate, endDate;
+    const now = new Date();
+
+    if (filter === "this-month") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    } else if (filter === "last-month") {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (start && end) {
+      startDate = new Date(start);
+      endDate = new Date(end);
+    } else {
+      return res.status(400).json({ message: "Invalid filter" });
+    }
+
+    const insights = await Expense.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lt: endDate },
+          $or: [
+            { paidBy: new mongoose.Types.ObjectId(userId) },
+            { "splitBetween.user": new mongoose.Types.ObjectId(userId) },
+          ],
+        },
+      },
+
+      {
+        $addFields: {
+          category: {
+            $ifNull: ["$category", "OTHER"],
+          },
+        },
+      },
+
+      {
+        $addFields: {
+          yourSplit: {
+            $first: {
+              $filter: {
+                input: "$splitBetween",
+                as: "s",
+                cond: {
+                  $eq: ["$$s.user", new mongoose.Types.ObjectId(userId)],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          yourExpense: {
+            $ifNull: ["$yourSplit.amount", 0],
+          },
+          paidByYou: {
+            $cond: [
+              { $eq: ["$paidBy", new mongoose.Types.ObjectId(userId)] },
+              "$amount",
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$category",
+          totalCategoryExpense: { $sum: "$yourExpense" },
+          totalPaidByYou: { $sum: "$paidByYou" },
+          totalYourExpense: { $sum: "$yourExpense" },
+        },
+      },
+    ]);
+
+    let paidByYou = 0;
+    let yourExpense = 0;
+
+    const categoryBreakdown = insights.map((item) => {
+      paidByYou += item.totalPaidByYou;
+      yourExpense += item.totalYourExpense;
+
+      return {
+        category: item._id,
+        total: Math.round(item.totalCategoryExpense * 100) / 100,
+      };
+    });
+
+    const netBalance = Math.round((paidByYou - yourExpense) * 100) / 100;
+
+    res.json({
+      categoryBreakdown,
+      paidByYou: Math.round(paidByYou * 100) / 100,
+      yourExpense: Math.round(yourExpense * 100) / 100,
+      netBalance,
+    });
+  } catch (error) {
+    console.error("INSIGHTS ERROR:", error);
+    res.status(500).json({ message: "FAILED_INSIGHTS" });
+  }
+};
