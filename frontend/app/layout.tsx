@@ -5,6 +5,7 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Providers from "./providers";
+import OfflineBanner from "@/app/components/offlineBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,11 +20,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "KharchaMate",
   description: "Smart expense splitting for groups",
+  manifest: "/manifest.json",
   icons: {
     icon: "/kms.svg",
   },
 };
 
+export const viewport = {
+  themeColor: "#000000",
+};
 
 export default function RootLayout({
   children,
@@ -32,11 +37,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        
-        <meta name="color-scheme" content="light" />
-      </head>
-
       <body
         className={`
           ${geistSans.variable}
@@ -47,9 +47,10 @@ export default function RootLayout({
         `}
       >
         <Providers>
+          <OfflineBanner />
           <Navbar />
 
-          <main className="min-h-screen pt-14">
+          <main className="min-h-screen pt-16">
             {children}
           </main>
 
