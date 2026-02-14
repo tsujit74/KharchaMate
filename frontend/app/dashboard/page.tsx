@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, Plus, UserPlus, ArrowRight } from "lucide-react";
+import {
+  Users,
+  Plus,
+  UserPlus,
+  ArrowRight,
+  TrendingUp,
+  Lock,
+  User,
+} from "lucide-react";
 import { formatDateTime } from "@/app/utils/formatDateTime";
 import { getMyGroups } from "../services/group.service";
 import { useAuth } from "../context/authContext";
@@ -91,106 +99,119 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-6 md:px-16 py-8">
       {/* Header */}
-      <div className="max-w-7xl mx-auto flex justify-between items-center mb-6 gap-3">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-10 pb-8 border-b border-gray-100">
+        {/* Left Section */}
         <div>
-          <h1 className="text-2xl sm:text-2xl text-lg font-semibold text-gray-900">
-            Dashboard
-          </h1>
+          {/* Heading */}
+          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
+            Hey, {user?.name?.split(" ")[0] || "User"}{" "}
+            <span className="text-gray-300 font-light">/</span>
+          </h2>
 
-          <p className="text-sm sm:text-sm text-xs text-gray-500">
-            Your expense ecosystem at a glance
+          <p className="text-base sm:text-lg font-medium text-slate-500 mt-1">
+            Your expense ecosystem at a glance.
           </p>
         </div>
 
-        <div className="flex gap-2">
+        {/* Right Section */}
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/dashboard/insights"
-            className="border px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm rounded-lg hover:bg-slate-100"
+            className="group flex items-center gap-2 px-5 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-2xl hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 shadow-sm"
           >
+            <TrendingUp className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors duration-200" />
             Insights
           </Link>
 
           <Link
             href="/groups/create"
-            className="btn-primary text-sm sm:text-sm text-xs px-3 sm:px-4 py-2 sm:py-2.5"
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-slate-950 text-white rounded-2xl hover:bg-slate-800 transition-all duration-200 shadow-md active:scale-95"
           >
-            <Plus className="w-4 h-4 sm:w-4 sm:h-4 w-3 h-3" />
-            <span className="hidden xs:inline">New Group</span>
+            <Plus className="w-4 h-4" />
+            New Group
           </Link>
         </div>
       </div>
 
       {/* Groups */}
-      <section className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <section className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {groups.map((group) => {
           const isClosed = !group.isActive;
+          const firstName = group.name;
 
           return (
             <div
               key={group._id}
-              onClick={() => {
-                if (!isClosed) {
-                  router.push(`/groups/${group._id}`);
-                } else {
-                  router.push(`/groups/${group._id}?mode=readonly`);
-                }
-              }}
-              className={`
-          card hover-lift cursor-pointer relative
-          ${isClosed ? "opacity-80 ring-red-200" : "ring-green-200"}
-        `}
-              title={
-                isClosed ? "This group is closed (read-only)" : "Open group"
+              onClick={() =>
+                router.push(
+                  isClosed
+                    ? `/groups/${group._id}?mode=readonly`
+                    : `/groups/${group._id}`,
+                )
               }
+              className={`group p-6 rounded-3xl border transition-all duration-300 cursor-pointer
+          ${isClosed ? "bg-slate-50 border-slate-200" : "bg-white border-slate-100 hover:shadow-sm hover:-translate-y-1"}
+        `}
             >
-              {/* Status badge */}
-              <span
-                className={`status-badge ${isClosed ? "inactive" : "active"}`}
-              >
-                {isClosed ? "CLOSED" : "ACTIVE"}
-              </span>
+              {/* Top Row */}
+              <div className="flex justify-between items-start mb-5">
+                <span
+                  className={`px-3 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full border
+              ${
+                isClosed
+                  ? "bg-slate-100 text-slate-500 border-slate-200"
+                  : "bg-emerald-50 text-emerald-600 border-emerald-100"
+              }`}
+                >
+                  {isClosed ? "Archived" : "Active"}
+                </span>
 
-              {/* Group name */}
-              <h2 className="font-semibold text-gray-900 truncate mb-1 flex items-center gap-2">
-                {group.name}
-                {isClosed && (
-                  <span className="text-xs text-red-500 font-medium">
-                    (Read-only)
-                  </span>
+                {!isClosed && (
+                  <Link
+                    href={`/groups/${group._id}/add-member`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                  </Link>
                 )}
-              </h2>
-
-              {/* Members */}
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                <Users className="w-4 h-4" />
-                {group.members.length} members
               </div>
 
-              {/* Updated */}
-              <p className="text-xs text-gray-400">
+              {/* Title */}
+              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 group-hover:text-indigo-600 transition-colors">
+                {firstName}
+                {isClosed && <Lock className="w-4 h-4 text-slate-400" />}
+              </h2>
+
+              <p className="text-xs text-slate-400 mt-1">
                 Updated {formatDateTime(group.updatedAt).dateLabel}
               </p>
 
-              {/* Avatars */}
-              <div className="flex -space-x-2 mt-4">
-                {group.members.slice(0, 4).map((m) => (
-                  <div key={m._id} className="avatar" title={m.email}>
-                    {m.name[0].toUpperCase()}
-                  </div>
-                ))}
+              {/* Members */}
+              <div className="flex items-center justify-between mt-6">
+                <div className="flex -space-x-3">
+                  {group.members.slice(0, 4).map((m, i) => (
+                    <div
+                      key={m._id}
+                      className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 border-2 border-white text-xs font-semibold text-slate-600"
+                      style={{ zIndex: 4 - i }}
+                    >
+                      {m.name?.[0]?.toUpperCase()}
+                    </div>
+                  ))}
+                  {group.members.length > 4 && (
+                    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-50 border-2 border-white text-[10px] font-semibold text-slate-400">
+                      +{group.members.length - 4}
+                    </div>
+                  )}
+                </div>
+
+                <ArrowRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
               </div>
 
-              {/* Add member (only if active) */}
-              {!isClosed && (
-                <Link
-                  href={`/groups/${group._id}/add-member`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="add-member"
-                  title="Add member"
-                >
-                  <UserPlus className="w-4 h-4" />
-                </Link>
-              )}
+              <p className="text-xs text-slate-500 mt-4 font-medium">
+                {group.members.length} members
+              </p>
             </div>
           );
         })}
