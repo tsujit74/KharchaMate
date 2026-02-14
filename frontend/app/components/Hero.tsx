@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import Link from "next/link";
 
@@ -19,74 +19,123 @@ export default function LandingPage() {
   return (
     <main className="bg-[#FCFCFD] text-[#1A1A1E] overflow-x-hidden">
       {/* HERO */}
-      <section className="relative min-h-screen flex items-center px-6 md:px-16">
-        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-50/50 blur-[120px] -z-10" />
-        <div className="absolute bottom-[10%] left-[-5%] w-[400px] h-[400px] bg-purple-50/50 blur-[120px] -z-10" />
+      <section className="relative min-h-[85vh] flex items-center px-6 md:px-16 pt-10 bg-white overflow-hidden">
+        {/* Soft Fintech Background */}
+        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-500/10 blur-[120px] rounded-full -z-10" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-indigo-500/10 blur-[120px] rounded-full -z-10" />
 
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              Split Expenses. <br />
-              <span className="text-gray-400">Stay Sorted.</span>
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          {/* LEFT SIDE */}
+          <div className="space-y-6">
+            {/* Trust Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 text-sm font-medium">
+              <ShieldCheck className="w-4 h-4 text-green-600" />
+              Secure. Transparent. No awkward reminders.
+            </div>
+
+            {/* Headline */}
+            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight text-slate-900">
+              Split Smarter. <br />
+              <span className="text-blue-600">Stay Friends.</span>
             </h1>
 
-            <p className="mt-8 text-xl text-gray-500 max-w-xl">
-              KharchaMate helps groups track shared expenses clearly - no
-              awkward reminders, no confusing math.
+            {/* Subtext */}
+            <p className="text-base text-slate-500 max-w-xl leading-relaxed">
+              KharchaMate helps flatmates, couples, and friends split expenses
+              clearly — from rent and dinners to trips and subscriptions. No
+              confusion. No math stress.
             </p>
 
-            <div className="mt-10 flex flex-wrap gap-4">
+            {/* CTA */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Link
                 href={isAuthenticated ? "/dashboard" : "/signup"}
-                className="group px-8 py-4 bg-black text-white font-semibold shadow-xl shadow-black/10 hover:shadow-black/20 hover:-translate-y-1 transition-all flex items-center gap-2"
+                className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all text-sm"
               >
-                Get Start
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                {isAuthenticated ? "Go to Dashboard" : "Get Started Free"}
               </Link>
 
-              <Link
-                href={isAuthenticated ? "/dashboard" : "/login"}
-                className="px-8 py-4 bg-white border border-gray-200 text-gray-900 font-semibold hover:bg-gray-50 transition-all flex items-center gap-2"
-              >
-                {isAuthenticated ? "Dashboard":"Login"}
-              </Link>
+              {!isAuthenticated && (
+                <Link
+                  href="/login"
+                  className="px-8 py-3 bg-white border border-slate-200 text-slate-700 font-semibold rounded-2xl hover:bg-slate-50 transition-all text-sm"
+                >
+                  Login
+                </Link>
+              )}
+            </div>
+
+            {/* Trust Stats */}
+            <div className="pt-6 grid grid-cols-3 gap-6 border-t border-slate-100 max-w-md">
+              <div>
+                <p className="text-xl font-bold text-slate-900">₹0</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                  Hidden Fees
+                </p>
+              </div>
+              <div>
+                <p className="text-xl font-bold text-slate-900">99.99%</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                  Secure
+                </p>
+              </div>
+              <div>
+                <p className="text-xl font-bold text-slate-900">24/7</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                  Access
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="relative lg:h-[450px] flex items-center justify-center mt-10">
-            <div className="relative w-full max-w-[450px] aspect-[4/5] bg-white shadow-xl border border-gray-100 p-4 overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-tr from-gray-50 to-transparent pointer-events-none" />
-              <div className="h-full w-full bg-gray-50 rounded-[2rem] p-6 flex flex-col gap-6">
-                <div className="flex justify-between items-center">
-                  <div className="h-4 w-24 bg-gray-200 rounded-full" />
-                  <div className="h-8 w-8 bg-black rounded-full" />
-                </div>
-                <div className="h-32 w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col justify-between">
-                  <div className="h-3 w-1/3 bg-gray-100 rounded-full" />
-                  <div className="h-8 w-1/2 bg-gray-900 rounded-lg" />
-                </div>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 shadow-sm transition-all hover:scale-[1.02]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-50 rounded-lg" />
-                        <div className="space-y-2">
-                          <div className="h-2 w-16 bg-gray-200 rounded-full" />
-                          <div className="h-2 w-10 bg-gray-100 rounded-full" />
-                        </div>
-                      </div>
-                      <div className="h-3 w-12 bg-green-100 rounded-full" />
-                    </div>
-                  ))}
-                </div>
+          {/* RIGHT SIDE */}
+          <div className="relative flex items-center justify-center mt-10 lg:mt-0">
+            <div className="w-full max-w-[400px] bg-white rounded-[2.5rem] border-[8px] border-slate-900 shadow-xl p-6 space-y-6">
+              <div>
+                <p className="text-xs text-slate-400 font-semibold uppercase">
+                  Total Balance
+                </p>
+                <h2 className="text-3xl font-extrabold text-slate-900">
+                  ₹18,420
+                </h2>
               </div>
-              {/* Floating elements for depth */}
-              <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white rounded-3xl rounded-bl-none shadow-xl border border-gray-100 p-4 animate-bounce hover:pause">
-                <Plus className="w-8 h-8 text-black mb-2" />
-                <div className="h-2 w-12 bg-gray-100 rounded-full" />
+
+              <div className="bg-blue-600 rounded-2xl p-5 text-white">
+                <p className="text-xs uppercase text-blue-200 font-bold">
+                  Active Group
+                </p>
+                <h3 className="text-lg font-bold mt-1">
+                  Flatmates
+                </h3>
+                <p className="text-sm mt-2 text-blue-100">
+                  You are owed ₹2,450
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { name: "Zomato Dinner", amount: "-₹1,250" },
+                  { name: "Uber Ride", amount: "-₹320" },
+                  { name: "Electricity Bill", amount: "+₹2,100" },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center p-3 bg-slate-50 rounded-xl"
+                  >
+                    <span className="text-sm font-medium text-slate-800">
+                      {item.name}
+                    </span>
+                    <span
+                      className={`font-semibold ${
+                        item.amount.startsWith("+")
+                          ? "text-green-600"
+                          : "text-slate-900"
+                      }`}
+                    >
+                      {item.amount}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
