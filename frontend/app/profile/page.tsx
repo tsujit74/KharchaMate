@@ -12,6 +12,7 @@ import {
 import { formatDateTime } from "../utils/formatDateTime";
 import { Users, CreditCard, Clock, Repeat } from "lucide-react";
 import MonthlyExpenseSummary from "../components/Profile/MonthlyExpenses";
+import AppSkeleton from "../components/ui/AppSkeleton";
 
 
 type Group = { _id: string; name: string };
@@ -116,11 +117,11 @@ export default function ProfilePage() {
     fetchData();
   }, [loading, isAuthenticated, router]);
 
-  if (loading || loadingData)
-    return <div className="p-10 text-center text-gray-500">Loading...</div>;
+  if (loading || loadingData) {
+  return <AppSkeleton variant="profile" />;
+}
   if (!user) return null;
 
-  /* ------------------ FILTER LOGIC ------------------ */
 
   const filterByMonth = (date: string) => {
     if (!selectedMonth) return true;

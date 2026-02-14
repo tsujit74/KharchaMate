@@ -21,6 +21,7 @@ import { getGroupById, getGroupExpenses } from "@/app/services/group.service";
 import ExpenseCard from "@/app/components/Expenses/ExpenseCard";
 import ReminderButton from "@/app/components/Reminder/ReminderButton";
 import GroupInfoDrawer from "@/app/components/Groups/GroupInfoDrawer";
+import AppSkeleton from "@/app/components/ui/AppSkeleton";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -79,8 +80,9 @@ export default function GroupDetailsPage() {
   const isActive = group?.isActive !== false;
 
   if (loading || pageLoading) {
-    return <div className="p-10 text-center text-gray-500">Loading...</div>;
-  }
+  return <AppSkeleton variant="details" />;
+}
+
 
   if (!isAuthenticated) return null;
 

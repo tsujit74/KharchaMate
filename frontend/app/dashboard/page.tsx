@@ -17,6 +17,7 @@ import { useAuth } from "../context/authContext";
 import { useRouter } from "next/navigation";
 import { getRecentExpenses } from "../services/expense.service";
 import { getPendingSettlements } from "../services/settlement.service";
+import AppSkeleton from "../components/ui/AppSkeleton";
 
 // ---------------- Types ----------------
 type Member = {
@@ -92,8 +93,9 @@ export default function DashboardPage() {
     fetchAll();
   }, [loading, isAuthenticated, router]);
 
-  if (loading || groupLoading)
-    return <p className="p-10 text-center">Loading…</p>;
+  if (loading || groupLoading) {
+  return <AppSkeleton variant="dashboard" />;
+}
   if (error) return <p className="p-10 text-center text-red-500">{error}</p>;
 
   return (
