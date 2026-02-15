@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Trash2, Edit } from "lucide-react";
 import { formatDateTime } from "@/app/utils/formatDateTime";
 import { deleteExpense } from "@/app/services/expense.service";
 import EditExpenseModal from "./EditExpenseModal";
+import toast from "react-hot-toast";
 
 export default function ExpenseCard({
   expense,
@@ -25,20 +26,29 @@ export default function ExpenseCard({
   const isOwner = expense.paidBy?._id === currentUserId;
 
   const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  e.stopPropagation();
 
-    if (!confirm("Are you sure you want to delete this expense?")) return;
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this expense?"
+  );
 
-    try {
-      setLoading(true);
-      await deleteExpense(expense._id);
-      onDeleted?.();
-    } catch (err: any) {
-      alert(err.message); 
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!confirmed) return;
+
+  try {
+    setLoading(true);
+
+    await deleteExpense(expense._id);
+
+    toast.success("Expense deleted successfully");
+
+    onDeleted?.();
+  } catch (err: any) {
+    toast.error(err?.message || "Failed to delete expense");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();

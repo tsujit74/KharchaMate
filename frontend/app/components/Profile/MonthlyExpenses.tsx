@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { getMonthlySummary } from "@/app/services/expense.service";
 import { getMyNetBalance } from "@/app/services/settlement.service";
+import toast from "react-hot-toast";
 
 const SummaryCard = ({ label, value, color }: any) => {
   return (
     <div className="bg-white border rounded-2xl p-5 shadow-sm hover:shadow-lg transition-shadow duration-300">
       <p className="text-xs text-gray-500">{label}</p>
-      <p className={`text-2xl font-semibold mt-1 ${color} transition-colors duration-300`}>
+      <p
+        className={`text-2xl font-semibold mt-1 ${color} transition-colors duration-300`}
+      >
         ₹{value}
       </p>
     </div>
@@ -34,7 +37,9 @@ const MonthSelector = ({
       </button>
 
       <p className="font-medium text-gray-700">
-        {new Date(year, month - 1).toLocaleString("default", { month: "long" })}{" "}
+        {new Date(year, month - 1).toLocaleString("default", {
+          month: "long",
+        })}{" "}
         {year}
       </p>
 
@@ -48,16 +53,25 @@ const MonthSelector = ({
   );
 };
 
-
 const MonthlySummary = ({ data }: any) => {
   return (
     <div className="grid sm:grid-cols-3 gap-4">
-      <SummaryCard label="Paid by you" value={data.paidByYou} color="text-blue-600" />
-      <SummaryCard label="Your actual expense" value={data.yourExpense} color="text-gray-900" />
+      <SummaryCard
+        label="Paid by you"
+        value={data.paidByYou}
+        color="text-blue-600"
+      />
+      <SummaryCard
+        label="Your actual expense"
+        value={data.yourExpense}
+        color="text-gray-900"
+      />
       <SummaryCard
         label="Net balance"
         value={data.netBalance}
-        color={data.netBalance >= 0 ? "text-green-600" : "text-red-500"}
+        color={
+          data.netBalance >= 0 ? "text-green-600" : "text-red-500"
+        }
       />
     </div>
   );
@@ -67,19 +81,38 @@ export default function MonthlyExpenseSummary() {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
   const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const monthly = await getMonthlySummary({ month, year });
-      const net = await getMyNetBalance();
+    let isMounted = true;
 
-      setSummary({
-        ...monthly,
-        netBalance: net.netBalance,
-      });
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const [monthly, net] = await Promise.all([
+          getMonthlySummary({ month, year }),
+          getMyNetBalance(),
+        ]);
+
+        if (!isMounted) return;
+
+        setSummary({
+          ...monthly,
+          netBalance: net.netBalance,
+        });
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to load summary");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
 
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [month, year]);
 
   const changeMonth = (dir: number) => {
@@ -99,7 +132,17 @@ export default function MonthlyExpenseSummary() {
     setYear(y);
   };
 
-  if (!summary) return <p className="text-gray-400 text-center">Loading summary...</p>;
+  if (loading) {
+    return (
+      <section className="bg-gray-50 p-4 rounded-2xl shadow-sm">
+        <p className="text-gray-400 text-center animate-pulse">
+          Loading summary...
+        </p>
+      </section>
+    );
+  }
+
+  if (!summary) return null;
 
   return (
     <section className="bg-gray-50 p-4 rounded-2xl shadow-sm">

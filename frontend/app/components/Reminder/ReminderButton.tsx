@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { sendReminder, checkReminder } from "@/app/services/reminder.service";
 import { getGroupById } from "@/app/services/group.service";
+import toast from "react-hot-toast";
 
 type Member = {
   _id: string;
@@ -75,13 +76,14 @@ export default function ReminderButton({
       await sendReminder({ groupId, toUserId, amount });
       setSent(true);
       setOpen(false);
+      toast.success("Reminder sent successfully");
     } catch (err: any) {
       if (err.message === "REMINDER_COOLDOWN") {
-        alert("Reminder already sent. Try later.");
+        toast.error("Reminder already sent. Try later.");
       } else if (err.message === "INVALID_REMINDER") {
-        alert("No pending payment.");
+        toast.error("No pending payment.");
       } else {
-        alert("Failed to send reminder.");
+        toast.error("Failed to send reminder.");
       }
     } finally {
       setLoading(false);
@@ -90,7 +92,7 @@ export default function ReminderButton({
 
   const handleWhatsAppReminder = () => {
     if (!toUserPhone) {
-      alert("This user has not added a mobile number");
+      toast.error("This user has not added a mobile number");
       return;
     }
 

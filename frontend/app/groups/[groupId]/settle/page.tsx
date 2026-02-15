@@ -4,6 +4,7 @@ import { useSearchParams, useParams, useRouter } from "next/navigation";
 import { IndianRupee, ArrowLeft, CheckCircle, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { settlePayment } from "@/app/services/settlement.service";
+import toast from "react-hot-toast";
 
 export default function SettlePaymentPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -16,7 +17,6 @@ export default function SettlePaymentPage() {
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
- 
   if (!toUserId || !amount) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
@@ -35,18 +35,21 @@ export default function SettlePaymentPage() {
     );
   }
 
-  /* ------------------ HANDLER ------------------ */
   const handleConfirmPayment = async () => {
     try {
       setLoading(true);
+
       await settlePayment(groupId, toUserId, Number(amount));
+
+      toast.success("Settlement recorded successfully");
+
       setConfirmed(true);
 
       setTimeout(() => {
         router.push(`/groups/${groupId}`);
       }, 1500);
-    } catch {
-      alert("Failed to update settlement. Please try again.");
+    } catch (err: any) {
+      toast.error("Failed to update settlement. Please try again.");
     } finally {
       setLoading(false);
     }

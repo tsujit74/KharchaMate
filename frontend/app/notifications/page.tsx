@@ -10,6 +10,7 @@ import {
 import EmptyState from "../components/EmptyState";
 import { useAuth } from "@/app/context/authContext";
 import clsx from "clsx";
+import toast from "react-hot-toast";
 
 type Notification = {
   _id: string;
@@ -39,78 +40,84 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, []);
 
-  /* ---------------- FETCH ---------------- */
   const fetchNotifications = async () => {
     try {
       setLoading(true);
+      setError("");
+
       const data = await getNotifications();
       setNotifications(data);
 
       setUnreadNotifications(
-        data.filter((n: Notification) => !n.isRead).length
+        data.filter((n: Notification) => !n.isRead).length,
       );
     } catch (err: any) {
-      setError(err.message || "Failed to load notifications");
+      const message = err.message || "Failed to load notifications";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------------- CLICK ---------------- */
   const handleClick = async (n: Notification) => {
-    if (!n.isRead) {
-      await markNotificationAsRead(n._id);
+    try {
+      if (!n.isRead) {
+        await markNotificationAsRead(n._id);
 
-      setNotifications((prev) =>
-        prev.map((x) =>
-          x._id === n._id ? { ...x, isRead: true } : x
-        )
-      );
+        setNotifications((prev) =>
+          prev.map((x) => (x._id === n._id ? { ...x, isRead: true } : x)),
+        );
 
-      setUnreadNotifications((c: number) => Math.max(0, c - 1));
+        setUnreadNotifications((c: number) => Math.max(0, c - 1));
+      }
+
+      if (n.link) router.push(n.link);
+    } catch {
+      toast.error("Failed to update notification.");
     }
-
-    if (n.link) router.push(n.link);
   };
 
   /* ---------------- BULK ---------------- */
   const toggleSelect = (id: string) => {
     setSelected((prev) =>
-      prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
   const markSelectedRead = async () => {
-    await Promise.all(
-      selected.map((id) => markNotificationAsRead(id))
-    );
+    try {
+      await Promise.all(selected.map((id) => markNotificationAsRead(id)));
 
-    setNotifications((prev) =>
-      prev.map((n) =>
-        selected.includes(n._id)
-          ? { ...n, isRead: true }
-          : n
-      )
-    );
+      setNotifications((prev) =>
+        prev.map((n) =>
+          selected.includes(n._id) ? { ...n, isRead: true } : n,
+        ),
+      );
 
-    setUnreadNotifications((c: number) =>
-      Math.max(0, c - selected.length)
-    );
+      setUnreadNotifications((c: number) => Math.max(0, c - selected.length));
 
-    setSelected([]);
-    setBulkMode(false);
+      toast.success("Selected notifications marked as read");
+
+      setSelected([]);
+      setBulkMode(false);
+    } catch {
+      toast.error("Failed to update notifications.");
+    }
   };
 
   const handleMarkAllRead = async () => {
-    await markAllNotificationsAsRead();
+    try {
+      await markAllNotificationsAsRead();
 
-    setNotifications((prev) =>
-      prev.map((n) => ({ ...n, isRead: true }))
-    );
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
 
-    setUnreadNotifications(0);
+      setUnreadNotifications(0);
+
+      toast.success("All notifications marked as read");
+    } catch {
+      toast.error("Failed to mark all as read.");
+    }
   };
 
   /* ---------------- SWIPE (MOBILE) ---------------- */
@@ -124,40 +131,30 @@ export default function NotificationsPage() {
   };
 
   const handleTouchEnd = async (n: Notification) => {
-    if (
-      touchStartX === null ||
-      touchEndX === null ||
-      n.isRead ||
-      bulkMode
-    )
+    if (touchStartX === null || touchEndX === null || n.isRead || bulkMode)
       return;
 
     const swipeDistance = touchEndX - touchStartX;
 
-    // Swipe right → mark read
     if (swipeDistance > 60) {
-      await markNotificationAsRead(n._id);
+      try {
+        await markNotificationAsRead(n._id);
 
-      setNotifications((prev) =>
-        prev.map((x) =>
-          x._id === n._id ? { ...x, isRead: true } : x
-        )
-      );
+        setNotifications((prev) =>
+          prev.map((x) => (x._id === n._id ? { ...x, isRead: true } : x)),
+        );
 
-      setUnreadNotifications((c: number) =>
-        Math.max(0, c - 1)
-      );
+        setUnreadNotifications((c: number) => Math.max(0, c - 1));
+      } catch {
+        toast.error("Failed to update notification.");
+      }
     }
   };
 
-  /* ---------------- SORT + GROUP ---------------- */
   const grouped = notifications
     .sort((a, b) => {
       if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
-      return (
-        new Date(b.createdAt).getTime() -
-        new Date(a.createdAt).getTime()
-      );
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     })
     .reduce((acc: Record<string, Notification[]>, n) => {
       const date = new Date(n.createdAt).toDateString();
@@ -166,7 +163,6 @@ export default function NotificationsPage() {
       return acc;
     }, {});
 
-  /* ---------------- STATES ---------------- */
   if (loading)
     return (
       <div className="max-w-3xl mx-auto px-4 py-6 text-sm text-gray-500">
@@ -181,25 +177,19 @@ export default function NotificationsPage() {
       </div>
     );
 
-  /* ---------------- UI ---------------- */
   return (
     <div className="max-w-3xl mx-auto px-3 sm:px-6 py-6">
       {/* Header */}
       <div className="flex justify-between items-start mb-5">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">
-            Notifications
-          </h1>
+          <h1 className="text-xl font-semibold text-gray-900">Notifications</h1>
           <p className="text-sm text-gray-500">
             Updates from your groups & expenses
           </p>
         </div>
 
         {bulkMode ? (
-          <button
-            onClick={markSelectedRead}
-            className="text-sm text-blue-600"
-          >
+          <button onClick={markSelectedRead} className="text-sm text-blue-600">
             Mark read
           </button>
         ) : notifications.some((n) => !n.isRead) ? (
@@ -220,9 +210,7 @@ export default function NotificationsPage() {
             {/* Date barrier */}
             <div className="flex items-center gap-2 my-3">
               <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-xs text-gray-400">
-                {date}
-              </span>
+              <span className="text-xs text-gray-400">{date}</span>
               <div className="flex-1 h-px bg-gray-200" />
             </div>
 
@@ -236,9 +224,8 @@ export default function NotificationsPage() {
                   onTouchEnd={() => handleTouchEnd(n)}
                   className={clsx(
                     "border rounded-lg p-3 sm:p-4 cursor-pointer transition",
-                    !n.isRead &&
-                      "bg-blue-50 border-blue-200",
-                    n.isRead && "bg-white"
+                    !n.isRead && "bg-blue-50 border-blue-200",
+                    n.isRead && "bg-white",
                   )}
                 >
                   <div className="flex gap-3 items-start">
@@ -261,9 +248,7 @@ export default function NotificationsPage() {
                         )}
                       </div>
 
-                      <p className="text-sm text-gray-600">
-                        {n.message}
-                      </p>
+                      <p className="text-sm text-gray-600">{n.message}</p>
 
                       {n.groupName && (
                         <span className="inline-block mt-2 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
@@ -279,17 +264,16 @@ export default function NotificationsPage() {
         ))
       )}
 
-      {!bulkMode &&
-        notifications.some((n) => !n.isRead) && (
-          <div className="mt-6 text-center">
-            <button
-              onClick={handleMarkAllRead}
-              className="text-sm text-blue-600 hover:underline"
-            >
-              Mark all as read
-            </button>
-          </div>
-        )}
+      {!bulkMode && notifications.some((n) => !n.isRead) && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={handleMarkAllRead}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Mark all as read
+          </button>
+        </div>
+      )}
     </div>
   );
 }

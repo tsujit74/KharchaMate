@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { createGroup } from "@/app/services/group.service";
 import { useAuth } from "@/app/context/authContext";
+import toast from "react-hot-toast";
 
 const CreateGroupPage = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -23,34 +24,49 @@ const CreateGroupPage = () => {
     }
   }, [loading, isAuthenticated, router]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+ const handleCreate = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
 
-    if (!name.trim()) {
-      setError("Group name is required.");
-      return;
+  if (!name.trim()) {
+    setError("Group name is required.");
+    toast.error("Group name is required.");
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+
+    await createGroup(name.trim());
+
+    toast.success("Group created successfully");
+
+    router.push("/dashboard");
+
+  } catch (err: any) {
+
+    switch (err.message) {
+
+      case "UNAUTHORIZED":
+        toast.error("Session expired. Please login again.");
+        router.replace("/login");
+        break;
+
+      case "INVALID_NAME":
+        setError("Please enter a valid group name.");
+        toast.error("Please enter a valid group name.");
+        break;
+
+      default:
+        setError("Failed to create group. Try again.");
+        toast.error("Failed to create group. Try again.");
     }
 
-    try {
-      setSubmitting(true);
-      await createGroup(name.trim());
-      router.push("/dashboard");
-    } catch (err: any) {
-      switch (err.message) {
-        case "UNAUTHORIZED":
-          router.replace("/login");
-          break;
-        case "INVALID_NAME":
-          setError("Please enter a valid group name.");
-          break;
-        default:
-          setError("Failed to create group. Try again.");
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   if (loading || !isAuthenticated) {
     return (

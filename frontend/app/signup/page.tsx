@@ -16,6 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/authContext";
 import { registerUser } from "../services/auth.service";
+import toast from "react-hot-toast";
 
 const SignupPage = () => {
   const router = useRouter();
@@ -36,39 +37,45 @@ const SignupPage = () => {
   }, [loading, isAuthenticated, router]);
 
   const validate = () => {
-    if (!name.trim()) return "Name is required";
-    if (!email.trim()) return "Email is required";
-    if (!/^\S+@\S+\.\S+$/.test(email)) return "Please enter a valid email";
-    if (!password.trim()) return "Password is required";
-    if (password.length < 6) return "Password must be at least 6 characters";
-    return "";
-  };
+  if (!name.trim()) return "Name is required";
+  if (!email.trim()) return "Email is required";
+  if (!/^\S+@\S+\.\S+$/.test(email)) return "Please enter a valid email";
+  if (!password.trim()) return "Password is required";
+  if (password.length < 6) return "Password must be at least 6 characters";
+  return "";
+};
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+  const validationError = validate();
+  if (validationError) {
+    setError(validationError);
+    toast.error(validationError); 
+    return;
+  }
 
-    setIsLoading(true);
-    setError("");
+  setIsLoading(true);
+  setError("");
 
-    try {
-      await registerUser({ name, email, password, mobile });
-      router.push("/login");
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Signup failed. Please try again.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    await registerUser({ name, email, password, mobile });
+
+    toast.success("Account created successfully 🎉");
+
+    router.push("/login");
+  } catch (err: any) {
+    const errorMessage =
+      err?.response?.data?.message ||
+      err?.message ||
+      "Signup failed. Please try again.";
+
+    setError(errorMessage); 
+    toast.error(errorMessage); 
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   if (loading) return null;
 

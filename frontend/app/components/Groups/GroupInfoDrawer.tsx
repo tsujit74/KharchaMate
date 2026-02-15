@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { X, Shield, UserMinus, UserPlus, Crown } from "lucide-react";
 import Link from "next/link";
 import { removeMember, toggleGroupStatus } from "@/app/services/group.service";
+import toast from "react-hot-toast";
 
 type Message = {
   type: "success" | "error";
@@ -44,12 +45,11 @@ export default function GroupInfoDrawer({
   const isActive = group?.isActive !== false;
   const hasExpenses = (group?.expenseCount ?? 0) > 0;
 
-  /* ---- Toggle Group Status ---- */
   const handleToggleStatus = async () => {
     if (!isAdmin || statusLoading) return;
 
     if (isActive) {
-      const ok = confirm(
+      const ok = window.confirm(
         "Closing this group will lock all actions.\nContinue?",
       );
       if (!ok) return;
@@ -57,63 +57,45 @@ export default function GroupInfoDrawer({
 
     try {
       setStatusLoading(true);
-      setMessage(null);
 
       await toggleGroupStatus(group._id, !isActive);
       await onRefresh();
 
-      setMessage({
-        type: "success",
-        text: isActive
+      toast.success(
+        isActive
           ? "Group closed successfully."
           : "Group reactivated successfully.",
-      });
+      );
     } catch (err: any) {
-      setMessage({
-        type: "error",
-        text: err.message || "Failed to update group status.",
-      });
+      toast.error(err?.message || "Failed to update group status.");
     } finally {
       setStatusLoading(false);
     }
   };
 
-  /* ---- Remove Member ---- */
   const handleRemove = async (userId: string) => {
     if (!isActive) {
-      setMessage({
-        type: "error",
-        text: "This group is closed.",
-      });
+      toast.error("This group is closed.");
       return;
     }
 
     if (hasExpenses) {
-      setMessage({
-        type: "error",
-        text: "Cannot remove members after expenses are added.",
-      });
+      toast.error("Cannot remove members after expenses are added.");
       return;
     }
 
-    if (!confirm("Remove this member from the group?")) return;
+    const ok = window.confirm("Remove this member from the group?");
+    if (!ok) return;
 
     try {
       setLoadingUserId(userId);
-      setMessage(null);
 
       await removeMember(group._id, userId);
       await onRefresh();
 
-      setMessage({
-        type: "success",
-        text: "Member removed successfully.",
-      });
+      toast.success("Member removed successfully.");
     } catch (err: any) {
-      setMessage({
-        type: "error",
-        text: err.message || "Failed to remove member.",
-      });
+      toast.error(err?.message || "Failed to remove member.");
     } finally {
       setLoadingUserId(null);
     }

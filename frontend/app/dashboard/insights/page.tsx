@@ -15,6 +15,7 @@ import {
 } from "recharts";
 
 import { getMyInsights } from "@/app/services/expense.service";
+import toast from "react-hot-toast";
 
 type InsightResponse = {
   categoryBreakdown: { category: string; total: number }[];
@@ -28,9 +29,9 @@ const COLORS = ["#111827", "#374151", "#6B7280", "#9CA3AF", "#D1D5DB"];
 export default function InsightsPage() {
   const [data, setData] = useState<InsightResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<
-    "this-month" | "last-month" | "custom"
-  >("this-month");
+  const [filter, setFilter] = useState<"this-month" | "last-month" | "custom">(
+    "this-month",
+  );
   const [chartType, setChartType] = useState<"pie" | "bar">("pie");
   const [error, setError] = useState("");
   const [customRange, setCustomRange] = useState({
@@ -38,8 +39,7 @@ export default function InsightsPage() {
     end: "",
   });
 
-  const isMobile =
-    typeof window !== "undefined" && window.innerWidth < 640;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -56,7 +56,9 @@ export default function InsightsPage() {
       const res = await getMyInsights(params || { filter });
       setData(res);
     } catch (err: any) {
-      setError(err.message || "Failed to load insights");
+      const message = err.message || "Failed to load insights";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -66,16 +68,19 @@ export default function InsightsPage() {
     if (filter !== "custom") {
       fetchInsights({ filter });
     }
-    // eslint-disable-next-line
   }, [filter]);
 
   const applyCustomFilter = () => {
     if (!customRange.start || !customRange.end) {
-      return setError("Please select both start and end dates.");
+      setError("Please select both start and end dates.");
+      toast.error("Please select both start and end dates.");
+      return;
     }
 
     if (customRange.start > customRange.end) {
-      return setError("Start date cannot be after end date.");
+      setError("Start date cannot be after end date.");
+      toast.error("Start date cannot be after end date.");
+      return;
     }
 
     fetchInsights({
@@ -98,10 +103,7 @@ export default function InsightsPage() {
             label={!isMobile}
           >
             {data.categoryBreakdown.map((_, index) => (
-              <Cell
-                key={index}
-                fill={COLORS[index % COLORS.length]}
-              />
+              <Cell key={index} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
           <Tooltip />
@@ -123,9 +125,7 @@ export default function InsightsPage() {
   return (
     <main className="min-h-screen bg-[#F9FAFB] p-4 sm:p-6">
       <div className="max-w-5xl mx-auto space-y-8">
-        <h1 className="text-xl sm:text-2xl font-bold">
-          Spending Insights
-        </h1>
+        <h1 className="text-xl sm:text-2xl font-bold">Spending Insights</h1>
 
         {/* FILTER */}
         <div className="flex flex-wrap gap-2 items-center">
@@ -140,8 +140,8 @@ export default function InsightsPage() {
               {f === "this-month"
                 ? "This Month"
                 : f === "last-month"
-                ? "Last Month"
-                : "Custom"}
+                  ? "Last Month"
+                  : "Custom"}
             </button>
           ))}
 
@@ -204,18 +204,14 @@ export default function InsightsPage() {
             {/* SUMMARY */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-white border p-4 sm:p-6">
-                <p className="text-sm text-gray-500">
-                  Paid by You
-                </p>
+                <p className="text-sm text-gray-500">Paid by You</p>
                 <p className="text-lg sm:text-xl font-bold">
                   {formatCurrency(data.paidByYou)}
                 </p>
               </div>
 
               <div className="bg-white border p-4 sm:p-6">
-                <p className="text-sm text-gray-500">
-                  Your Expense
-                </p>
+                <p className="text-sm text-gray-500">Your Expense</p>
                 <p className="text-lg sm:text-xl font-bold">
                   {formatCurrency(data.yourExpense)}
                 </p>
@@ -227,9 +223,7 @@ export default function InsightsPage() {
                 </p>
                 <p
                   className={`text-lg sm:text-xl font-bold ${
-                    data.netBalance >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
+                    data.netBalance >= 0 ? "text-green-600" : "text-red-600"
                   }`}
                 >
                   {formatCurrency(data.netBalance)}
@@ -242,9 +236,7 @@ export default function InsightsPage() {
               <button
                 onClick={() => setChartType("pie")}
                 className={`px-3 py-1 text-xs sm:text-sm border ${
-                  chartType === "pie"
-                    ? "bg-black text-white"
-                    : ""
+                  chartType === "pie" ? "bg-black text-white" : ""
                 }`}
               >
                 Pie
@@ -252,9 +244,7 @@ export default function InsightsPage() {
               <button
                 onClick={() => setChartType("bar")}
                 className={`px-3 py-1 text-xs sm:text-sm border ${
-                  chartType === "bar"
-                    ? "bg-black text-white"
-                    : ""
+                  chartType === "bar" ? "bg-black text-white" : ""
                 }`}
               >
                 Bar

@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { getRecentExpenses } from "../services/expense.service";
 import { getPendingSettlements } from "../services/settlement.service";
 import AppSkeleton from "../components/ui/AppSkeleton";
+import toast from "react-hot-toast";
 
 // ---------------- Types ----------------
 type Member = {
@@ -71,7 +72,6 @@ export default function DashboardPage() {
       try {
         const groupsData = await getMyGroups();
 
-        // ✅ keep backend isActive value
         setGroups(
           groupsData.sort(
             (a: Group, b: Group) =>
@@ -81,8 +81,14 @@ export default function DashboardPage() {
 
         setRecentExpenses(await getRecentExpenses());
         setPendingSettlements(await getPendingSettlements());
-      } catch (err) {
-        setError("Failed to load dashboard data");
+      } catch (err: any) {
+        const message = err.message || "Failed to load dashboard data";
+        setError(message);
+        toast.error(message);
+
+        if (err.message === "UNAUTHORIZED") {
+          router.replace("/login");
+        }
       } finally {
         setGroupLoading(false);
         setRecentLoading(false);
@@ -94,8 +100,8 @@ export default function DashboardPage() {
   }, [loading, isAuthenticated, router]);
 
   if (loading || groupLoading) {
-  return <AppSkeleton variant="dashboard" />;
-}
+    return <AppSkeleton variant="dashboard" />;
+  }
   if (error) return <p className="p-10 text-center text-red-500">{error}</p>;
 
   return (

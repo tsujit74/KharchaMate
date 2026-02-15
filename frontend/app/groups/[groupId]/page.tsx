@@ -22,6 +22,7 @@ import ExpenseCard from "@/app/components/Expenses/ExpenseCard";
 import ReminderButton from "@/app/components/Reminder/ReminderButton";
 import GroupInfoDrawer from "@/app/components/Groups/GroupInfoDrawer";
 import AppSkeleton from "@/app/components/ui/AppSkeleton";
+import toast from "react-hot-toast";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -66,8 +67,10 @@ export default function GroupDetailsPage() {
       } catch (err: any) {
         if (err.message === "FORBIDDEN") {
           setError("You are not a member of this group.");
+          toast.error("You are not a member of this group.");
         } else {
           setError("Failed to load group details.");
+          toast.error("Failed to load group details.");
         }
       } finally {
         setPageLoading(false);
@@ -80,9 +83,8 @@ export default function GroupDetailsPage() {
   const isActive = group?.isActive !== false;
 
   if (loading || pageLoading) {
-  return <AppSkeleton variant="details" />;
-}
-
+    return <AppSkeleton variant="details" />;
+  }
 
   if (!isAuthenticated) return null;
 
@@ -112,6 +114,7 @@ export default function GroupDetailsPage() {
       setSettlement(updatedSettlement);
     } catch (err) {
       console.error("Failed to refresh data", err);
+      toast.error("Failed to refresh group data.");
     }
   };
 

@@ -13,7 +13,7 @@ import { formatDateTime } from "../utils/formatDateTime";
 import { Users, CreditCard, Clock, Repeat } from "lucide-react";
 import MonthlyExpenseSummary from "../components/Profile/MonthlyExpenses";
 import AppSkeleton from "../components/ui/AppSkeleton";
-
+import toast from "react-hot-toast";
 
 type Group = { _id: string; name: string };
 
@@ -60,7 +60,6 @@ type Item = {
   status?: string;
 };
 
-
 export default function ProfilePage() {
   const ITEMS_PER_PAGE = 10;
   const { user, isAuthenticated, loading } = useAuth();
@@ -82,8 +81,6 @@ export default function ProfilePage() {
   );
   const [selectedMonth, setSelectedMonth] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
-  /* ------------------ FETCH DATA ------------------ */
 
   useEffect(() => {
     if (loading) return;
@@ -107,8 +104,16 @@ export default function ProfilePage() {
         setExpenses(expData || []);
         setSettlements(settleData || []);
         setHistory(historyData || []);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Profile fetch failed:", err);
+
+        if (err.message === "UNAUTHORIZED") {
+          toast.error("Session expired. Please login again.");
+          router.replace("/login");
+          return;
+        }
+
+        toast.error("Failed to load profile data.");
       } finally {
         setLoadingData(false);
       }
@@ -118,10 +123,9 @@ export default function ProfilePage() {
   }, [loading, isAuthenticated, router]);
 
   if (loading || loadingData) {
-  return <AppSkeleton variant="profile" />;
-}
+    return <AppSkeleton variant="profile" />;
+  }
   if (!user) return null;
-
 
   const filterByMonth = (date: string) => {
     if (!selectedMonth) return true;

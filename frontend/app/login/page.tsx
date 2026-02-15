@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/authContext";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -31,40 +32,47 @@ const LoginPage = () => {
   }, [loading, isAuthenticated, router]);
 
   const validate = () => {
-    if (!email.trim()) return "Email is required";
-    if (!/^\S+@\S+\.\S+$/.test(email))
-      return "Please enter a valid email";
-    if (!password.trim()) return "Password is required";
-    if (password.length < 6)
-      return "Password must be at least 6 characters";
-    return "";
-  };
+  if (!email.trim()) return "Email is required";
+  if (!/^\S+@\S+\.\S+$/.test(email))
+    return "Please enter a valid email";
+  if (!password.trim()) return "Password is required";
+  if (password.length < 6)
+    return "Password must be at least 6 characters";
+  return "";
+};
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+  const validationError = validate();
+  if (validationError) {
+    setError(validationError);
+    toast.error(validationError); 
+    return;
+  }
 
-    setIsLoading(true);
-    setError("");
+  setIsLoading(true);
+  setError("");
 
-    try {
-      await login({ email, password });
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Login failed. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    await login({ email, password });
+
+    toast.success("Logged in successfully."); 
+
+    router.push("/dashboard");
+  } catch (err: any) {
+    const errorMessage =
+      err?.response?.data?.message ||
+      err?.message ||
+      "Login failed. Please try again.";
+
+    setError(errorMessage); 
+    toast.error(errorMessage); 
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   if (loading) return null;
 

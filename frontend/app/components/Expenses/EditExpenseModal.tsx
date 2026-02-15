@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateExpense } from "@/app/services/expense.service";
+import toast from "react-hot-toast";
 
 export default function EditExpenseModal({
   expense,
@@ -17,30 +18,35 @@ export default function EditExpenseModal({
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!description || !amount) {
-      alert("Please fill all fields");
-      return;
-    }
+  if (!description || !amount) {
+    toast.error("Please fill all fields");
+    return;
+  }
 
-    try {
-      setLoading(true);
-      await updateExpense({
-        expenseId: expense._id,
-        description,
-        amount,
-        splitBetween: expense.splitBetween.map((s: any) => ({
-          user: s.user._id,
-          amount: s.amount,
-        })),
-      });
-      onUpdated();
-      onClose();
-    } catch (err: any) {
-      alert(err.message || "Failed to update expense");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+
+    await updateExpense({
+      expenseId: expense._id,
+      description,
+      amount,
+      splitBetween: expense.splitBetween.map((s: any) => ({
+        user: s.user._id,
+        amount: s.amount,
+      })),
+    });
+
+    toast.success("Expense updated successfully");
+
+    onUpdated();
+    onClose();
+  } catch (err: any) {
+    toast.error(err?.message || "Failed to update expense");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">

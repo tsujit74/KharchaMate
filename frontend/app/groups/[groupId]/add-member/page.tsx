@@ -6,6 +6,7 @@ import { Mail, UserPlus, ArrowRight } from "lucide-react";
 
 import { addMember } from "@/app/services/group.service";
 import { useAuth } from "@/app/context/authContext";
+import toast from "react-hot-toast";
 
 export default function AddMemberPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -39,21 +40,47 @@ export default function AddMemberPage() {
     setError("");
     setSuccess("");
 
+    const trimmedEmail = email.trim();
+
+    // ✅ Manual Validation
+    if (!trimmedEmail) {
+      setError("Email is required.");
+      toast.error("Email is required.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setError("Enter a valid email address.");
+      toast.error("Enter a valid email address.");
+      return;
+    }
+
     try {
       setBtnLoading(true);
-      await addMember(groupId, email.trim());
+
+      await addMember(groupId, trimmedEmail);
+
       setSuccess("Member added successfully");
+      toast.success("Member added successfully");
+
       setEmail("");
     } catch (err: any) {
       if (err.message === "UNAUTHORIZED") {
+        toast.error("Session expired. Please login again.");
         router.replace("/login");
         return;
       }
+
       if (err.message === "FORBIDDEN") {
         setError("You are not allowed to add members.");
+        toast.error("You are not allowed to add members.");
         return;
       }
+
       setError("Failed to add member. Try again.");
+      toast.error("Failed to add member. Try again.");
     } finally {
       setBtnLoading(false);
     }
@@ -79,7 +106,7 @@ export default function AddMemberPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleAddMember} className="space-y-5">
+          <form onSubmit={handleAddMember} noValidate className="space-y-5">
             {error && (
               <p className="text-sm text-red-500 bg-red-50 p-3 text-center">
                 {error}
@@ -94,8 +121,7 @@ export default function AddMemberPage() {
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
-                type="email"
-                required
+                type="text"
                 placeholder="friend@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

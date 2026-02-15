@@ -7,6 +7,7 @@ import { IndianRupee, FileText, Plus } from "lucide-react";
 import { useAuth } from "@/app/context/authContext";
 import { addExpense } from "@/app/services/expense.service";
 import { getGroupById } from "@/app/services/group.service";
+import toast from "react-hot-toast";
 
 type Member = {
   _id: string;
@@ -47,12 +48,12 @@ export default function AddExpensePage() {
     setError("");
 
     if (!description.trim()) {
-      setError("Description is required");
+      toast.error("Description is required");
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
-      setError("Enter a valid expense amount");
+      toast.error("Enter a valid expense amount");
       return;
     }
 
@@ -69,7 +70,7 @@ export default function AddExpensePage() {
 
     if (category) {
       if (!allowedCategories.includes(category)) {
-        setError("Invalid category selected");
+        toast.error("Invalid category selected");
         return;
       }
       payload.category = category;
@@ -78,7 +79,7 @@ export default function AddExpensePage() {
     // ✅ CUSTOM SPLIT
     if (splitType === "CUSTOM") {
       if (!members.length) {
-        setError("No group members found");
+        toast.error("No group members found");
         return;
       }
 
@@ -88,7 +89,7 @@ export default function AddExpensePage() {
         const value = customSplit[m._id];
 
         if (!value || value <= 0) {
-          setError(`Enter valid amount for ${m.name}`);
+          toast.error(`Enter valid amount for ${m.name}`);
           return;
         }
 
@@ -104,7 +105,7 @@ export default function AddExpensePage() {
         Math.round(totalSplit * 100) / 100 !==
         Math.round(totalAmount * 100) / 100
       ) {
-        setError("Split total must equal expense amount");
+        toast.error("Split total must equal expense amount");
         return;
       }
 
@@ -114,9 +115,10 @@ export default function AddExpensePage() {
     try {
       setSubmitting(true);
       await addExpense(payload);
+      toast.success("Expense added successfully");
       router.push(`/groups/${groupId}`);
     } catch (err: any) {
-      setError(err.message || "Failed to add expense");
+      toast.error(err.message || "Failed to add expense");
     } finally {
       setSubmitting(false);
     }
