@@ -30,12 +30,37 @@ export default function GroupDetailsPage() {
   const { isAuthenticated, loading, user } = useAuth();
 
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [settlement, setSettlement] = useState<any>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
   const [infoOpen, setInfoOpen] = useState(false);
   const [group, setGroup] = useState<any>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
+  const isActive = group?.isActive !== false;
+
+  // Function to load expenses per page
+  const loadExpenses = async (pageNum = 1) => {
+    try {
+      const data = await getGroupExpenses(groupId, pageNum, 10); // 10 per page
+      if (pageNum === 1) {
+        setExpenses(data.expenses);
+      } else {
+        setExpenses((prev) => [...prev, ...data.expenses]);
+      }
+      setPage(data.page);
+      setTotalExpenses(data.total);
+      setTotalPages(data.totalPages);
+    } catch (err) {
+      console.error("Failed to load expenses", err);
+      toast.error("Failed to load expenses.");
+    }
+  };
+
+  // Load initial data
   useEffect(() => {
     if (loading) return;
 
@@ -55,15 +80,15 @@ export default function GroupDetailsPage() {
         setPageLoading(true);
         setError("");
 
-        const [expenseData, settlementData, groupData] = await Promise.all([
-          getGroupExpenses(groupId),
+        const [settlementData, groupData] = await Promise.all([
           getGroupSettlement(groupId),
           getGroupById(groupId),
         ]);
 
-        setExpenses(expenseData);
         setSettlement(settlementData);
         setGroup(groupData);
+
+        await loadExpenses(1); // fetch first page
       } catch (err: any) {
         if (err.message === "FORBIDDEN") {
           setError("You are not a member of this group.");
@@ -80,7 +105,43 @@ export default function GroupDetailsPage() {
     loadData();
   }, [loading, isAuthenticated, groupId, router]);
 
-  const isActive = group?.isActive !== false;
+  // Refresh expenses and group/settlement data
+  const refreshExpenses = async () => {
+    try {
+      await loadExpenses(1); // refresh first page
+      const [updatedGroup, updatedSettlement] = await Promise.all([
+        getGroupById(groupId),
+        getGroupSettlement(groupId),
+      ]);
+      setGroup(updatedGroup);
+      setSettlement(updatedSettlement);
+    } catch (err) {
+      console.error("Failed to refresh data", err);
+      toast.error("Failed to refresh group data.");
+    }
+  };
+
+  const loadMoreExpenses = async () => {
+    if (page < totalPages) {
+      try {
+        setLoadingMore(true);
+        await loadExpenses(page + 1);
+      } finally {
+        setLoadingMore(false);
+      }
+    }
+  };
+
+  // Handle settlement payments
+  const handleSettle = async (toId: string, amount: number) => {
+    try {
+      await settlePayment(groupId, toId, amount);
+      const updated = await getGroupSettlement(groupId);
+      setSettlement(updated);
+    } catch {
+      alert("Payment failed. Try again.");
+    }
+  };
 
   if (loading || pageLoading) {
     return <AppSkeleton variant="details" />;
@@ -99,34 +160,6 @@ export default function GroupDetailsPage() {
       </div>
     );
   }
-
-  const refreshExpenses = async () => {
-    try {
-      const [updatedGroup, updatedExpenses, updatedSettlement] =
-        await Promise.all([
-          getGroupById(groupId),
-          getGroupExpenses(groupId),
-          getGroupSettlement(groupId),
-        ]);
-
-      setGroup(updatedGroup);
-      setExpenses(updatedExpenses);
-      setSettlement(updatedSettlement);
-    } catch (err) {
-      console.error("Failed to refresh data", err);
-      toast.error("Failed to refresh group data.");
-    }
-  };
-
-  const handleSettle = async (toId: string, amount: number) => {
-    try {
-      await settlePayment(groupId, toId, amount);
-      const updated = await getGroupSettlement(groupId);
-      setSettlement(updated);
-    } catch {
-      alert("Payment failed. Try again.");
-    }
-  };
 
   return (
     <main className="min-h-screen bg-[#FCFCFD] flex">
@@ -285,10 +318,13 @@ export default function GroupDetailsPage() {
           )}
         </div>
 
-        {/* Expenses */}
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between mb-4">
-            <h2 className="font-semibold">Expenses</h2>
+            <h2 className="font-semibold">Expenses ({totalExpenses})</h2>
+
+            <p className="text-sm text-gray-500">
+              Showing {expenses.length} of {totalExpenses}
+            </p>
 
             {isActive ? (
               <Link
@@ -312,17 +348,61 @@ export default function GroupDetailsPage() {
           {expenses.length === 0 ? (
             <p className="text-gray-500 text-sm">No expenses yet.</p>
           ) : (
-            expenses
-              .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
-              .map((e) => (
-                <ExpenseCard
-                  key={e._id}
-                  expense={e}
-                  currentUserId={user?.id}
-                  onDeleted={refreshExpenses}
-                  onUpdated={refreshExpenses}
-                />
-              ))
+            <>
+              {expenses
+                .sort(
+                  (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+                )
+                .map((e) => (
+                  <ExpenseCard
+                    key={e._id}
+                    expense={e}
+                    currentUserId={user?.id}
+                    onDeleted={refreshExpenses}
+                    onUpdated={refreshExpenses}
+                  />
+                ))}
+
+              {page < totalPages && (
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={loadMoreExpenses}
+                    disabled={loadingMore}
+                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2 disabled:opacity-70"
+                  >
+                    {loadingMore && (
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+                        />
+                      </svg>
+                    )}
+
+                    {loadingMore
+                      ? "Loading..."
+                      : `Load +${Math.min(
+                          10,
+                          totalExpenses - expenses.length,
+                        )} more`}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

@@ -83,17 +83,33 @@ export const addExpense = async (req, res) => {
 
 export const getGroupExpenses = async (req, res) => {
   try {
-    const expenses = await Expense.find({
-      group: req.params.groupId,
-    })
-      .populate("paidBy", "name email")
-      .populate("splitBetween.user", "name email");
+    const { groupId } = req.params;
+    const page = parseInt(req.query.page) || 1; 
+    const limit = parseInt(req.query.limit) || 10; 
+    const skip = (page - 1) * limit;
 
-    res.json(expenses);
+    const expenses = await Expense.find({ group: groupId })
+      .sort({ createdAt: -1 }) 
+      .skip(skip)
+      .limit(limit)
+      .populate("paidBy", "name email")
+      .populate("splitBetween.user", "name email")
+      .lean();
+
+    const total = await Expense.countDocuments({ group: groupId });
+
+    res.json({
+      expenses,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
+    console.error("FETCH GROUP EXPENSES ERROR:", error);
     res.status(500).json({ message: "Failed to fetch expenses" });
   }
 };
+
 
 export const getRecentExpenses = async (req, res) => {
   try {

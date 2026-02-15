@@ -111,15 +111,27 @@ export const toggleGroupStatus = async (groupId: string, p0: boolean) => {
   }
 };
 
-export const getGroupExpenses = async (groupId: string) => {
+export const getGroupExpenses = async (
+  groupId: string,
+  page: number = 1,
+  limit: number = 10
+) => {
   if (!groupId) throw new Error("INVALID_GROUP");
 
   try {
-    const res = await axios.get(`${API_URL}/api/expenses/${groupId}`, {
-      headers: getAuthHeader(),
-    });
+    const res = await axios.get(
+      `${API_URL}/api/expenses/${groupId}?page=${page}&limit=${limit}`,
+      {
+        headers: getAuthHeader(),
+      }
+    );
 
-    return Array.isArray(res.data) ? res.data : [];
+    return {
+      expenses: Array.isArray(res.data.expenses) ? res.data.expenses : [],
+      page: res.data.page,
+      totalPages: res.data.totalPages,
+      total: res.data.total,
+    };
   } catch (err: any) {
     if (err.response?.status === 403) throw new Error("FORBIDDEN");
     if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
