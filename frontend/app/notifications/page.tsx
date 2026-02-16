@@ -16,7 +16,11 @@ type Notification = {
   _id: string;
   title: string;
   message: string;
-  actorName?: string;
+  actor?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
   groupName?: string;
   link?: string;
   isRead: boolean;
@@ -65,14 +69,10 @@ export default function NotificationsPage() {
         await markNotificationAsRead(n._id);
 
         setNotifications((prev) =>
-          prev.map((x) =>
-            x._id === n._id ? { ...x, isRead: true } : x,
-          ),
+          prev.map((x) => (x._id === n._id ? { ...x, isRead: true } : x)),
         );
 
-        setUnreadNotifications((c: number) =>
-          Math.max(0, c - 1),
-        );
+        setUnreadNotifications((c: number) => Math.max(0, c - 1));
       }
 
       if (n.link) router.push(n.link);
@@ -84,29 +84,21 @@ export default function NotificationsPage() {
   /* ---------------- BULK ---------------- */
   const toggleSelect = (id: string) => {
     setSelected((prev) =>
-      prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id],
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
   const markSelectedRead = async () => {
     try {
-      await Promise.all(
-        selected.map((id) => markNotificationAsRead(id)),
-      );
+      await Promise.all(selected.map((id) => markNotificationAsRead(id)));
 
       setNotifications((prev) =>
         prev.map((n) =>
-          selected.includes(n._id)
-            ? { ...n, isRead: true }
-            : n,
+          selected.includes(n._id) ? { ...n, isRead: true } : n,
         ),
       );
 
-      setUnreadNotifications((c: number) =>
-        Math.max(0, c - selected.length),
-      );
+      setUnreadNotifications((c: number) => Math.max(0, c - selected.length));
 
       toast.success("Selected notifications marked as read");
 
@@ -121,9 +113,7 @@ export default function NotificationsPage() {
     try {
       await markAllNotificationsAsRead();
 
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, isRead: true })),
-      );
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
 
       setUnreadNotifications(0);
 
@@ -144,12 +134,7 @@ export default function NotificationsPage() {
   };
 
   const handleTouchEnd = async (n: Notification) => {
-    if (
-      touchStartX === null ||
-      touchEndX === null ||
-      n.isRead ||
-      bulkMode
-    )
+    if (touchStartX === null || touchEndX === null || n.isRead || bulkMode)
       return;
 
     const swipeDistance = touchEndX - touchStartX;
@@ -159,16 +144,10 @@ export default function NotificationsPage() {
         await markNotificationAsRead(n._id);
 
         setNotifications((prev) =>
-          prev.map((x) =>
-            x._id === n._id
-              ? { ...x, isRead: true }
-              : x,
-          ),
+          prev.map((x) => (x._id === n._id ? { ...x, isRead: true } : x)),
         );
 
-        setUnreadNotifications((c: number) =>
-          Math.max(0, c - 1),
-        );
+        setUnreadNotifications((c: number) => Math.max(0, c - 1));
       } catch {
         toast.error("Failed to update notification.");
       }
@@ -179,10 +158,7 @@ export default function NotificationsPage() {
   const grouped = [...notifications]
     .sort((a, b) => {
       if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
-      return (
-        new Date(b.createdAt).getTime() -
-        new Date(a.createdAt).getTime()
-      );
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     })
     .reduce((acc: Record<string, Notification[]>, n) => {
       const date = new Date(n.createdAt).toDateString();
@@ -209,19 +185,14 @@ export default function NotificationsPage() {
     <div className="max-w-3xl mx-auto px-3 sm:px-6 py-6">
       <div className="flex justify-between items-start mb-5">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">
-            Notifications
-          </h1>
+          <h1 className="text-xl font-semibold text-gray-900">Notifications</h1>
           <p className="text-sm text-gray-500">
             Updates from your groups & expenses
           </p>
         </div>
 
         {bulkMode ? (
-          <button
-            onClick={markSelectedRead}
-            className="text-sm text-blue-600"
-          >
+          <button onClick={markSelectedRead} className="text-sm text-blue-600">
             Mark read
           </button>
         ) : notifications.some((n) => !n.isRead) ? (
@@ -241,9 +212,7 @@ export default function NotificationsPage() {
           <div key={date} className="mb-4">
             <div className="flex items-center gap-2 my-3">
               <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-xs text-gray-400">
-                {date}
-              </span>
+              <span className="text-xs text-gray-400">{date}</span>
               <div className="flex-1 h-px bg-gray-200" />
             </div>
 
@@ -251,18 +220,13 @@ export default function NotificationsPage() {
               {items.map((n) => (
                 <div
                   key={n._id}
-                  onClick={() =>
-                    !bulkMode && handleClick(n)
-                  }
+                  onClick={() => !bulkMode && handleClick(n)}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
-                  onTouchEnd={() =>
-                    handleTouchEnd(n)
-                  }
+                  onTouchEnd={() => handleTouchEnd(n)}
                   className={clsx(
                     "border rounded-lg p-3 sm:p-4 cursor-pointer transition",
-                    !n.isRead &&
-                      "bg-blue-50 border-blue-200",
+                    !n.isRead && "bg-blue-50 border-blue-200",
                     n.isRead && "bg-white",
                   )}
                 >
@@ -270,12 +234,8 @@ export default function NotificationsPage() {
                     {bulkMode && (
                       <input
                         type="checkbox"
-                        checked={selected.includes(
-                          n._id,
-                        )}
-                        onChange={() =>
-                          toggleSelect(n._id)
-                        }
+                        checked={selected.includes(n._id)}
+                        onChange={() => toggleSelect(n._id)}
                         className="mt-1"
                       />
                     )}
@@ -291,10 +251,10 @@ export default function NotificationsPage() {
                       </div>
 
                       <p className="text-sm text-gray-600">
-                        {n.actorName ? (
+                        {n.actor?.name ? (
                           <>
                             <span className="font-semibold text-gray-900">
-                              {n.actorName}
+                              {n.actor.name}
                             </span>{" "}
                             {n.message}
                           </>
@@ -317,17 +277,16 @@ export default function NotificationsPage() {
         ))
       )}
 
-      {!bulkMode &&
-        notifications.some((n) => !n.isRead) && (
-          <div className="mt-6 text-center">
-            <button
-              onClick={handleMarkAllRead}
-              className="text-sm text-blue-600 hover:underline"
-            >
-              Mark all as read
-            </button>
-          </div>
-        )}
+      {!bulkMode && notifications.some((n) => !n.isRead) && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={handleMarkAllRead}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Mark all as read
+          </button>
+        </div>
+      )}
     </div>
   );
 }
