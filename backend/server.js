@@ -15,6 +15,8 @@ import reminderRoutes from "./routes/sendReminder.js";
 dotenv.config();
 const app = express();
 
+app.set("trust proxy", 1);
+
 process.on("uncaughtException", (err) => {
   console.error("Uncaught Exception:", err.message);
 });
@@ -30,26 +32,26 @@ app.use(
   }),
 );
 
-
 app.use(helmet());
 
 app.use(express.json({ limit: "1mb" }));
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: "Too many requests. Please try again later.",
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 app.use(globalLimiter);
 
-const authLimiter = rateLimit({
+const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 10,
   message: "Too many login attempts. Try again later.",
 });
 
-app.use("/api/auth", authLimiter);
+app.use("/api/auth/login", loginLimiter);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/groups", groupRoutes);
