@@ -36,24 +36,44 @@ export default function NotificationsPage() {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 10;
+
   const router = useRouter();
   const { setUnreadNotifications } = useAuth();
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(1);
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (pageNumber: number) => {
     try {
+      if (pageNumber === 1) {
+        setHasMore(true);
+      }
+
       setLoading(true);
       setError("");
 
-      const data = await getNotifications();
-      setNotifications(data);
+      const data = await getNotifications(pageNumber, LIMIT);
 
-      setUnreadNotifications(
-        data.filter((n: Notification) => !n.isRead).length,
-      );
+      if (pageNumber === 1) {
+        setNotifications(data);
+
+        // Set unread count only on first load
+        setUnreadNotifications(
+          data.filter((n: Notification) => !n.isRead).length
+        );
+      } else {
+        setNotifications((prev) => [...prev, ...data]);
+      }
+
+      if (data.length < LIMIT) {
+        setHasMore(false);
+      }
+
+      setPage(pageNumber);
     } catch (err: any) {
       const message = err.message || "Failed to load notifications";
       setError(message);
@@ -69,7 +89,7 @@ export default function NotificationsPage() {
         await markNotificationAsRead(n._id);
 
         setNotifications((prev) =>
-          prev.map((x) => (x._id === n._id ? { ...x, isRead: true } : x)),
+          prev.map((x) => (x._id === n._id ? { ...x, isRead: true } : x))
         );
 
         setUnreadNotifications((c: number) => Math.max(0, c - 1));
@@ -84,7 +104,7 @@ export default function NotificationsPage() {
   /* ---------------- BULK ---------------- */
   const toggleSelect = (id: string) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
@@ -94,11 +114,13 @@ export default function NotificationsPage() {
 
       setNotifications((prev) =>
         prev.map((n) =>
-          selected.includes(n._id) ? { ...n, isRead: true } : n,
-        ),
+          selected.includes(n._id) ? { ...n, isRead: true } : n
+        )
       );
 
-      setUnreadNotifications((c: number) => Math.max(0, c - selected.length));
+      setUnreadNotifications((c: number) =>
+        Math.max(0, c - selected.length)
+      );
 
       toast.success("Selected notifications marked as read");
 
@@ -113,7 +135,9 @@ export default function NotificationsPage() {
     try {
       await markAllNotificationsAsRead();
 
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, isRead: true }))
+      );
 
       setUnreadNotifications(0);
 
@@ -144,7 +168,7 @@ export default function NotificationsPage() {
         await markNotificationAsRead(n._id);
 
         setNotifications((prev) =>
-          prev.map((x) => (x._id === n._id ? { ...x, isRead: true } : x)),
+          prev.map((x) => (x._id === n._id ? { ...x, isRead: true } : x))
         );
 
         setUnreadNotifications((c: number) => Math.max(0, c - 1));
@@ -154,7 +178,7 @@ export default function NotificationsPage() {
     }
   };
 
-  /* 🔥 IMPORTANT FIX — clone before sort */
+  /* 🔥 Clone before sort */
   const grouped = [...notifications]
     .sort((a, b) => {
       if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
@@ -167,7 +191,7 @@ export default function NotificationsPage() {
       return acc;
     }, {});
 
-  if (loading)
+  if (loading && page === 1)
     return (
       <div className="max-w-3xl mx-auto px-4 py-6 text-sm text-gray-500">
         Loading notifications…
@@ -185,7 +209,9 @@ export default function NotificationsPage() {
     <div className="max-w-3xl mx-auto px-3 sm:px-6 py-6">
       <div className="flex justify-between items-start mb-5">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Notifications</h1>
+          <h1 className="text-xl font-semibold text-gray-900">
+            Notifications
+          </h1>
           <p className="text-sm text-gray-500">
             Updates from your groups & expenses
           </p>
@@ -227,7 +253,7 @@ export default function NotificationsPage() {
                   className={clsx(
                     "border rounded-lg p-3 sm:p-4 cursor-pointer transition",
                     !n.isRead && "bg-blue-50 border-blue-200",
-                    n.isRead && "bg-white",
+                    n.isRead && "bg-white"
                   )}
                 >
                   <div className="flex gap-3 items-start">
@@ -284,6 +310,17 @@ export default function NotificationsPage() {
             className="text-sm text-blue-600 hover:underline"
           >
             Mark all as read
+          </button>
+        </div>
+      )}
+
+      {hasMore && !bulkMode && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => fetchNotifications(page + 1)}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Load more
           </button>
         </div>
       )}

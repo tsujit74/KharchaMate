@@ -27,7 +27,7 @@ process.on("unhandledRejection", (err) => {
 
 app.use(
   cors({
-    origin: "https://kharcha-mate.vercel.app",
+    origin: "http://localhost:3000",
     credentials: true,
   }),
 );

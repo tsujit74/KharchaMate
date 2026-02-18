@@ -6,11 +6,17 @@ const router = express.Router();
 
 router.get("/", authMiddleware, async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const notifications = await Notification.find({
       user: req.user.id,
     })
       .populate("actor", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     res.json(notifications);
   } catch (error) {
@@ -56,6 +62,5 @@ router.get("/unread-count", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch unread count" });
   }
 });
-
 
 export default router;

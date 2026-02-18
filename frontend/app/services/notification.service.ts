@@ -8,12 +8,14 @@ const getAuthHeader = () => {
   return { Authorization: `Bearer ${token}` };
 };
 
-// Get all notifications of logged-in user
-export const getNotifications = async () => {
+export const getNotifications = async (page = 1, limit = 10) => {
   try {
-    const res = await axios.get(`${API_URL}/api/notifications`, {
-      headers: getAuthHeader(),
-    });
+    const res = await axios.get(
+      `${API_URL}/api/notifications?page=${page}&limit=${limit}`,
+      {
+        headers: getAuthHeader(),
+      },
+    );
     return res.data;
   } catch (err: any) {
     if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
@@ -50,10 +52,9 @@ export const markAllNotificationsAsRead = async () => {
 };
 
 export const getUnreadNotificationCount = async () => {
-  const res = await axios.get(
-    `${API_URL}/api/notifications/unread-count`,
-    { headers: getAuthHeader() }
-  );
+  const res = await axios.get(`${API_URL}/api/notifications/unread-count`, {
+    headers: getAuthHeader(),
+  });
 
   return res.data.count;
 };
