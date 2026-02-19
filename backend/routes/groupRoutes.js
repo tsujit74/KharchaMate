@@ -13,6 +13,7 @@ import {
   getGroupById,
   removeMember,
   toggleGroupStatus,
+  updateGroupName,
 } from "../controllers/groupController.js";
 
 const router = express.Router();
@@ -48,5 +49,13 @@ router.patch(
   toggleGroupStatus
 );
 
+router.patch(
+  "/:groupId/update-name",
+  authMiddleware,
+  groupContext,
+  checkGroupActive,
+  isAdmin,
+  updateGroupName
+);
 
 export default router;

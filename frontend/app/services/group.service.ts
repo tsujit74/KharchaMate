@@ -138,3 +138,22 @@ export const getGroupExpenses = async (
     throw new Error("FAILED_EXPENSES");
   }
 };
+
+export const updateGroupName = async (groupId: string, name: string) => {
+  if (!groupId || !name?.trim()) throw new Error("INVALID_DATA");
+
+  try {
+    const res = await axios.patch(
+      `${API_URL}/api/groups/${groupId}/update-name`,
+      { name: name.trim() },
+      { headers: getAuthHeader() },
+    );
+
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    throw new Error("FAILED_UPDATE_GROUP_NAME");
+  }
+};
+

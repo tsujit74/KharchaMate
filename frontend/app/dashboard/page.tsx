@@ -5,12 +5,16 @@ import Link from "next/link";
 import {
   Users,
   Plus,
+  MoreVertical,
   UserPlus,
+  Pencil,
   ArrowRight,
   TrendingUp,
   Lock,
   User,
 } from "lucide-react";
+import {} from "lucide-react";
+
 import { formatDateTime } from "@/app/utils/formatDateTime";
 import { getMyGroups } from "../services/group.service";
 import { useAuth } from "../context/authContext";
@@ -19,6 +23,7 @@ import { getRecentExpenses } from "../services/expense.service";
 import { getPendingSettlements } from "../services/settlement.service";
 import AppSkeleton from "../components/ui/AppSkeleton";
 import toast from "react-hot-toast";
+import EditGroupNameModal from "../components/Groups/EditGroupNameModal";
 
 // ---------------- Types ----------------
 type Member = {
@@ -60,6 +65,9 @@ export default function DashboardPage() {
   const [pendingLoading, setPendingLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [editGroupId, setEditGroupId] = useState<string | null>(null);
+  const [editGroupName, setEditGroupName] = useState("");
+
   // ---------------- Fetch ----------------
   useEffect(() => {
     if (loading) return;
@@ -98,6 +106,12 @@ export default function DashboardPage() {
 
     fetchAll();
   }, [loading, isAuthenticated, router]);
+
+  const handleNameUpdated = (newName: string) => {
+    setGroups((prev) =>
+      prev.map((g) => (g._id === editGroupId ? { ...g, name: newName } : g)),
+    );
+  };
 
   if (loading || groupLoading) {
     return <AppSkeleton variant="dashboard" />;
@@ -157,8 +171,12 @@ export default function DashboardPage() {
                     : `/groups/${group._id}`,
                 )
               }
-              className={`group p-6 rounded-3xl border transition-all duration-300 cursor-pointer
-          ${isClosed ? "bg-slate-50 border-slate-200" : "bg-white border-slate-100 hover:shadow-sm hover:-translate-y-1"}
+              className={`group relative p-6 rounded-3xl border transition-all duration-300 cursor-pointer
+          ${
+            isClosed
+              ? "bg-slate-50 border-slate-200"
+              : "bg-white border-slate-100 hover:shadow-sm hover:-translate-y-1"
+          }
         `}
             >
               {/* Top Row */}
@@ -174,14 +192,41 @@ export default function DashboardPage() {
                   {isClosed ? "Archived" : "Active"}
                 </span>
 
+                {/* 3 Dot Menu */}
                 {!isClosed && (
-                  <Link
-                    href={`/groups/${group._id}/add-member`}
+                  <div
                     onClick={(e) => e.stopPropagation()}
-                    className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition"
+                    className="relative"
                   >
-                    <UserPlus className="w-4 h-4" />
-                  </Link>
+                    <details className="relative">
+                      <summary className="list-none cursor-pointer p-2 rounded-xl hover:bg-slate-100 transition">
+                        <MoreVertical className="w-4 h-4 text-slate-500" />
+                      </summary>
+
+                      <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-100 rounded-2xl shadow-lg p-2 z-20">
+                        {/* Edit */}
+                        <button
+                          onClick={() => {
+                            setEditGroupId(group._id);
+                            setEditGroupName(group.name);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
+                        >
+                          <Pencil className="w-4 h-4 text-slate-500" />
+                          Edit Name
+                        </button>
+
+                        {/* Add Member */}
+                        <Link
+                          href={`/groups/${group._id}/add-member`}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
+                        >
+                          <UserPlus className="w-4 h-4 text-slate-500" />
+                          Add Member
+                        </Link>
+                      </div>
+                    </details>
+                  </div>
                 )}
               </div>
 
@@ -291,6 +336,13 @@ export default function DashboardPage() {
           ))
         )}
       </section>
+      <EditGroupNameModal
+        isOpen={!!editGroupId}
+        onClose={() => setEditGroupId(null)}
+        groupId={editGroupId || ""}
+        currentName={editGroupName}
+        onUpdated={handleNameUpdated}
+      />
     </main>
   );
 }

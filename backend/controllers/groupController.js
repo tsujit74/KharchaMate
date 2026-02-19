@@ -154,3 +154,26 @@ export const toggleGroupStatus = async (req, res) => {
     res.status(500).json({ message: "Failed to update group" });
   }
 };
+
+export const updateGroupName = async (req, res) => {
+  try {
+    const { name } = req.body;
+    const group = req.group;
+
+    if (!name || name.trim() === "") {
+      return res.status(400).json({
+        message: "Group name is required",
+      });
+    }
+
+    group.name = name.trim();
+    await group.save();
+
+    res.status(200).json({
+      message: "Group name updated successfully",
+      group,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update group name" });
+  }
+};
