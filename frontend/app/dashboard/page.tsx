@@ -36,6 +36,7 @@ type Group = {
   _id: string;
   name: string;
   createdBy: string;
+  admins:string[];
   members: Member[];
   createdAt: string;
   updatedAt: string;
@@ -156,119 +157,149 @@ export default function DashboardPage() {
       </div>
 
       {/* Groups */}
-      <section className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {groups.map((group) => {
-          const isClosed = !group.isActive;
-          const firstName = group.name;
+      {/* Groups */}
+<section className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  {groups.map((group) => {
+    const isClosed = !group.isActive;
 
-          return (
-            <div
-              key={group._id}
-              onClick={() =>
-                router.push(
-                  isClosed
-                    ? `/groups/${group._id}?mode=readonly`
-                    : `/groups/${group._id}`,
-                )
-              }
-              className={`group relative p-6 rounded-3xl border transition-all duration-300 cursor-pointer
+    const isAdmin =
+  group.admins?.some(
+    (adminId: string) =>
+      adminId?.toString() === user?.id?.toString(),
+  ) ?? false;
+
+const isCreator =
+  group.createdBy?.toString() === user?.id?.toString();
+
+    return (
+      <div
+        key={group._id}
+        onClick={() =>
+          router.push(
+            isClosed
+              ? `/groups/${group._id}?mode=readonly`
+              : `/groups/${group._id}`,
+          )
+        }
+        className={`group relative p-6 rounded-3xl border transition-all duration-300 cursor-pointer
           ${
             isClosed
               ? "bg-slate-50 border-slate-200"
               : "bg-white border-slate-100 hover:shadow-sm hover:-translate-y-1"
           }
         `}
-            >
-              {/* Top Row */}
-              <div className="flex justify-between items-start mb-5">
-                <span
-                  className={`px-3 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full border
+      >
+        {/* Top Row */}
+        <div className="flex justify-between items-start mb-5">
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-3 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full border
               ${
                 isClosed
                   ? "bg-slate-100 text-slate-500 border-slate-200"
                   : "bg-emerald-50 text-emerald-600 border-emerald-100"
               }`}
-                >
-                  {isClosed ? "Archived" : "Active"}
-                </span>
+            >
+              {isClosed ? "Archived" : "Active"}
+            </span>
 
-                {/* 3 Dot Menu */}
-                {!isClosed && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="relative"
-                  >
-                    <details className="relative">
-                      <summary className="list-none cursor-pointer p-2 rounded-xl hover:bg-slate-100 transition">
-                        <MoreVertical className="w-4 h-4 text-slate-500" />
-                      </summary>
+            {/* 👑 Creator Badge */}
+            {isCreator && (
+              <span className="px-2 py-1 text-[10px] font-semibold rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
+                Creator
+              </span>
+            )}
+          </div>
 
-                      <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-100 rounded-2xl shadow-lg p-2 z-20">
-                        {/* Edit */}
-                        <button
-                          onClick={() => {
-                            setEditGroupId(group._id);
-                            setEditGroupName(group.name);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
-                        >
-                          <Pencil className="w-4 h-4 text-slate-500" />
-                          Edit Name
-                        </button>
+          {/* 3 Dot Menu - Visible To Everyone */}
+          {!isClosed && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative"
+            >
+              <details className="relative">
+                <summary className="list-none cursor-pointer p-2 rounded-xl hover:bg-slate-100 transition">
+                  <MoreVertical className="w-4 h-4 text-slate-500" />
+                </summary>
 
-                        {/* Add Member */}
-                        <Link
-                          href={`/groups/${group._id}/add-member`}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
-                        >
-                          <UserPlus className="w-4 h-4 text-slate-500" />
-                          Add Member
-                        </Link>
-                      </div>
-                    </details>
-                  </div>
-                )}
-              </div>
+                <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-100 rounded-2xl shadow-lg p-2 z-20">
 
-              {/* Title */}
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 group-hover:text-indigo-600 transition-colors">
-                {firstName}
-                {isClosed && <Lock className="w-4 h-4 text-slate-400" />}
-              </h2>
-
-              <p className="text-xs text-slate-400 mt-1">
-                Updated {formatDateTime(group.updatedAt).dateLabel}
-              </p>
-
-              {/* Members */}
-              <div className="flex items-center justify-between mt-6">
-                <div className="flex -space-x-3">
-                  {group.members.slice(0, 4).map((m, i) => (
-                    <div
-                      key={m._id}
-                      className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 border-2 border-white text-xs font-semibold text-slate-600"
-                      style={{ zIndex: 4 - i }}
+                  {/* Edit Name - Only Admin */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        setEditGroupId(group._id);
+                        setEditGroupName(group.name);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
                     >
-                      {m.name?.[0]?.toUpperCase()}
-                    </div>
-                  ))}
-                  {group.members.length > 4 && (
-                    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-50 border-2 border-white text-[10px] font-semibold text-slate-400">
-                      +{group.members.length - 4}
+                      <Pencil className="w-4 h-4 text-slate-500" />
+                      Edit Name
+                    </button>
+                  )}
+
+                  {/* Add Member - Only Admin */}
+                  {isAdmin && (
+                    <Link
+                      href={`/groups/${group._id}/add-member`}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
+                    >
+                      <UserPlus className="w-4 h-4 text-slate-500" />
+                      Add Member
+                    </Link>
+                  )}
+
+                  {/* If Not Admin Show Info */}
+                  {!isAdmin && (
+                    <div className="px-3 py-2 text-xs text-slate-400">
+                      Admin only actions
                     </div>
                   )}
                 </div>
-
-                <ArrowRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-              </div>
-
-              <p className="text-xs text-slate-500 mt-4 font-medium">
-                {group.members.length} members
-              </p>
+              </details>
             </div>
-          );
-        })}
-      </section>
+          )}
+        </div>
+
+        {/* Title */}
+        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 group-hover:text-indigo-600 transition-colors">
+          {group.name}
+          {isClosed && <Lock className="w-4 h-4 text-slate-400" />}
+        </h2>
+
+        <p className="text-xs text-slate-400 mt-1">
+          Updated {formatDateTime(group.updatedAt).dateLabel}
+        </p>
+
+        {/* Members */}
+        <div className="flex items-center justify-between mt-6">
+          <div className="flex -space-x-3">
+            {group.members.slice(0, 4).map((m, i) => (
+              <div
+                key={m._id}
+                className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 border-2 border-white text-xs font-semibold text-slate-600"
+                style={{ zIndex: 4 - i }}
+              >
+                {m.name?.[0]?.toUpperCase()}
+              </div>
+            ))}
+            {group.members.length > 4 && (
+              <div className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-50 border-2 border-white text-[10px] font-semibold text-slate-400">
+                +{group.members.length - 4}
+              </div>
+            )}
+          </div>
+
+          <ArrowRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+        </div>
+
+        <p className="text-xs text-slate-500 mt-4 font-medium">
+          {group.members.length} members
+        </p>
+      </div>
+    );
+  })}
+</section>
 
       {/* Recent Expenses */}
       <section className="max-w-7xl mx-auto mt-10">
