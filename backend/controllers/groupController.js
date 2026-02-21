@@ -27,6 +27,14 @@ export const addMember = async (req, res) => {
     const { email } = req.body;
     const group = req.group;
 
+     const expenseExists = await Expense.exists({ group: group._id });
+
+    if (expenseExists) {
+      return res.status(400).json({
+        message: "Cannot add member after expenses are created",
+      });
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
