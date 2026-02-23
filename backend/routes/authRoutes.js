@@ -1,5 +1,5 @@
 import express from "express";
-import { signup, login } from "../controllers/authController.js";
+import { signup, login, forgotPassword, resetPassword } from "../controllers/authController.js";
 import User from "../models/User.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
@@ -7,6 +7,9 @@ const router = express.Router();
 
 router.post("/signup", signup);
 router.post("/login", login);
+
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 router.get("/me", authMiddleware, async (req, res) => {
   try {
