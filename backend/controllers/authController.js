@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { sendEmail } from "../service/mailService.js";
 
 
 export const signup = async (req, res) => {
@@ -72,30 +73,53 @@ export const login = async (req, res) => {
   }
 };
 
+
+
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const genericResponse = {
+      message:
+        "If an account with that email exists, a reset link has been sent.",
+    };
+
     const user = await User.findOne({ email });
+
+  
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.json(genericResponse);
     }
 
     const resetToken = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
-      { expiresIn: "15m" } 
+      { expiresIn: "15m" }
     );
 
-   
-    res.json({
-      message: "Password reset token generated",
-      resetToken,
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Reset Your Password",
+      html: `
+        <h3>Password Reset</h3>
+        <p>This link is valid for 15 minutes.</p>
+        <a href="${resetLink}">${resetLink}</a>
+      `,
     });
+
+    return res.json(genericResponse);
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Forgot password failed" });
+    return res.status(500).json({
+      message: "Something went wrong. Please try again later.",
+    });
   }
 };
 
@@ -103,11 +127,23 @@ export const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        message: "Token and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id);
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json({ message: "Invalid token" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);

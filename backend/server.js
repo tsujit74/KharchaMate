@@ -1,6 +1,7 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
@@ -12,7 +13,6 @@ import blanceRoutes from "./routes/blanceRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import reminderRoutes from "./routes/sendReminder.js";
 
-dotenv.config();
 const app = express();
 
 app.set("trust proxy", 1);
