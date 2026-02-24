@@ -125,15 +125,16 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { token } = req.params;
+    const { password } = req.body;
 
-    if (!token || !newPassword) {
+    if (!token || !password) {
       return res.status(400).json({
-        message: "Token and new password are required",
+        message: "Token and password are required",
       });
     }
 
-    if (newPassword.length < 6) {
+    if (password.length < 6) {
       return res.status(400).json({
         message: "Password must be at least 6 characters",
       });
@@ -146,7 +147,7 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid token" });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
 
     await user.save();

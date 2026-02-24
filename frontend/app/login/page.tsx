@@ -32,47 +32,44 @@ const LoginPage = () => {
   }, [loading, isAuthenticated, router]);
 
   const validate = () => {
-  if (!email.trim()) return "Email is required";
-  if (!/^\S+@\S+\.\S+$/.test(email))
-    return "Please enter a valid email";
-  if (!password.trim()) return "Password is required";
-  if (password.length < 6)
-    return "Password must be at least 6 characters";
-  return "";
-};
+    if (!email.trim()) return "Email is required";
+    if (!/^\S+@\S+\.\S+$/.test(email)) return "Please enter a valid email";
+    if (!password.trim()) return "Password is required";
+    if (password.length < 6) return "Password must be at least 6 characters";
+    return "";
+  };
 
-const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const validationError = validate();
-  if (validationError) {
-    setError(validationError);
-    toast.error(validationError); 
-    return;
-  }
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      toast.error(validationError);
+      return;
+    }
 
-  setIsLoading(true);
-  setError("");
+    setIsLoading(true);
+    setError("");
 
-  try {
-    await login({ email, password });
+    try {
+      await login({ email, password });
 
-    toast.success("Logged in successfully."); 
+      toast.success("Logged in successfully.");
 
-    router.push("/dashboard");
-  } catch (err: any) {
-    const errorMessage =
-      err?.response?.data?.message ||
-      err?.message ||
-      "Login failed. Please try again.";
+      router.push("/dashboard");
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Login failed. Please try again.";
 
-    setError(errorMessage); 
-    toast.error(errorMessage); 
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (loading) return null;
 
@@ -131,6 +128,14 @@ const handleLogin = async (e: React.FormEvent) => {
                     {showPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
+                <div className="text-right mt-2">
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-medium text-black hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
 
               {/* Error */}
@@ -171,7 +176,10 @@ const handleLogin = async (e: React.FormEvent) => {
 
           <p className="text-center mt-4 text-sm text-gray-500">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-bold text-black hover:underline">
+            <Link
+              href="/signup"
+              className="font-bold text-black hover:underline"
+            >
               Create one
             </Link>
           </p>
