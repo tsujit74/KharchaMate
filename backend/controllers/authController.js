@@ -104,14 +104,68 @@ export const forgotPassword = async (req, res) => {
     const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     await sendEmail({
-      to: user.email,
-      subject: "Reset Your Password",
-      html: `
-        <h3>Password Reset</h3>
-        <p>This link is valid for 15 minutes.</p>
-        <a href="${resetLink}">${resetLink}</a>
-      `,
-    });
+  to: user.email,
+  subject: "Reset Your KharchaMate Password",
+  html: `
+  <div style="margin:0;padding:0;background:#0f172a;font-family:Arial,Helvetica,sans-serif;">
+    
+    <div style="max-width:600px;margin:40px auto;background:#111827;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+      
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#22c55e,#06b6d4);padding:30px;text-align:center;">
+        <h1 style="margin:0;color:white;font-size:24px;">
+          🔐 KharchaMate
+        </h1>
+        <p style="margin:8px 0 0;color:white;opacity:0.9;">
+          Password Reset Request
+        </p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:40px;color:#e5e7eb;text-align:center;">
+        
+        <h2 style="margin-bottom:20px;font-size:20px;">
+          Hello ${user.name || "User"},
+        </h2>
+
+        <p style="font-size:15px;line-height:1.6;color:#cbd5e1;">
+          We received a request to reset your password.
+          Click the button below to create a new password.
+        </p>
+
+        <p style="margin:20px 0;font-size:14px;color:#94a3b8;">
+          This link will expire in <strong>15 minutes</strong>.
+        </p>
+
+        <!-- Button -->
+        <div style="margin:35px 0;">
+          <a href="${resetLink}"
+             style="background:linear-gradient(135deg,#22c55e,#06b6d4);
+                    color:white;
+                    padding:14px 28px;
+                    text-decoration:none;
+                    border-radius:8px;
+                    font-weight:bold;
+                    display:inline-block;">
+            Reset Password
+          </a>
+        </div>
+
+        <p style="font-size:13px;color:#64748b;">
+          If you didn’t request this, you can safely ignore this email.
+        </p>
+
+      </div>
+
+      <!-- Footer -->
+      <div style="background:#0b1220;padding:20px;text-align:center;font-size:12px;color:#64748b;">
+        © ${new Date().getFullYear()} KharchaMate. All rights reserved.
+      </div>
+
+    </div>
+  </div>
+  `,
+});
 
     return res.json(genericResponse);
 
