@@ -12,6 +12,7 @@ import expenseRoutes from "./routes/expenseRoutes.js";
 import blanceRoutes from "./routes/blanceRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import reminderRoutes from "./routes/sendReminder.js";
+import userRoutes from "./routes/userRoutes.js"
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use("/api/expenses", expenseRoutes);
 app.use("/api/blance", blanceRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (req, res) => {
   res.send("KharchaMate Backend Running");

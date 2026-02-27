@@ -11,7 +11,7 @@ export const getGroupSettlement = async (req, res) => {
 
     const group = await Group.findById(groupId).populate(
       "members",
-      "name email",
+      "name email mobile",
     );
     if (!group) return res.status(404).json({ message: "Group not found" });
 
@@ -97,6 +97,7 @@ export const getGroupSettlement = async (req, res) => {
         fromName: debtors[i].user.name,
         to: creditors[j].user._id,
         toName: creditors[j].user.name,
+        toMobile: creditors[j].user.mobile,
         amount: Number(amount.toFixed(2)),
       });
 

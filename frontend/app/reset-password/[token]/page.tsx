@@ -60,14 +60,14 @@ export default function ResetPasswordPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter new password"
-              className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-200git a text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all"
+              className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black hover:bg-gray-900 text-white py-4git a font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-black hover:bg-gray-900 text-white py-4 font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? (
               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
