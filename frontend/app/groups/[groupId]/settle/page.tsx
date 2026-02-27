@@ -7,6 +7,7 @@ import { settlePayment } from "@/app/services/settlement.service";
 import { getUserById } from "@/app/services/users.ervice";
 import toast from "react-hot-toast";
 import QRCode from "qrcode";
+import Image from "next/image";
 
 export default function SettlePaymentPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -145,11 +146,7 @@ export default function SettlePaymentPage() {
             {/* QR */}
             {qrImage && !confirmed && (
               <div className="flex flex-col items-center">
-                <img
-                  src={qrImage}
-                  alt="UPI QR"
-                  className="w-[200px] h-[200px] bg-white p-4 rounded-2xl border"
-                />
+                <Image src={qrImage} alt="UPI QR" width={200} height={200} />
                 <p className="text-xs text-gray-500 mt-4 text-center">
                   Scan this QR using any UPI application
                 </p>
