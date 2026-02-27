@@ -1,12 +1,7 @@
 "use client";
 
 import { useSearchParams, useParams, useRouter } from "next/navigation";
-import {
-  IndianRupee,
-  ArrowLeft,
-  CheckCircle,
-  ShieldCheck,
-} from "lucide-react";
+import { IndianRupee, ArrowLeft, CheckCircle, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { settlePayment } from "@/app/services/settlement.service";
 import { getUserById } from "@/app/services/users.ervice";
@@ -26,6 +21,40 @@ export default function SettlePaymentPage() {
   const [qrImage, setQrImage] = useState<string>("");
   const [receiver, setReceiver] = useState<any>(null);
 
+  // ✅ ALL HOOKS MUST BE ABOVE RETURN
+
+  useEffect(() => {
+    if (!toUserId) return;
+
+    const fetchReceiver = async () => {
+      try {
+        const res = await getUserById(toUserId);
+        setReceiver(res.data.user);
+      } catch {
+        toast.error("Unable to load receiver details");
+      }
+    };
+
+    fetchReceiver();
+  }, [toUserId]);
+
+  useEffect(() => {
+    if (!receiver?.mobile || !amount) return;
+
+    const generateQR = async () => {
+      const upiId = `${receiver.mobile}@upi`;
+
+      const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
+        receiver.name,
+      )}&am=${amount}&cu=INR`;
+
+      const qr = await QRCode.toDataURL(upiString);
+      setQrImage(qr);
+    };
+
+    generateQR();
+  }, [receiver, amount]);
+
   if (!toUserId || !amount) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
@@ -43,38 +72,6 @@ export default function SettlePaymentPage() {
       </main>
     );
   }
-
-  // Fetch receiver
-  useEffect(() => {
-    const fetchReceiver = async () => {
-      try {
-        const res = await getUserById(toUserId);
-        setReceiver(res.data.user);
-      } catch {
-        toast.error("Unable to load receiver details");
-      }
-    };
-
-    fetchReceiver();
-  }, [toUserId]);
-
-  // Generate QR
-  useEffect(() => {
-    if (!receiver?.mobile || !amount) return;
-
-    const generateQR = async () => {
-      const upiId = `${receiver.mobile}@upi`;
-
-      const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
-        receiver.name
-      )}&am=${amount}&cu=INR`;
-
-      const qr = await QRCode.toDataURL(upiString);
-      setQrImage(qr);
-    };
-
-    generateQR();
-  }, [receiver, amount]);
 
   const handleConfirmPayment = async () => {
     try {
@@ -98,7 +95,6 @@ export default function SettlePaymentPage() {
   return (
     <main className="min-h-screen bg-neutral-50 px-4 py-10">
       <div className="max-w-5xl mx-auto bg-white border overflow-hidden">
-
         {/* Header */}
         <div className="border-b px-8 py-6 flex items-center justify-between">
           <button
@@ -118,7 +114,6 @@ export default function SettlePaymentPage() {
 
         {/* Body */}
         <div className="grid md:grid-cols-2">
-
           {/* LEFT SECTION */}
           <div className="p-8 border-r bg-neutral-50">
             <h2 className="text-sm uppercase tracking-wider text-gray-500 mb-6">
@@ -131,9 +126,7 @@ export default function SettlePaymentPage() {
               <p className="text-lg font-semibold text-black">
                 {receiver?.name || "Loading..."}
               </p>
-              <p className="text-sm text-gray-500">
-                {receiver?.mobile}
-              </p>
+              <p className="text-sm text-gray-500">{receiver?.mobile}</p>
             </div>
 
             {/* Amount */}
@@ -145,9 +138,7 @@ export default function SettlePaymentPage() {
                 <p className="text-xs text-gray-500 uppercase tracking-wide">
                   Amount
                 </p>
-                <p className="text-3xl font-semibold text-black">
-                  ₹{amount}
-                </p>
+                <p className="text-3xl font-semibold text-black">₹{amount}</p>
               </div>
             </div>
 
@@ -174,9 +165,9 @@ export default function SettlePaymentPage() {
               </h2>
 
               <p className="text-sm text-gray-700 leading-relaxed mb-8">
-                Complete the payment externally using UPI, cash, or any preferred
-                method. Once payment is done, confirm below to update the
-                settlement record.
+                Complete the payment externally using UPI, cash, or any
+                preferred method. Once payment is done, confirm below to update
+                the settlement record.
               </p>
 
               <div className="flex gap-3 text-xs text-gray-500 mb-8">
