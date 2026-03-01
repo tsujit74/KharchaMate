@@ -58,8 +58,17 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({
-      token,
+    console.log("COOKIES:", req.cookies)
+
+    res.cookie("accessToken", token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});
+
+    res.status(200).json({
+      message: "Login successful",
       user: {
         id: user._id,
         name: user.name,
@@ -67,6 +76,7 @@ export const login = async (req, res) => {
         mobile: user.mobile || null,
       },
     });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Login failed" });

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Group from "../models/Group.js";
 
 export const groupContext = async (req, res, next) => {
@@ -13,13 +14,18 @@ export const groupContext = async (req, res, next) => {
       return res.status(400).json({ message: "Group ID is required" });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(groupId)) {
+      return res.status(400).json({ message: "Invalid group ID" });
+    }
+
     const group = await Group.findById(groupId);
+
     if (!group) {
       return res.status(404).json({ message: "Group not found" });
     }
 
     const isMember = group.members.some(
-      (id) => id.toString() === userId.toString(),
+      (id) => id.toString() === userId.toString()
     );
 
     if (!isMember) {
