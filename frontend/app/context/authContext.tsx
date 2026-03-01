@@ -1,10 +1,20 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { getMe, loginUser } from "@/app/services/auth.service";
-import { getUnreadNotificationCount } from "@/app/services/notification.service";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import {
+  getMe,
+  loginUser,
+  logoutUser,
+} from "@/app/services/auth.service";
+import {
+  getUnreadNotificationCount,
+} from "@/app/services/notification.service";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 
 type User = {
   id: string;
@@ -15,41 +25,38 @@ type User = {
 type AuthContextType = {
   user: User | null;
   unreadNotifications: number;
-  setUnreadNotifications: React.Dispatch<React.SetStateAction<number>>;
+  setUnreadNotifications: React.Dispatch<
+    React.SetStateAction<number>
+  >;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (data: { email: string; password: string }) => Promise<void>;
-  logout: () => void;
+  login: (data: {
+    email: string;
+    password: string;
+  }) => Promise<void>;
+  logout: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext =
+  createContext<AuthContextType | null>(null);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [loading, setLoading] = useState(true);
+export const AuthProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [user, setUser] =
+    useState<User | null>(null);
+  const [unreadNotifications, setUnreadNotifications] =
+    useState(0);
+  const [loading, setLoading] =
+    useState(true);
 
   const router = useRouter();
 
-  const setupAxiosToken = (token: string | null) => {
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common["Authorization"];
-    }
-  };
-
-  // 🔁 Init auth
+ 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem("accessToken");
-      setupAxiosToken(token);
-
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
       try {
         const res = await getMe();
         const u = res.data.user;
@@ -60,11 +67,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           email: u.email,
         });
 
-        const unread = await getUnreadNotificationCount();
+        const unread =
+          await getUnreadNotificationCount();
         setUnreadNotifications(unread);
       } catch {
-        localStorage.removeItem("accessToken");
-        setupAxiosToken(null);
+        // If cookie invalid or expired
         setUser(null);
         setUnreadNotifications(0);
       } finally {
@@ -75,36 +82,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initAuth();
   }, []);
 
-  // 🔐 Login
-  const login = async (data: { email: string; password: string }) => {
-    const res = await loginUser(data);
-    const token = res.data.token;
 
-    localStorage.setItem("accessToken", token);
-    setupAxiosToken(token);
+  const login = async (data: {
+    email: string;
+    password: string;
+  }) => {
+    try {
+      
+      await loginUser(data);
 
-    const userRes = await getMe();
-    const u = userRes.data.user;
+      const userRes = await getMe();
+      const u = userRes.data.user;
 
-    setUser({
-      id: u._id,
-      name: u.name,
-      email: u.email,
-    });
+      setUser({
+        id: u._id,
+        name: u.name,
+        email: u.email,
+      });
 
-    const unread = await getUnreadNotificationCount();
-    setUnreadNotifications(unread);
+      const unread =
+        await getUnreadNotificationCount();
+      setUnreadNotifications(unread);
 
-    router.push("/dashboard");
+      router.push("/dashboard");
+    } catch (err: any) {
+      throw err; 
+    }
   };
 
-  // 🚪 Logout
-  const logout = () => {
-    localStorage.removeItem("accessToken");
-    setupAxiosToken(null);
-    setUser(null);
-    setUnreadNotifications(0);
-    router.push("/login");
+
+  const logout = async () => {
+    try {
+      await logoutUser(); // backend clears cookie
+    } catch {
+      // Even if backend fails, clear frontend state
+    } finally {
+      setUser(null);
+      setUnreadNotifications(0);
+      router.push("/login");
+    }
   };
 
   return (
@@ -126,6 +142,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  if (!ctx)
+    throw new Error(
+      "useAuth must be used inside AuthProvider"
+    );
   return ctx;
 };

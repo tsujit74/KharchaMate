@@ -5,12 +5,21 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+  
+    if (
+      typeof window !== "undefined" &&
+      error.response?.status === 401
+    ) {
+   
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
     }
+
+    return Promise.reject(error);
   }
-  return config;
-});
+);

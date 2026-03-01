@@ -1,24 +1,19 @@
-import axios from "axios";
+import { api } from "./api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-const getAuthHeader = () => {
-  const token = localStorage.getItem("accessToken");
-  if (!token) throw new Error("UNAUTHORIZED");
-  return { Authorization: `Bearer ${token}` };
-};
 
 export const getGroupDetails = async (groupId: string) => {
-  if (!groupId) throw new Error("INVALID_GROUP");
+  if (!groupId?.trim()) throw new Error("INVALID_GROUP");
 
   try {
-    const res = await axios.get(`${API_URL}/api/groups/${groupId}`, {
-      headers: getAuthHeader(),
-    });
+    const res = await api.get(`/groups/${groupId}`);
     return res.data;
   } catch (err: any) {
-    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
-    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response.status === 403) throw new Error("FORBIDDEN");
+    if (err.response.status === 404) throw new Error("GROUP_NOT_FOUND");
+
     throw new Error("FAILED_GROUP_DETAILS");
   }
 };
@@ -28,20 +23,17 @@ export const addExpense = async ({
   description,
   amount,
   splitBetween,
-  category, 
+  category,
 }: {
   groupId: string;
   description: string;
   amount: number;
-  splitBetween?: {
-    user: string;
-    amount: number;
-  }[];
-  category?: string; 
+  splitBetween?: { user: string; amount: number }[];
+  category?: string;
 }) => {
-  if (!groupId || !description || !amount) {
-    throw new Error("INVALID_DATA");
-  }
+  if (!groupId?.trim()) throw new Error("INVALID_GROUP");
+  if (!description?.trim()) throw new Error("INVALID_DESCRIPTION");
+  if (!amount || amount <= 0) throw new Error("INVALID_AMOUNT");
 
   try {
     const payload: any = {
@@ -50,24 +42,33 @@ export const addExpense = async ({
       amount,
     };
 
-    // attach category only if provided
-    if (category) {
-      payload.category = category;
+    if (category?.trim()) {
+      payload.category = category.trim();
     }
 
-    // ONLY attach when custom split is used
     if (Array.isArray(splitBetween) && splitBetween.length > 0) {
-      payload.splitBetween = splitBetween;
+      const validSplit = splitBetween.filter(
+        (s) => s.user && s.amount > 0
+      );
+
+      if (validSplit.length === 0)
+        throw new Error("INVALID_SPLIT");
+
+      payload.splitBetween = validSplit;
     }
 
-    const res = await axios.post(`${API_URL}/api/expenses/add`, payload, {
-      headers: getAuthHeader(),
-    });
-
+    const res = await api.post("/expenses/add", payload);
     return res.data;
   } catch (err: any) {
-    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
-    if (err.response?.status === 403) throw new Error("FORBIDDEN");
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 400)
+      throw new Error(err.response.data?.message || "INVALID_EXPENSE_DATA");
+
     throw new Error("FAILED_ADD_EXPENSE");
   }
 };
@@ -75,27 +76,33 @@ export const addExpense = async ({
 
 export const getRecentExpenses = async () => {
   try {
-    const res = await axios.get(`${API_URL}/api/expenses/recent`, {
-      headers: getAuthHeader(),
-    });
+    const res = await api.get("/expenses/recent");
 
-    return res.data;
+    return Array.isArray(res.data) ? res.data : [];
   } catch (err: any) {
-    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401)
+      throw new Error("UNAUTHORIZED");
+
     throw new Error("FAILED_RECENT_EXPENSES");
   }
 };
 
+
 export const getMyExpenses = async (month?: string) => {
   try {
-    const res = await axios.get(`${API_URL}/api/expenses/my/expenses`, {
-      headers: getAuthHeader(),
+    const res = await api.get("/expenses/my/expenses", {
       params: month ? { month } : {},
     });
 
-    return res.data;
+    return Array.isArray(res.data) ? res.data : [];
   } catch (err: any) {
-    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401)
+      throw new Error("UNAUTHORIZED");
+
     throw new Error("FAILED_MY_EXPENSES");
   }
 };
@@ -107,15 +114,31 @@ export const getMonthlySummary = async ({
   month: number;
   year: number;
 }) => {
+  if (!month || month < 1 || month > 12)
+    throw new Error("INVALID_MONTH");
+
+  if (!year || year < 2000)
+    throw new Error("INVALID_YEAR");
+
   const monthString = `${year}-${String(month).padStart(2, "0")}`;
 
-  const res = await axios.get(`${API_URL}/api/expenses/my/monthly-summary`, {
-    headers: getAuthHeader(),
-    params: { month: monthString },
-  });
+  try {
+    const res = await api.get(
+      "/expenses/my/monthly-summary",
+      { params: { month: monthString } }
+    );
 
-  return res.data;
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401)
+      throw new Error("UNAUTHORIZED");
+
+    throw new Error("FAILED_MONTHLY_SUMMARY");
+  }
 };
+
 
 export const updateExpense = async ({
   expenseId,
@@ -128,8 +151,14 @@ export const updateExpense = async ({
   amount: number;
   splitBetween?: { user: string; amount: number }[];
 }) => {
-  if (!expenseId) throw new Error("INVALID_EXPENSE");
-  if (!description || !amount) throw new Error("INVALID_DATA");
+  if (!expenseId?.trim())
+    throw new Error("INVALID_EXPENSE");
+
+  if (!description?.trim())
+    throw new Error("INVALID_DESCRIPTION");
+
+  if (!amount || amount <= 0)
+    throw new Error("INVALID_AMOUNT");
 
   try {
     const payload: any = {
@@ -137,55 +166,71 @@ export const updateExpense = async ({
       amount,
     };
 
-    if (splitBetween && splitBetween.length > 0) {
-      payload.splitBetween = splitBetween;
+    if (Array.isArray(splitBetween) && splitBetween.length > 0) {
+      const validSplit = splitBetween.filter(
+        (s) => s.user && s.amount > 0
+      );
+
+      if (validSplit.length === 0)
+        throw new Error("INVALID_SPLIT");
+
+      payload.splitBetween = validSplit;
     }
 
-    const res = await axios.put(
-      `${API_URL}/api/expenses/${expenseId}`,
-      payload,
-      {
-        headers: getAuthHeader(),
-      },
+    const res = await api.put(
+      `/expenses/${expenseId}`,
+      payload
     );
 
     return res.data;
   } catch (err: any) {
-    console.error("Update expense error:", err.response?.data || err.message);
+    if (!err.response) throw new Error("NETWORK_ERROR");
 
-    if (err.response) {
-      const status = err.response.status;
-      if (status === 401) throw new Error("UNAUTHORIZED");
-      if (status === 403) throw new Error("FORBIDDEN");
-      if (status === 400)
-        throw new Error(err.response.data?.message || "UPDATE_NOT_ALLOWED");
-      if (status === 404) throw new Error("EXPENSE_NOT_FOUND");
-    }
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 400)
+      throw new Error(err.response.data?.message || "UPDATE_NOT_ALLOWED");
+    if (status === 404)
+      throw new Error("EXPENSE_NOT_FOUND");
 
     throw new Error("FAILED_UPDATE_EXPENSE");
   }
 };
 
-export const deleteExpense = async (expenseId: string) => {
-  if (!expenseId) throw new Error("INVALID_EXPENSE");
+
+export const deleteExpense = async (
+  expenseId: string
+) => {
+  if (!expenseId?.trim())
+    throw new Error("INVALID_EXPENSE");
 
   try {
-    const res = await axios.delete(`${API_URL}/api/expenses/${expenseId}`, {
-      headers: getAuthHeader(),
-    });
+    const res = await api.delete(
+      `/expenses/${expenseId}`
+    );
 
     return res.data;
   } catch (err: any) {
-    const status = err.response?.status;
-    const message = err.response?.data?.message || err.message;
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
 
     if (status === 401) throw new Error("UNAUTHORIZED");
     if (status === 403) throw new Error("FORBIDDEN");
-    if (status === 400) throw new Error(message || "Cannot delete this expense");
+    if (status === 400)
+      throw new Error(
+        err.response.data?.message ||
+          "DELETE_NOT_ALLOWED"
+      );
+    if (status === 404)
+      throw new Error("EXPENSE_NOT_FOUND");
 
     throw new Error("FAILED_DELETE_EXPENSE");
   }
 };
+
 
 export const getMyInsights = async ({
   filter,
@@ -200,6 +245,8 @@ export const getMyInsights = async ({
     const params: any = {};
 
     if (filter) {
+      if (!["this-month", "last-month"].includes(filter))
+        throw new Error("INVALID_FILTER");
       params.filter = filter;
     }
 
@@ -208,16 +255,22 @@ export const getMyInsights = async ({
       params.end = end;
     }
 
-    const res = await axios.get(`${API_URL}/api/expenses/my/insights`, {
-      headers: getAuthHeader(),
-      params,
-    });
+    const res = await api.get(
+      "/expenses/my/insights",
+      { params }
+    );
 
     return res.data;
   } catch (err: any) {
-    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
-    if (err.response?.status === 400)
-      throw new Error(err.response?.data?.message || "INVALID_FILTER");
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401)
+      throw new Error("UNAUTHORIZED");
+
+    if (err.response.status === 400)
+      throw new Error(
+        err.response.data?.message || "INVALID_FILTER"
+      );
 
     throw new Error("FAILED_FETCH_INSIGHTS");
   }

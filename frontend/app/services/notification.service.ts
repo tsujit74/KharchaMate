@@ -1,60 +1,96 @@
-import axios from "axios";
+import { api } from "./api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-const getAuthHeader = () => {
-  const token = localStorage.getItem("accessToken");
-  if (!token) throw new Error("UNAUTHORIZED");
-  return { Authorization: `Bearer ${token}` };
-};
+export const getNotifications = async (
+  page: number = 1,
+  limit: number = 10
+) => {
+  if (page < 1) page = 1;
+  if (limit < 1) limit = 10;
 
-export const getNotifications = async (page = 1, limit = 10) => {
   try {
-    const res = await axios.get(
-      `${API_URL}/api/notifications?page=${page}&limit=${limit}`,
-      {
-        headers: getAuthHeader(),
-      },
-    );
-    return res.data;
+    const res = await api.get("/notifications", {
+      params: { page, limit },
+    });
+
+    return {
+      notifications: Array.isArray(res.data?.notifications)
+        ? res.data.notifications
+        : [],
+      page: res.data?.page || 1,
+      totalPages: res.data?.totalPages || 1,
+      total: res.data?.total || 0,
+    };
   } catch (err: any) {
-    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401)
+      throw new Error("UNAUTHORIZED");
+
     throw new Error("FAILED_FETCH_NOTIFICATIONS");
   }
 };
 
-// Mark single notification as read
-export const markNotificationAsRead = async (notificationId: string) => {
+
+export const markNotificationAsRead = async (
+  notificationId: string
+) => {
+  if (!notificationId?.trim())
+    throw new Error("INVALID_NOTIFICATION");
+
   try {
-    const res = await axios.patch(
-      `${API_URL}/api/notifications/${notificationId}/read`,
-      {},
-      { headers: getAuthHeader() },
+    const res = await api.patch(
+      `/notifications/${notificationId}/read`
     );
+
     return res.data;
-  } catch {
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401)
+      throw new Error("UNAUTHORIZED");
+
+    if (status === 404)
+      throw new Error("NOTIFICATION_NOT_FOUND");
+
     throw new Error("FAILED_MARK_READ");
   }
 };
 
-// Mark all notifications as read
 export const markAllNotificationsAsRead = async () => {
   try {
-    const res = await axios.patch(
-      `${API_URL}/api/notifications/read-all`,
-      {},
-      { headers: getAuthHeader() },
+    const res = await api.patch(
+      "/notifications/read-all"
     );
+
     return res.data;
-  } catch {
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401)
+      throw new Error("UNAUTHORIZED");
+
     throw new Error("FAILED_MARK_ALL_READ");
   }
 };
 
 export const getUnreadNotificationCount = async () => {
-  const res = await axios.get(`${API_URL}/api/notifications/unread-count`, {
-    headers: getAuthHeader(),
-  });
+  try {
+    const res = await api.get(
+      "/notifications/unread-count"
+    );
 
-  return res.data.count;
+    return typeof res.data?.count === "number"
+      ? res.data.count
+      : 0;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401)
+      throw new Error("UNAUTHORIZED");
+
+    throw new Error("FAILED_FETCH_UNREAD_COUNT");
+  }
 };
