@@ -112,11 +112,8 @@ export const toggleGroupStatus = async (groupId: string) => {
 
     return res.data;
   } catch (err: any) {
-    if (!err.response) throw new Error("NETWORK_ERROR");
-
-    if (err.response.status === 401) throw new Error("UNAUTHORIZED");
-
-    if (err.response.status === 403) throw new Error("FORBIDDEN");
+    if (err.response?.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response?.status === 403) throw new Error("FORBIDDEN");
 
     throw new Error("FAILED_TOGGLE_GROUP");
   }
