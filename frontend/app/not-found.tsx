@@ -44,7 +44,7 @@ export default function NotFound() {
         </h1>
 
         <p className="mt-2 text-gray-600 dark:text-gray-300">
-          Oops! The page you're looking for doesn't exist.
+          Oops! The page you&apos;re looking for doesn&apos;t exist.
         </p>
 
         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
