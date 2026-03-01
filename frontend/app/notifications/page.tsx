@@ -61,7 +61,6 @@ export default function NotificationsPage() {
       if (pageNumber === 1) {
         setNotifications(data);
 
-        // Set unread count only on first load
         setUnreadNotifications(
           data.filter((n: Notification) => !n.isRead).length
         );
@@ -178,7 +177,6 @@ export default function NotificationsPage() {
     }
   };
 
-  /* 🔥 Clone before sort */
   const grouped = [...notifications]
     .sort((a, b) => {
       if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;

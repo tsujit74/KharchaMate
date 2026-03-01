@@ -12,15 +12,8 @@ export const getNotifications = async (
     const res = await api.get("/notifications", {
       params: { page, limit },
     });
-
-    return {
-      notifications: Array.isArray(res.data?.notifications)
-        ? res.data.notifications
-        : [],
-      page: res.data?.page || 1,
-      totalPages: res.data?.totalPages || 1,
-      total: res.data?.total || 0,
-    };
+    
+    return Array.isArray(res.data) ? res.data : [];
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 

@@ -58,7 +58,7 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    console.log("COOKIES:", req.cookies)
+
 
     res.cookie("accessToken", token, {
   httpOnly: true,
