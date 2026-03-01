@@ -58,7 +58,7 @@ export default function GroupInfoDrawer({
     try {
       setStatusLoading(true);
 
-      await toggleGroupStatus(group._id, !isActive);
+      await toggleGroupStatus(group._id);
       await onRefresh();
 
       toast.success(
