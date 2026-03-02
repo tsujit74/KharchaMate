@@ -13,6 +13,7 @@ const authMiddleware = (req, res, next) => {
     req.user = {
       id: decoded.id || decoded._id, 
       email: decoded.email,
+      role: decoded.role 
     };
 
     if (!req.user.id) {

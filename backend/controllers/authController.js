@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { sendEmail } from "../service/mailService.js";
 
-
 export const signup = async (req, res) => {
   try {
     const { name, email, password, mobile } = req.body;
@@ -37,7 +36,6 @@ export const signup = async (req, res) => {
   }
 };
 
-
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -47,25 +45,29 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    if (user.isBlocked) {
+      return res.status(403).json({
+        message: "Your account has been blocked by admin",
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role: user.role, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
-
-
     res.cookie("accessToken", token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({
       message: "Login successful",
@@ -74,39 +76,29 @@ export const login = async (req, res) => {
         name: user.name,
         email: user.email,
         mobile: user.mobile || null,
+        role: user.role,
       },
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Login failed" });
   }
 };
 
-
 export const logout = async (req, res) => {
   try {
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? "none"
-          : "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
 
-    return res
-      .status(200)
-      .json({ message: "Logged out successfully" });
+    return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ message: "Logout failed" });
+    return res.status(500).json({ message: "Logout failed" });
   }
 };
-
-
 
 export const forgotPassword = async (req, res) => {
   try {
@@ -123,23 +115,20 @@ export const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email });
 
-  
     if (!user) {
       return res.json(genericResponse);
     }
 
-    const resetToken = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" }
-    );
+    const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "15m",
+    });
 
     const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     await sendEmail({
-  to: user.email,
-  subject: "Reset Your KharchaMate Password",
-  html: `
+      to: user.email,
+      subject: "Reset Your KharchaMate Password",
+      html: `
   <div style="margin:0;padding:0;background:#0f172a;font-family:Arial,Helvetica,sans-serif;">
     
     <div style="max-width:600px;margin:40px auto;background:#111827;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.3);">
@@ -198,10 +187,9 @@ export const forgotPassword = async (req, res) => {
     </div>
   </div>
   `,
-});
+    });
 
     return res.json(genericResponse);
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -240,7 +228,6 @@ export const resetPassword = async (req, res) => {
     await user.save();
 
     res.json({ message: "Password reset successful" });
-
   } catch (error) {
     console.error(error);
     res.status(400).json({ message: "Invalid or expired token" });
