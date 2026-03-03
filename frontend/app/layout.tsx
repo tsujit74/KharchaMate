@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Providers from "./providers";
 import OfflineBanner from "@/app/components/offlineBanner";
+import LayoutWrapper from "./layoutWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,13 +49,7 @@ export default function RootLayout({
       >
         <Providers>
           <OfflineBanner />
-          <Navbar />
-
-          <main className="min-h-screen pt-16">
-            {children}
-          </main>
-
-          <Footer />
+          <LayoutWrapper>{children}</LayoutWrapper>
         </Providers>
       </body>
     </html>
