@@ -21,9 +21,19 @@ export default function Sidebar() {
     }
   };
 
+  const navItemClass = (path: string) => `
+    group relative flex items-center
+    px-3 py-2.5 text-sm font-medium
+    transition-colors
+    ${
+      isActive(path)
+        ? "bg-gray-900 text-white"
+        : "text-gray-700 hover:bg-gray-100"
+    }
+  `;
+
   return (
     <div className="h-full flex flex-col bg-white">
-      
       {/* Header */}
       <div className="h-16 flex items-center px-6 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 tracking-tight">
@@ -33,46 +43,27 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-6 space-y-1">
-        
-        <Link
-          href="/admin"
-          className={`
-            group relative flex items-center
-            px-3 py-2.5 text-sm font-medium
-            transition-colors
-            ${
-              isActive("/admin")
-                ? "bg-gray-900 text-white"
-                : "text-gray-700 hover:bg-gray-100"
-            }
-          `}
-        >
-          {/* Active indicator bar */}
+        <Link href="/admin" className={navItemClass("/admin")}>
           {isActive("/admin") && (
             <span className="absolute left-0 top-0 h-full w-1 bg-white" />
           )}
           Dashboard
         </Link>
 
-        <Link
-          href="/admin/users"
-          className={`
-            group relative flex items-center
-            px-3 py-2.5 text-sm font-medium
-            transition-colors
-            ${
-              isActive("/admin/users")
-                ? "bg-gray-900 text-white"
-                : "text-gray-700 hover:bg-gray-100"
-            }
-          `}
-        >
+        <Link href="/admin/users" className={navItemClass("/admin/users")}>
           {isActive("/admin/users") && (
             <span className="absolute left-0 top-0 h-full w-1 bg-white" />
           )}
           User Management
         </Link>
 
+        {/* Normal View */}
+        <Link href="/" className={navItemClass("/")}>
+          {isActive("/") && (
+            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
+          )}
+          Normal View
+        </Link>
       </nav>
 
       {/* Footer */}
