@@ -26,7 +26,6 @@ export default function AdminDashboard() {
 
       const data = await getAdminStats();
 
-      // Validate response structure
       if (
         typeof data.totalUsers !== "number" ||
         typeof data.totalGroups !== "number"
@@ -57,34 +56,60 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  // 🔄 Loading State
+  // Loading State (realistic skeleton)
   if (loading) {
     return (
-      <div className="p-8 text-center text-gray-500">Loading dashboard...</div>
-    );
-  }
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="h-8 w-64 bg-gray-200 animate-pulse mb-8" />
 
-  // ❌ Error State
-  if (error) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button
-          onClick={fetchStats}
-          className="px-4 py-2 bg-black text-white rounded-lg hover:opacity-90"
-        >
-          Retry
-        </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="h-28 bg-white border border-gray-200 animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
-  // ✅ Success State
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+  // Error State
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+        <div className="text-center">
+          <p className="text-red-600 mb-4 font-medium">{error}</p>
+          <button
+            onClick={fetchStats}
+            className="px-5 py-2 bg-black text-white hover:opacity-90 transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-      <StatsGrid stats={stats} />
+  //  Success State
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-6 md:p-8">
+        {/* Header */}
+        <div className="mb-8 border-b border-gray-200 pb-4">
+          <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
+            Admin Dashboard
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Platform overview and system metrics
+          </p>
+        </div>
+
+        {/* Stats */}
+        <StatsGrid stats={stats} />
+      </div>
     </div>
   );
 }

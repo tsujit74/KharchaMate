@@ -46,7 +46,7 @@ export const blockUser = async (userId: string) => {
 
   try {
     const res = await api.patch(
-      `/admin/users/${userId}/block`
+      `/admin/user/${userId}/block`
     );
 
     return res.data;
@@ -75,7 +75,7 @@ export const unblockUser = async (userId: string) => {
 
   try {
     const res = await api.patch(
-      `/admin/users/${userId}/unblock`
+      `/admin/user/${userId}/unblock`
     );
 
     return res.data;
