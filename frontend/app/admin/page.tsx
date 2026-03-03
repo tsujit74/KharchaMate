@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAdminStats } from "@/app/services/admin.service";
 import StatsGrid from "./components/StatsGrid";
+import DashboardHeader from "./components/DashobardHeader";
 import toast from "react-hot-toast";
 
 type Stats = {
@@ -25,13 +26,6 @@ export default function AdminDashboard() {
       setError(null);
 
       const data = await getAdminStats();
-
-      if (
-        typeof data.totalUsers !== "number" ||
-        typeof data.totalGroups !== "number"
-      ) {
-        throw new Error("INVALID_DATA");
-      }
 
       setStats(data);
     } catch (err: any) {
@@ -56,35 +50,32 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  // Loading State (realistic skeleton)
+  // Loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="h-8 w-64 bg-gray-200 animate-pulse mb-8" />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="h-28 bg-white border border-gray-200 animate-pulse"
-              />
-            ))}
-          </div>
+      <div className="space-y-6">
+        <div className="h-8 w-64 bg-gray-200 animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="h-28 bg-white border animate-pulse rounded-lg"
+            />
+          ))}
         </div>
       </div>
     );
   }
 
-  // Error State
+  // Error
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+      <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <p className="text-red-600 mb-4 font-medium">{error}</p>
+          <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={fetchStats}
-            className="px-5 py-2 bg-black text-white hover:opacity-90 transition"
+            className="px-5 py-2 bg-black text-white rounded hover:opacity-90"
           >
             Retry
           </button>
@@ -93,23 +84,15 @@ export default function AdminDashboard() {
     );
   }
 
-  //  Success State
+  // Success
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6 md:p-8">
-        {/* Header */}
-        <div className="mb-8 border-b border-gray-200 pb-4">
-          <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
-            Admin Dashboard
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Platform overview and system metrics
-          </p>
-        </div>
+    <div className="space-y-8">
+      <DashboardHeader
+        title="Admin Dashboard"
+        subtitle="Platform overview and system metrics"
+      />
 
-        {/* Stats */}
-        <StatsGrid stats={stats} />
-      </div>
+      <StatsGrid stats={stats} />
     </div>
   );
 }

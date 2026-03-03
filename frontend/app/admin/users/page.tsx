@@ -7,6 +7,7 @@ import {
   blockUser,
   unblockUser,
 } from "@/app/services/admin.service";
+import DashboardHeader from "../components/DashobardHeader";
 
 type User = {
   _id: string;
@@ -109,14 +110,17 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="p-6 md:p-10 bg-gray-50 min-h-screen">
+    <div className="p-1 md:p-2 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Monitor and control platform users
-        </p>
-      </div>
+      <DashboardHeader
+        title="User Management"
+        subtitle="Manage platform users"
+        action={
+          <button className="px-4 py-2 bg-black text-white rounded">
+            Add User
+          </button>
+        }
+      />
 
       {/* Card */}
       <div className="bg-white border border-gray-200 overflow-hidden">

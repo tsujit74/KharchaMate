@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getMe } from "@/app/services/auth.service";
 import toast from "react-hot-toast";
+import Sidebar from "./components/Sidebar";
 
 type Props = {
   children: ReactNode;
@@ -24,7 +25,7 @@ export default function AdminLayout({ children }: Props) {
           router.replace("/dashboard");
           return;
         }
-      } catch (err) {
+      } catch {
         toast.error("Please login to continue.");
         router.replace("/login");
       } finally {
@@ -44,14 +45,31 @@ export default function AdminLayout({ children }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm px-8 py-4">
-        <h1 className="font-bold text-lg">KharchaMate Admin</h1>
+  <div className="h-screen bg-gray-50 flex overflow-hidden">
+    
+    {/* Sidebar */}
+    <aside className="w-64 border-r border-gray-200 bg-white flex-shrink-0">
+      <Sidebar />
+    </aside>
+
+    {/* Right side */}
+    <div className="flex-1 flex flex-col min-w-0">
+      
+      {/* Top Header — MATCHES sidebar header */}
+      <div className="h-16 border-b border-gray-200 bg-white flex items-center px-6">
+        <h2 className="text-lg font-semibold text-gray-900 tracking-tight">
+          Admin Panel
+        </h2>
       </div>
 
-      <div className="max-w-7xl mx-auto py-8 px-6">
-        {children}
-      </div>
+      {/* Scrollable content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-4 md:p-6 max-w-7xl mx-auto">
+          {children}
+        </div>
+      </main>
+
     </div>
-  );
+  </div>
+);
 }
