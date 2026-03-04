@@ -134,17 +134,37 @@ export const getAllGroups = async (req, res) => {
       .populate("members", "name email")
       .sort({ createdAt: -1 });
 
-    const formatted = groups.map((group) => ({
-      _id: group._id,
-      name: group.name,
-      createdBy: group.createdBy,
-      totalMembers: group.members.length,
-      totalExpenses: group.expenses?.length || 0,
-      createdAt: group.createdAt,
-    }));
+    const formatted = await Promise.all(
+      groups.map(async (group) => {
+        const expenseAgg = await Expense.aggregate([
+          {
+            $match: {
+              group: group._id,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$amount" },
+            },
+          },
+        ]);
+
+        return {
+          _id: group._id,
+          name: group.name,
+          createdBy: group.createdBy,
+          totalMembers: group.members.length,
+          totalExpenses: expenseAgg[0]?.total || 0,
+          createdAt: group.createdAt,
+          isBlocked: group.isBlocked ?? false,
+        };
+      })
+    );
 
     res.json({ groups: formatted });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to fetch groups" });
   }
 };
