@@ -41,6 +41,7 @@ type Group = {
   createdAt: string;
   updatedAt: string;
   isActive?: boolean;
+  isBlocked?:boolean;
 };
 
 type RecentExpense = {
@@ -120,13 +121,13 @@ export default function DashboardPage() {
   if (error) return <p className="p-10 text-center text-red-500">{error}</p>;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-6 md:px-16 py-8">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-6 md:px-12 py-4">
       {/* Header */}
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-10 pb-8 border-b border-gray-100">
         {/* Left Section */}
         <div>
           {/* Heading */}
-          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
             Hey, {user?.name?.split(" ")[0] || "User"}{" "}
             <span className="text-gray-300 font-light">/</span>
           </h2>
@@ -160,7 +161,8 @@ export default function DashboardPage() {
       {/* Groups */}
 <section className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
   {groups.map((group) => {
-    const isClosed = !group.isActive;
+    const isBlockedByAdmin = group.isBlocked;
+const isClosed = !group.isActive && !isBlockedByAdmin;
 
     const isAdmin =
   group.admins?.some(
@@ -175,12 +177,12 @@ const isCreator =
       <div
         key={group._id}
         onClick={() =>
-          router.push(
-            isClosed
-              ? `/groups/${group._id}?mode=readonly`
-              : `/groups/${group._id}`,
-          )
-        }
+  router.push(
+    isBlockedByAdmin || isClosed
+      ? `/groups/${group._id}?mode=readonly`
+      : `/groups/${group._id}`
+  )
+}
         className={`group relative p-6 rounded-3xl border transition-all duration-300 cursor-pointer
           ${
             isClosed
@@ -192,16 +194,22 @@ const isCreator =
         {/* Top Row */}
         <div className="flex justify-between items-start mb-5">
           <div className="flex items-center gap-2">
-            <span
-              className={`px-3 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full border
-              ${
-                isClosed
-                  ? "bg-slate-100 text-slate-500 border-slate-200"
-                  : "bg-emerald-50 text-emerald-600 border-emerald-100"
-              }`}
-            >
-              {isClosed ? "Archived" : "Active"}
-            </span>
+           <span
+  className={`px-3 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full border
+    ${
+      isBlockedByAdmin
+        ? "bg-red-50 text-red-600 border-red-200"
+        : isClosed
+        ? "bg-slate-100 text-slate-500 border-slate-200"
+        : "bg-emerald-50 text-emerald-600 border-emerald-100"
+    }`}
+>
+  {isBlockedByAdmin
+    ? "Blocked by Admin"
+    : isClosed
+    ? "Archived"
+    : "Active"}
+</span>
 
             {/* 👑 Creator Badge */}
             {isCreator && (
@@ -212,7 +220,7 @@ const isCreator =
           </div>
 
           {/* 3 Dot Menu - Visible To Everyone */}
-          {!isClosed && (
+         {!isClosed && !isBlockedByAdmin && (
             <div
               onClick={(e) => e.stopPropagation()}
               className="relative"
@@ -262,10 +270,16 @@ const isCreator =
         </div>
 
         {/* Title */}
-        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 group-hover:text-indigo-600 transition-colors">
-          {group.name}
-          {isClosed && <Lock className="w-4 h-4 text-slate-400" />}
-        </h2>
+       <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 group-hover:text-indigo-600 transition-colors">
+  {group.name}
+  {(isClosed || isBlockedByAdmin) && (
+    <Lock
+      className={`w-4 h-4 ${
+        isBlockedByAdmin ? "text-red-500" : "text-slate-400"
+      }`}
+    />
+  )}
+</h2>
 
         <p className="text-xs text-slate-400 mt-1">
           Updated {formatDateTime(group.updatedAt).dateLabel}
