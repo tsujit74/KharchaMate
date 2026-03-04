@@ -15,12 +15,13 @@ import {
 import {
   groupContext,
   checkGroupActive,
+  checkGroupBlocked,
 } from "../middleware/groupContext.js";
 
 const router = express.Router();
 
 
-router.post("/add", authMiddleware, groupContext, checkGroupActive, addExpense);
+router.post("/add", authMiddleware, groupContext,checkGroupBlocked, checkGroupActive, addExpense);
 
 
 

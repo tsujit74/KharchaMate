@@ -84,3 +84,14 @@ export const checkGroupActive = (req, res, next) => {
 
   next();
 };
+
+export const checkGroupBlocked = (req, res, next) => {
+  if (req.group?.isBlocked) {
+    return res.status(403).json({
+      message: "This group is blocked by admin",
+      code: "GROUP_BLOCKED",
+    });
+  }
+
+  next();
+};

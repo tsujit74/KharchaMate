@@ -4,6 +4,7 @@ import {
   groupContext,
   isAdmin,
   checkGroupActive,
+  checkGroupBlocked,
 } from "../middleware/groupContext.js";
 
 import {
@@ -27,6 +28,7 @@ router.post(
   "/add-member",
   authMiddleware,
   groupContext,
+  checkGroupBlocked,
   checkGroupActive,
   isAdmin,
   addMember,
@@ -36,6 +38,7 @@ router.post(
   "/remove-member",
   authMiddleware,
   groupContext,
+  checkGroupBlocked,
   checkGroupActive,
   isAdmin,
   removeMember,
@@ -45,6 +48,7 @@ router.patch(
   "/:groupId/toggle-status",
   authMiddleware,
   groupContext,
+  checkGroupBlocked,
   isAdmin,
   toggleGroupStatus
 );
@@ -53,6 +57,7 @@ router.patch(
   "/:groupId/update-name",
   authMiddleware,
   groupContext,
+  checkGroupBlocked,
   checkGroupActive,
   isAdmin,
   updateGroupName
