@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Group from "../models/Group.js";
 import Expense from "../models/Expense.js";
+import { notifyUser } from "../service/notify.js";
 
 export const getAdminStats = async (req, res) => {
   try {
@@ -198,6 +199,20 @@ export const blockGroup = async (req, res) => {
 
     await group.save();
 
+    try {
+      await notifyUser({
+        userId: group.createdBy,
+        actor: null,
+        title: "Group Blocked",
+        message: `Your group "${group.name}" was blocked by admin`,
+        type: "GROUP",
+        link: `/groups/${group._id}`,
+        relatedId: group._id,
+      });
+    } catch (notifyError) {
+      console.error("Notify error (block):", notifyError);
+    }
+
     res.status(200).json({ message: "Group blocked successfully" });
   } catch (error) {
     console.error(error);
@@ -227,13 +242,23 @@ export const unblockGroup = async (req, res) => {
     }
 
     group.isBlocked = false;
-
-    if ("blockedBy" in group) {
-      group.blockedBy = null;
-      group.blockedAt = null;
-    }
+    group.blockedBy = null;
+    group.blockedAt = null;
 
     await group.save();
+    try {
+      await notifyUser({
+        userId: group.createdBy,
+        actor: null,
+        title: "Group Unblocked",
+        message: `Your group "${group.name}" was unblocked by admin`,
+        type: "GROUP",
+        link: `/groups/${group._id}`,
+        relatedId: group._id,
+      });
+    } catch (notifyError) {
+      console.error("Notify error (unblock):", notifyError);
+    }
 
     res.status(200).json({ message: "Group unblocked successfully" });
   } catch (error) {
