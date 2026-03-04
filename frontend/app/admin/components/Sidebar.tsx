@@ -57,6 +57,13 @@ export default function Sidebar() {
           User Management
         </Link>
 
+        <Link href="/admin/groups" className={navItemClass("/admin/groups")}>
+          {isActive("/admin/groups") && (
+            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
+          )}
+          Group Management
+        </Link>
+
         {/* Normal View */}
         <Link href="/" className={navItemClass("/")}>
           {isActive("/") && (

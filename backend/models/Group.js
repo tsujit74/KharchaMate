@@ -31,8 +31,13 @@ const groupSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Group", groupSchema);

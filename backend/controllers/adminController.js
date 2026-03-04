@@ -126,3 +126,98 @@ export const unblockUser = async (req, res) => {
     res.status(500).json({ message: "Failed to unblock user" });
   }
 };
+
+export const getAllGroups = async (req, res) => {
+  try {
+    const groups = await Group.find()
+      .populate("createdBy", "name email")
+      .populate("members", "name email")
+      .sort({ createdAt: -1 });
+
+    const formatted = groups.map((group) => ({
+      _id: group._id,
+      name: group.name,
+      createdBy: group.createdBy,
+      totalMembers: group.members.length,
+      totalExpenses: group.expenses?.length || 0,
+      createdAt: group.createdAt,
+    }));
+
+    res.json({ groups: formatted });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch groups" });
+  }
+};
+
+export const blockGroup = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate Mongo ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid group ID" });
+    }
+
+    const group = await Group.findById(id);
+
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    // Prevent duplicate block
+    if (group.isBlocked) {
+      return res.status(400).json({ message: "Group already blocked" });
+    }
+
+    group.isBlocked = true;
+
+    if (req.user?.id) {
+      group.blockedBy = req.user.id;
+      group.blockedAt = new Date();
+    }
+
+    await group.save();
+
+    res.status(200).json({ message: "Group blocked successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to block group" });
+  }
+};
+
+
+export const unblockGroup = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate Mongo ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid group ID" });
+    }
+
+    const group = await Group.findById(id);
+
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    // Prevent duplicate unblock
+    if (!group.isBlocked) {
+      return res.status(400).json({ message: "Group is not blocked" });
+    }
+
+    group.isBlocked = false;
+
+    if ("blockedBy" in group) {
+      group.blockedBy = null;
+      group.blockedAt = null;
+    }
+
+    await group.save();
+
+    res.status(200).json({ message: "Group unblocked successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to unblock group" });
+  }
+};

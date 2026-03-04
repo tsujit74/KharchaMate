@@ -96,3 +96,64 @@ export const unblockUser = async (userId: string) => {
     throw new Error("FAILED_UNBLOCK_USER");
   }
 };
+
+export const getAllGroupsAdmin = async () => {
+  try {
+    const res = await api.get("/admin/groups");
+
+    return Array.isArray(res.data?.groups)
+      ? res.data.groups
+      : [];
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+
+    throw new Error("FAILED_FETCH_GROUPS");
+  }
+};
+
+export const blockGroupAdmin = async (id: string) => {
+  if (!id || typeof id !== "string" || !id.trim()) {
+    throw new Error("INVALID_GROUP_ID");
+  }
+
+  try {
+    const res = await api.patch(`/admin/groups/${id}/block`);
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 404) throw new Error("GROUP_NOT_FOUND");
+    if (status === 400) throw new Error("GROUP_ALREADY_BLOCKED");
+
+    throw new Error("FAILED_BLOCK_GROUP");
+  }
+};
+
+export const unblockGroupAdmin = async (id: string) => {
+  if (!id?.trim()) throw new Error("INVALID_GROUP_ID");
+
+  try {
+    const res = await api.patch(`/admin/groups/${id}/unblock`);
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 404) throw new Error("GROUP_NOT_FOUND");
+    if (status === 400) throw new Error("GROUP_NOT_BLOCKED");
+
+    throw new Error("FAILED_UNBLOCK_GROUP");
+  }
+};
