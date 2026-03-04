@@ -17,7 +17,7 @@ import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const router = useRouter();
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, user } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -27,7 +27,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace(user?.role === "admin" ? "/admin" : "/dashboard");
     }
   }, [loading, isAuthenticated, router]);
 
@@ -56,8 +56,6 @@ const LoginPage = () => {
       await login({ email, password });
 
       toast.success("Logged in successfully.");
-
-      router.push("/dashboard");
     } catch (err: any) {
       const errorMessage =
         err?.response?.data?.message ||

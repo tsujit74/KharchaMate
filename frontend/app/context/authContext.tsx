@@ -1,60 +1,36 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import {
-  getMe,
-  loginUser,
-  logoutUser,
-} from "@/app/services/auth.service";
-import {
-  getUnreadNotificationCount,
-} from "@/app/services/notification.service";
+import { createContext, useContext, useEffect, useState } from "react";
+import { getMe, loginUser, logoutUser } from "@/app/services/auth.service";
+import { getUnreadNotificationCount } from "@/app/services/notification.service";
 import { useRouter } from "next/navigation";
 
 type User = {
   id: string;
   name: string;
   email: string;
+  role: "user" | "admin";
 };
 
 type AuthContextType = {
   user: User | null;
   unreadNotifications: number;
-  setUnreadNotifications: React.Dispatch<
-    React.SetStateAction<number>
-  >;
+  setUnreadNotifications: React.Dispatch<React.SetStateAction<number>>;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (data: {
-    email: string;
-    password: string;
-  }) => Promise<void>;
+  login: (data: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
 };
 
-const AuthContext =
-  createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const [user, setUser] =
-    useState<User | null>(null);
-  const [unreadNotifications, setUnreadNotifications] =
-    useState(0);
-  const [loading, setLoading] =
-    useState(true);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const router = useRouter();
 
- 
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -65,10 +41,10 @@ export const AuthProvider = ({
           id: u._id,
           name: u.name,
           email: u.email,
+          role: u.role,
         });
 
-        const unread =
-          await getUnreadNotificationCount();
+        const unread = await getUnreadNotificationCount();
         setUnreadNotifications(unread);
       } catch {
         // If cookie invalid or expired
@@ -82,13 +58,8 @@ export const AuthProvider = ({
     initAuth();
   }, []);
 
-
-  const login = async (data: {
-    email: string;
-    password: string;
-  }) => {
+  const login = async (data: { email: string; password: string }) => {
     try {
-      
       await loginUser(data);
 
       const userRes = await getMe();
@@ -98,18 +69,21 @@ export const AuthProvider = ({
         id: u._id,
         name: u.name,
         email: u.email,
+        role: u.role,
       });
 
-      const unread =
-        await getUnreadNotificationCount();
+      const unread = await getUnreadNotificationCount();
       setUnreadNotifications(unread);
 
-      router.push("/dashboard");
+      if (u.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
-      throw err; 
+      throw err;
     }
   };
-
 
   const logout = async () => {
     try {
@@ -142,9 +116,6 @@ export const AuthProvider = ({
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx)
-    throw new Error(
-      "useAuth must be used inside AuthProvider"
-    );
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 };

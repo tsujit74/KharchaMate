@@ -10,6 +10,8 @@ export default function Navbar() {
   const { user, unreadNotifications, isAuthenticated, logout, loading } =
     useAuth();
 
+  const isAdmin = user?.role === "admin";
+
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -36,7 +38,10 @@ export default function Navbar() {
     <nav className="fixed top-0 z-50 w-full h-16 bg-white border-b border-gray-100 shadow-sm">
       <div className="max-w-6xl mx-auto flex items-center justify-between h-full px-4">
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center">
+        <Link
+          href={isAdmin ? "/admin" : "/dashboard"}
+          className="flex items-center"
+        >
           {" "}
           <div className="relative h-64 w-48">
             {" "}
@@ -86,6 +91,16 @@ export default function Navbar() {
               <Plus size={16} />
               Add
             </Link>
+
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="px-3 py-2 rounded-lg bg-red-50 text-red-600 font-medium
+                   hover:bg-red-100 transition"
+              >
+                Admin Panel
+              </Link>
+            )}
           </div>
         )}
 
