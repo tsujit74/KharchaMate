@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import React from "react";
 
 type User = {
@@ -24,6 +25,7 @@ function UsersTable({
   handleBlock,
   handleUnblock,
 }: Props) {
+  const router = useRouter();
   return (
     <div className="bg-white border overflow-hidden">
       <div className="overflow-x-auto">
@@ -42,16 +44,15 @@ function UsersTable({
             {users.map((user) => (
               <tr
                 key={user._id}
-                className="border-t hover:bg-gray-50 transition-colors"
+                onClick={() => router.push(`/admin/users/${user._id}`)}
+                className="border-t hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <td className="p-4">
                   <div className="flex flex-col">
                     <span className="font-semibold text-gray-900">
                       {user.name}
                     </span>
-                    <span className="text-xs text-gray-500">
-                      {user.email}
-                    </span>
+                    <span className="text-xs text-gray-500">{user.email}</span>
                   </div>
                 </td>
 
@@ -80,23 +81,27 @@ function UsersTable({
                 <td className="p-4">
                   <button
                     disabled={actionLoading === user._id}
-                    onClick={() =>
-                      user.isBlocked
-                        ? handleUnblock(user._id)
-                        : handleBlock(user._id)
-                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+
+                      if (user.isBlocked) {
+                        handleUnblock(user._id);
+                      } else {
+                        handleBlock(user._id);
+                      }
+                    }}
                     className={`min-w-[110px] px-4 py-1.5 text-xs font-semibold text-white transition disabled:opacity-60
-                    ${
-                      user.isBlocked
-                        ? "bg-green-600 hover:bg-green-700"
-                        : "bg-red-600 hover:bg-red-700"
-                    }`}
+    ${
+      user.isBlocked
+        ? "bg-green-600 hover:bg-green-700"
+        : "bg-red-600 hover:bg-red-700"
+    }`}
                   >
                     {actionLoading === user._id
                       ? "Processing..."
                       : user.isBlocked
-                      ? "Unblock"
-                      : "Block"}
+                        ? "Unblock"
+                        : "Block"}
                   </button>
                 </td>
               </tr>
@@ -106,9 +111,7 @@ function UsersTable({
       </div>
 
       {users.length === 0 && (
-        <div className="p-10 text-center text-gray-500">
-          No users found
-        </div>
+        <div className="p-10 text-center text-gray-500">No users found</div>
       )}
     </div>
   );

@@ -7,6 +7,8 @@ import {
   getAdminStats,
   getAllGroups,
   getAllUsers,
+  getUserDetailsAdmin,
+  getUserGroupsAdmin,
   unblockGroup,
   unblockUser,
 } from "../controllers/adminController.js";
@@ -22,5 +24,19 @@ router.patch("/user/:id/unblock", authMiddleware, adminMiddleware, unblockUser);
 router.get("/groups", authMiddleware, adminMiddleware, getAllGroups);
 router.patch("/groups/:id/block", authMiddleware, adminMiddleware, blockGroup);
 router.patch("/groups/:id/unblock", authMiddleware, adminMiddleware, unblockGroup);
+
+router.get(
+  "/users/:userId",
+  authMiddleware,
+  adminMiddleware,
+  getUserDetailsAdmin
+);
+
+router.get(
+  "/users/:userId/groups",
+  authMiddleware,
+  adminMiddleware,
+  getUserGroupsAdmin
+);
 
 export default router;

@@ -157,3 +157,47 @@ export const unblockGroupAdmin = async (id: string) => {
     throw new Error("FAILED_UNBLOCK_GROUP");
   }
 };
+
+// Get Single User Details (Admin)
+export const getUserDetailsAdmin = async (userId: string) => {
+  if (!userId?.trim()) throw new Error("INVALID_USER_ID");
+
+  try {
+    const res = await api.get(`/admin/users/${userId}`);
+
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 404) throw new Error("USER_NOT_FOUND");
+
+    throw new Error("FAILED_FETCH_USER_DETAILS");
+  }
+};
+
+
+// Get Groups Created/Joined by User (Admin)
+export const getUserGroupsAdmin = async (userId: string) => {
+  if (!userId?.trim()) throw new Error("INVALID_USER_ID");
+
+  try {
+    const res = await api.get(`/admin/users/${userId}/groups`);
+
+    return Array.isArray(res.data) ? res.data : [];
+
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 404) throw new Error("USER_NOT_FOUND");
+
+    throw new Error("FAILED_FETCH_USER_GROUPS");
+  }
+};

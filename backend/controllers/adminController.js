@@ -272,3 +272,91 @@ export const unblockGroup = async (req, res) => {
     res.status(500).json({ message: "Failed to unblock group" });
   }
 };
+
+// USERS BY ID DETAILS
+export const getUserDetailsAdmin = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        message: "Invalid user id",
+      });
+    }
+
+    const objectUserId = new mongoose.Types.ObjectId(userId);
+
+    // Fetch user
+    const user = await User.findById(objectUserId).select(
+      "name email role isBlocked createdAt"
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // Run stats queries in parallel
+    const [groupsCreated, groupsJoined, expensesAgg] = await Promise.all([
+      Group.countDocuments({ createdBy: objectUserId }),
+
+      Group.countDocuments({ members: objectUserId }),
+
+      Expense.aggregate([
+        {
+          $match: { paidBy: objectUserId },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$amount" },
+          },
+        },
+      ]),
+    ]);
+
+    const totalExpenses =
+      expensesAgg.length > 0 ? expensesAgg[0].total : 0;
+
+    return res.status(200).json({
+      user,
+      stats: {
+        groupsCreated,
+        groupsJoined,
+        totalExpenses,
+      },
+    });
+
+  } catch (error) {
+    console.error("Admin getUserDetails error:", error);
+
+    return res.status(500).json({
+      message: "Failed to fetch user details",
+    });
+  }
+};
+
+export const getUserGroupsAdmin = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user id" });
+    }
+
+    const groups = await Group.find({
+      createdBy: userId,
+    })
+      .select("name totalMembers totalExpenses isBlocked createdAt")
+      .sort({ createdAt: -1 });
+
+    res.json(groups);
+  } catch (error) {
+    console.error("Admin getUserGroups error:", error);
+    res.status(500).json({
+      message: "Failed to fetch groups",
+    });
+  }
+};
