@@ -7,6 +7,8 @@ import DashboardHeader from "./components/DashobardHeader";
 import toast from "react-hot-toast";
 
 type Stats = {
+  blockedGroups: number;
+  blockedUsers: number;
   totalUsers: number;
   totalGroups: number;
   totalExpenses: number;
@@ -84,15 +86,16 @@ export default function AdminDashboard() {
     );
   }
 
-  // Success
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <DashboardHeader
         title="Admin Dashboard"
-        subtitle="Platform overview and system metrics"
+        subtitle="Platform analytics and system overview"
       />
 
-      <StatsGrid stats={stats} />
+      <div className="bg-white border border-slate-200 rounded p-8">
+        <StatsGrid stats={stats} />
+      </div>
     </div>
   );
 }

@@ -1,8 +1,18 @@
 "use client";
 
 import StatCard from "./StatCard";
+import {
+  Users,
+  Shield,
+  Wallet,
+  Folder,
+  Ban,
+  Activity,
+} from "lucide-react";
 
 type Stats = {
+  blockedGroups: number;
+  blockedUsers: number;
   totalUsers: number;
   totalGroups: number;
   totalExpenses: number;
@@ -25,41 +35,62 @@ export default function StatsGrid({ stats }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      
       <StatCard
         title="Total Users"
         value={stats.totalUsers}
         subtitle="All registered users"
+        icon={<Users size={18} />}
+      />
+
+      <StatCard
+        title="Blocked Users"
+        value={stats.blockedUsers}
+        subtitle="Users restricted by admin"
+        icon={<Ban size={18} />}
       />
 
       <StatCard
         title="Total Groups"
         value={stats.totalGroups}
         subtitle="Groups created"
+        icon={<Folder size={18} />}
+      />
+
+      <StatCard
+        title="Blocked Groups"
+        value={stats.blockedGroups}
+        subtitle="Groups disabled by admin"
+        icon={<Shield size={18} />}
       />
 
       <StatCard
         title="Total Expenses"
         value={stats.totalExpenses}
         subtitle="All recorded expenses"
+        icon={<Activity size={18} />}
       />
 
       <StatCard
-        title="Total Money Tracked"
+        title="Money Tracked"
         value={`₹ ${stats.totalMoney.toLocaleString()}`}
-        subtitle="Cumulative expense amount"
+        subtitle="Total platform transactions"
+        icon={<Wallet size={18} />}
       />
 
       <StatCard
-        title="New Users This Month"
+        title="New Users"
         value={stats.newUsersThisMonth}
-        subtitle="Monthly signups"
+        subtitle="Joined this month"
+        icon={<Users size={18} />}
       />
 
       <StatCard
-        title="Active Users This Month"
+        title="Active Users"
         value={stats.loggedInThisMonth}
-        subtitle="Users logged in"
+        subtitle="Logged in this month"
+        icon={<Activity size={18} />}
       />
     </div>
   );

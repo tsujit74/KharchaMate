@@ -10,6 +10,11 @@ export const getAdminStats = async (req, res) => {
     const totalGroups = await Group.countDocuments();
     const totalExpenses = await Expense.countDocuments();
 
+    const blockedUsers = await User.countDocuments({ isBlocked: true });
+    const blockedGroups = await Group.countDocuments({
+      isBlocked: true,
+    });
+
     const totalMoneyResult = await Expense.aggregate([
       {
         $group: {
@@ -40,6 +45,8 @@ export const getAdminStats = async (req, res) => {
       totalMoney,
       newUsersThisMonth,
       loggedInThisMonth,
+      blockedUsers,
+      blockedGroups,
     });
   } catch (error) {
     console.error(error);
@@ -160,7 +167,7 @@ export const getAllGroups = async (req, res) => {
           createdAt: group.createdAt,
           isBlocked: group.isBlocked ?? false,
         };
-      })
+      }),
     );
 
     res.json({ groups: formatted });
@@ -219,7 +226,6 @@ export const blockGroup = async (req, res) => {
     res.status(500).json({ message: "Failed to block group" });
   }
 };
-
 
 export const unblockGroup = async (req, res) => {
   try {
