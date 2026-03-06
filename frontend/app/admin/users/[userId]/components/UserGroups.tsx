@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { getUserGroupsAdmin } from "@/app/services/admin.service";
+import {
+  getUserGroupsAdmin,
+  blockGroupAdmin,
+  unblockGroupAdmin,
+} from "@/app/services/admin.service";
 
 type Group = {
   _id: string;
@@ -16,21 +20,18 @@ type Props = {
 };
 
 export default function UserGroups({ userId }: Props) {
-
   const [groups, setGroups] = useState<Group[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const loadGroups = async () => {
     if (!userId) return;
 
     try {
       setLoading(true);
-
       const data = await getUserGroupsAdmin(userId);
-
       setGroups(Array.isArray(data) ? data : []);
-
     } catch (err: any) {
       toast.error(err.message || "Failed to load groups");
     } finally {
@@ -44,6 +45,46 @@ export default function UserGroups({ userId }: Props) {
 
     if (nextOpen && groups.length === 0) {
       loadGroups();
+    }
+  };
+
+  // BLOCK
+  const handleBlock = async (id: string) => {
+    try {
+      setActionLoading(id);
+
+      setGroups((prev) =>
+        prev.map((g) =>
+          g._id === id ? { ...g, isBlocked: true } : g
+        )
+      );
+
+      await blockGroupAdmin(id);
+      toast.success("Group blocked");
+    } catch {
+      loadGroups();
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // UNBLOCK
+  const handleUnblock = async (id: string) => {
+    try {
+      setActionLoading(id);
+
+      setGroups((prev) =>
+        prev.map((g) =>
+          g._id === id ? { ...g, isBlocked: false } : g
+        )
+      );
+
+      await unblockGroupAdmin(id);
+      toast.success("Group unblocked");
+    } catch {
+      loadGroups();
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -88,9 +129,7 @@ export default function UserGroups({ userId }: Props) {
                   key={group._id}
                   className="p-4 border-b flex items-center justify-between hover:bg-gray-50"
                 >
-
                   <div>
-
                     <p className="font-medium text-gray-900">
                       {group.name}
                     </p>
@@ -98,10 +137,9 @@ export default function UserGroups({ userId }: Props) {
                     <p className="text-xs text-gray-400">
                       Created {new Date(group.createdAt).toLocaleDateString()}
                     </p>
-
                   </div>
 
-                  <div>
+                  <div className="flex items-center gap-4">
 
                     {group.isBlocked ? (
                       <span className="text-xs text-red-600 font-medium">
@@ -113,8 +151,28 @@ export default function UserGroups({ userId }: Props) {
                       </span>
                     )}
 
-                  </div>
+                    <button
+                      disabled={actionLoading === group._id}
+                      onClick={() =>
+                        group.isBlocked
+                          ? handleUnblock(group._id)
+                          : handleBlock(group._id)
+                      }
+                      className={`px-3 py-1 text-xs font-semibold text-white
+                      ${
+                        group.isBlocked
+                          ? "bg-green-600 hover:bg-green-700"
+                          : "bg-red-600 hover:bg-red-700"
+                      }`}
+                    >
+                      {actionLoading === group._id
+                        ? "Processing..."
+                        : group.isBlocked
+                        ? "Unblock"
+                        : "Block"}
+                    </button>
 
+                  </div>
                 </div>
               ))}
 
@@ -123,7 +181,6 @@ export default function UserGroups({ userId }: Props) {
 
         </div>
       )}
-
     </div>
   );
 }
