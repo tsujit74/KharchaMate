@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Group from "../models/Group.js";
 import Expense from "../models/Expense.js";
+import Announcement from "../models/Announcement.js";
 import { notifyUser } from "../service/notify.js";
 
 export const getAdminStats = async (req, res) => {
@@ -289,7 +290,7 @@ export const getUserDetailsAdmin = async (req, res) => {
 
     // Fetch user
     const user = await User.findById(objectUserId).select(
-      "name email role isBlocked createdAt"
+      "name email role isBlocked createdAt",
     );
 
     if (!user) {
@@ -317,8 +318,7 @@ export const getUserDetailsAdmin = async (req, res) => {
       ]),
     ]);
 
-    const totalExpenses =
-      expensesAgg.length > 0 ? expensesAgg[0].total : 0;
+    const totalExpenses = expensesAgg.length > 0 ? expensesAgg[0].total : 0;
 
     return res.status(200).json({
       user,
@@ -328,7 +328,6 @@ export const getUserDetailsAdmin = async (req, res) => {
         totalExpenses,
       },
     });
-
   } catch (error) {
     console.error("Admin getUserDetails error:", error);
 
@@ -357,6 +356,120 @@ export const getUserGroupsAdmin = async (req, res) => {
     console.error("Admin getUserGroups error:", error);
     res.status(500).json({
       message: "Failed to fetch groups",
+    });
+  }
+};
+
+export const createAnnouncement = async (req, res) => {
+  try {
+    const { title, message } = req.body;
+
+    if (!title?.trim() || !message?.trim()) {
+      return res.status(400).json({
+        message: "TITLE_AND_MESSAGE_REQUIRED",
+      });
+    }
+
+    const announcement = await Announcement.create({
+      title,
+      message,
+      createdBy: req.user._id,
+    });
+
+    res.status(201).json({
+      message: "ANNOUNCEMENT_CREATED",
+      announcement,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "FAILED_CREATE_ANNOUNCEMENT",
+    });
+  }
+};
+
+export const getAllAnnouncements = async (req, res) => {
+  try {
+    const announcements = await Announcement.find().sort({ createdAt: -1 });
+
+    res.json({
+      announcements,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "FAILED_FETCH_ANNOUNCEMENTS",
+    });
+  }
+};
+
+export const toggleAnnouncement = async (req, res) => {
+  try {
+    const announcement = await Announcement.findById(req.params.id);
+
+    if (!announcement) {
+      return res.status(404).json({
+        message: "ANNOUNCEMENT_NOT_FOUND",
+      });
+    }
+
+    announcement.isActive = !announcement.isActive;
+
+    await announcement.save();
+
+    res.json({
+      message: "ANNOUNCEMENT_UPDATED",
+      announcement,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "FAILED_UPDATE_ANNOUNCEMENT",
+    });
+  }
+};
+
+export const deleteAnnouncement = async (req, res) => {
+  try {
+    const announcement = await Announcement.findById(req.params.id);
+
+    if (!announcement) {
+      return res.status(404).json({
+        message: "ANNOUNCEMENT_NOT_FOUND",
+      });
+    }
+
+    await announcement.deleteOne();
+
+    res.json({
+      message: "ANNOUNCEMENT_DELETED",
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "FAILED_DELETE_ANNOUNCEMENT",
+    });
+  }
+};
+
+export const getActiveAnnouncements = async (req, res) => {
+  try {
+    const announcements = await Announcement.find({
+      isActive: true,
+    }).sort({ createdAt: -1 });
+
+    res.json({
+      announcements,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "FAILED_FETCH_ANNOUNCEMENTS",
     });
   }
 };

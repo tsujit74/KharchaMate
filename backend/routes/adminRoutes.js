@@ -4,11 +4,15 @@ import adminMiddleware from "../middleware/adminMiddleware.js";
 import {
   blockGroup,
   blockUser,
+  createAnnouncement,
+  deleteAnnouncement,
   getAdminStats,
+  getAllAnnouncements,
   getAllGroups,
   getAllUsers,
   getUserDetailsAdmin,
   getUserGroupsAdmin,
+  toggleAnnouncement,
   unblockGroup,
   unblockUser,
 } from "../controllers/adminController.js";
@@ -38,5 +42,36 @@ router.get(
   adminMiddleware,
   getUserGroupsAdmin
 );
+
+/* ANNOUNCEMENTS */
+
+router.post(
+  "/announcements",
+  authMiddleware,
+  adminMiddleware,
+  createAnnouncement
+);
+
+router.get(
+  "/announcements",
+  authMiddleware,
+  adminMiddleware,
+  getAllAnnouncements
+);
+
+router.patch(
+  "/announcements/:id/toggle",
+  authMiddleware,
+  adminMiddleware,
+  toggleAnnouncement
+);
+
+router.delete(
+  "/announcements/:id",
+  authMiddleware,
+  adminMiddleware,
+  deleteAnnouncement
+);
+
 
 export default router;

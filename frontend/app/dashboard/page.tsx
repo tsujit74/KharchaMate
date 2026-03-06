@@ -24,6 +24,7 @@ import { getPendingSettlements } from "../services/settlement.service";
 import AppSkeleton from "../components/ui/AppSkeleton";
 import toast from "react-hot-toast";
 import EditGroupNameModal from "../components/Groups/EditGroupNameModal";
+import Announcements from "./components/Announcements";
 
 // ---------------- Types ----------------
 type Member = {
@@ -122,6 +123,8 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-6 md:px-12 py-4">
+
+      <Announcements/>
       {/* Header */}
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-10 pb-8 border-b border-gray-100">
         {/* Left Section */}

@@ -25,6 +25,7 @@ export default function Sidebar() {
     group relative flex items-center
     px-3 py-2.5 text-sm font-medium
     transition-colors
+    border-1
     ${
       isActive(path)
         ? "bg-gray-900 text-white"
@@ -62,6 +63,13 @@ export default function Sidebar() {
             <span className="absolute left-0 top-0 h-full w-1 bg-white" />
           )}
           Group Management
+        </Link>
+
+        <Link href="/admin/announcements" className={navItemClass("/admin/announcements")}>
+          {isActive("/admin/announcements") && (
+            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
+          )}
+          Announcements
         </Link>
 
         {/* Normal View */}

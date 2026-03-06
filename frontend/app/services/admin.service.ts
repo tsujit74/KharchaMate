@@ -201,3 +201,98 @@ export const getUserGroupsAdmin = async (userId: string) => {
     throw new Error("FAILED_FETCH_USER_GROUPS");
   }
 };
+
+export const getAllAnnouncementsAdmin = async () => {
+  try {
+    const res = await api.get("/admin/announcements");
+
+    return Array.isArray(res.data?.announcements)
+      ? res.data.announcements
+      : [];
+
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+
+    throw new Error("FAILED_FETCH_ANNOUNCEMENTS");
+  }
+};
+
+
+
+export const createAnnouncementAdmin = async (data: {
+  title: string;
+  message: string;
+}) => {
+
+  if (!data?.title?.trim()) throw new Error("INVALID_TITLE");
+  if (!data?.message?.trim()) throw new Error("INVALID_MESSAGE");
+
+  try {
+    const res = await api.post("/admin/announcements", data);
+
+    return res.data.announcement;
+
+  } catch (err: any) {
+
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 400) throw new Error("INVALID_DATA");
+
+    throw new Error("FAILED_CREATE_ANNOUNCEMENT");
+  }
+};
+
+
+
+export const deleteAnnouncementAdmin = async (announcementId: string) => {
+
+  if (!announcementId?.trim()) throw new Error("INVALID_ANNOUNCEMENT_ID");
+
+  try {
+    await api.delete(`/admin/announcements/${announcementId}`);
+
+    return true;
+
+  } catch (err: any) {
+
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 404) throw new Error("ANNOUNCEMENT_NOT_FOUND");
+
+    throw new Error("FAILED_DELETE_ANNOUNCEMENT");
+  }
+};
+
+export const toggleAnnouncementAdmin = async (announcementId: string) => {
+  if (!announcementId?.trim()) throw new Error("INVALID_ANNOUNCEMENT_ID");
+
+  try {
+    const res = await api.patch(`/admin/announcements/${announcementId}/toggle`);
+
+    return res.data;
+
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 404) throw new Error("ANNOUNCEMENT_NOT_FOUND");
+
+    throw new Error("FAILED_TOGGLE_ANNOUNCEMENT");
+  }
+};
