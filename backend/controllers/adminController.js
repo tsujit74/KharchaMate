@@ -4,6 +4,7 @@ import Group from "../models/Group.js";
 import Expense from "../models/Expense.js";
 import Announcement from "../models/Announcement.js";
 import { notifyUser } from "../service/notify.js";
+import Ticket from "../models/Ticket.js";
 
 export const getAdminStats = async (req, res) => {
   try {
@@ -470,6 +471,64 @@ export const getActiveAnnouncements = async (req, res) => {
 
     res.status(500).json({
       message: "FAILED_FETCH_ANNOUNCEMENTS",
+    });
+  }
+};
+export const getAllTickets = async (req, res) => {
+  try {
+    const tickets = await Ticket.find()
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      tickets,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch tickets",
+    });
+  }
+};
+
+export const adminReplyTicket = async (req, res) => {
+  try {
+    const { message, status } = req.body;
+
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: "Ticket not found",
+      });
+    }
+
+    ticket.messages.push({
+      sender: req.user.id,
+      role: "ADMIN",
+      message,
+    });
+
+    if (status) {
+      ticket.status = status;
+
+      if (status === "RESOLVED") {
+        ticket.resolvedAt = new Date();
+      }
+    }
+
+    await ticket.save();
+
+    res.json({
+      success: true,
+      message: "Reply sent",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to reply",
     });
   }
 };
