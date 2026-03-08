@@ -30,15 +30,14 @@ export default function TicketTable({ tickets }: Props) {
     try {
       setUpdating(ticketId);
 
-
       await adminReplyTicket(ticketId, status, status);
 
       setTicketList((prev) =>
         prev.map((ticket) =>
           ticket._id === ticketId
             ? { ...ticket, status: status as Ticket["status"] }
-            : ticket
-        )
+            : ticket,
+        ),
       );
 
       toast.success("Ticket status updated");
@@ -97,7 +96,7 @@ export default function TicketTable({ tickets }: Props) {
               <td className="p-4">
                 <span
                   className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusStyle(
-                    ticket.status
+                    ticket.status,
                   )}`}
                 >
                   {ticket.status.replace("_", " ")}
@@ -119,9 +118,7 @@ export default function TicketTable({ tickets }: Props) {
 
                   <button
                     onClick={() =>
-                      setOpenMenu(
-                        openMenu === ticket._id ? null : ticket._id
-                      )
+                      setOpenMenu(openMenu === ticket._id ? null : ticket._id)
                     }
                     className="text-xs bg-gray-200 px-2 py-1 rounded"
                   >
@@ -130,12 +127,10 @@ export default function TicketTable({ tickets }: Props) {
                 </div>
 
                 {openMenu === ticket._id && (
-                  <div className="absolute right-4 mt-2 w-40 bg-white border rounded-md shadow-lg z-10">
+                  <div className="absolute right-0 top-full mt-2 w-40 bg-white border rounded-md shadow-lg z-50">
                     <button
                       disabled={updating === ticket._id}
-                      onClick={() =>
-                        handleStatus(ticket._id, "IN_PROGRESS")
-                      }
+                      onClick={() => handleStatus(ticket._id, "IN_PROGRESS")}
                       className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                     >
                       Mark In Progress
@@ -143,9 +138,7 @@ export default function TicketTable({ tickets }: Props) {
 
                     <button
                       disabled={updating === ticket._id}
-                      onClick={() =>
-                        handleStatus(ticket._id, "RESOLVED")
-                      }
+                      onClick={() => handleStatus(ticket._id, "RESOLVED")}
                       className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                     >
                       Mark Resolved
