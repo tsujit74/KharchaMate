@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { adminReplyTicket } from "@/app/services/ticket.service";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
@@ -26,18 +26,34 @@ export default function TicketTable({ tickets }: Props) {
   const [updating, setUpdating] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleStatus = async (ticketId: string, status: string) => {
     try {
       setUpdating(ticketId);
 
       await adminReplyTicket(ticketId, status, status);
 
+      // Instant UI Update
       setTicketList((prev) =>
         prev.map((ticket) =>
           ticket._id === ticketId
             ? { ...ticket, status: status as Ticket["status"] }
-            : ticket,
-        ),
+            : ticket
+        )
       );
 
       toast.success("Ticket status updated");
@@ -62,8 +78,17 @@ export default function TicketTable({ tickets }: Props) {
     }
   };
 
+  // ✅ EMPTY STATE
+  if (!ticketList || ticketList.length === 0) {
+    return (
+      <div className="bg-white border rounded-lg p-10 text-center text-gray-500">
+        No tickets found.
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white border  overflow-hidden shadow-sm">
+    <div className="bg-white border shadow-sm rounded-lg overflow-visible">
       <table className="w-full text-sm">
         <thead className="bg-gray-50 border-b">
           <tr>
@@ -96,7 +121,7 @@ export default function TicketTable({ tickets }: Props) {
               <td className="p-4">
                 <span
                   className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusStyle(
-                    ticket.status,
+                    ticket.status
                   )}`}
                 >
                   {ticket.status.replace("_", " ")}
@@ -118,7 +143,9 @@ export default function TicketTable({ tickets }: Props) {
 
                   <button
                     onClick={() =>
-                      setOpenMenu(openMenu === ticket._id ? null : ticket._id)
+                      setOpenMenu(
+                        openMenu === ticket._id ? null : ticket._id
+                      )
                     }
                     className="text-xs bg-gray-200 px-2 py-1 rounded"
                   >
@@ -126,21 +153,35 @@ export default function TicketTable({ tickets }: Props) {
                   </button>
                 </div>
 
+                {/* Dropdown */}
                 {openMenu === ticket._id && (
-                  <div className="absolute right-0 top-full mt-2 w-40 bg-white border rounded-md shadow-lg z-50">
+                  <div
+                    ref={menuRef}
+                    className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg z-50"
+                  >
                     <button
                       disabled={updating === ticket._id}
-                      onClick={() => handleStatus(ticket._id, "IN_PROGRESS")}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                      onClick={() =>
+                        handleStatus(ticket._id, "IN_PROGRESS")
+                      }
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
                     >
+                      {updating === ticket._id && (
+                        <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                      )}
                       Mark In Progress
                     </button>
 
                     <button
                       disabled={updating === ticket._id}
-                      onClick={() => handleStatus(ticket._id, "RESOLVED")}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                      onClick={() =>
+                        handleStatus(ticket._id, "RESOLVED")
+                      }
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
                     >
+                      {updating === ticket._id && (
+                        <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                      )}
                       Mark Resolved
                     </button>
                   </div>
