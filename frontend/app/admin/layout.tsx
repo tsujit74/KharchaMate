@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getMe } from "@/app/services/auth.service";
 import toast from "react-hot-toast";
 import Sidebar from "./components/Sidebar";
+import RouteLoader from "../components/RouteLoader";
 
 type Props = {
   children: ReactNode;
@@ -61,6 +62,8 @@ export default function AdminLayout({ children }: Props) {
           Admin Panel
         </h2>
       </div>
+
+      <RouteLoader/>
 
       {/* Scrollable content */}
       <main className="flex-1 overflow-y-auto">

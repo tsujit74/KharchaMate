@@ -3,6 +3,7 @@
 import { useState } from "react";
 import SupportSidebar from "./components/SupportSidebar";
 import CreateTicketModal from "./components/CreateTicketModal";
+import RouteLoader from "@/app/components/RouteLoader";
 
 export default function SupportLayout({
   children,
@@ -19,7 +20,7 @@ export default function SupportLayout({
         <SupportSidebar onCreateClick={() => setOpenModal(true)} />
       </div>
 
-     
+     <RouteLoader/>
       <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
         {children}
       </div>

@@ -17,6 +17,20 @@ export const getAdminStats = async (req, res) => {
       isBlocked: true,
     });
 
+    const openTickets = await Ticket.countDocuments({
+      status: "OPEN",
+    });
+
+    const inProgressTickets = await Ticket.countDocuments({
+      status: "IN_PROGRESS",
+    });
+
+    const resolvedTickets = await Ticket.countDocuments({
+      status: "RESOLVED",
+    });
+
+    const totalTickets = await Ticket.countDocuments();
+
     const totalMoneyResult = await Expense.aggregate([
       {
         $group: {
@@ -49,6 +63,12 @@ export const getAdminStats = async (req, res) => {
       loggedInThisMonth,
       blockedUsers,
       blockedGroups,
+
+      
+      totalTickets,
+      openTickets,
+      inProgressTickets,
+      resolvedTickets,
     });
   } catch (error) {
     console.error(error);
