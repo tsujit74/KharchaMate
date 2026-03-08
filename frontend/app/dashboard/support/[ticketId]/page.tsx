@@ -5,6 +5,8 @@ import { getTicketById, replyToTicket } from "@/app/services/ticket.service";
 import { useParams } from "next/navigation";
 import TicketMessage from "../components/TicketMessage";
 
+type TicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
+
 export default function TicketDetailsPage() {
   const params = useParams();
   const ticketId = params.ticketId as string;
@@ -15,6 +17,12 @@ export default function TicketDetailsPage() {
   const [sending, setSending] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const statusStyles: Record<TicketStatus, string> = {
+    OPEN: "bg-yellow-50 text-yellow-700 border border-yellow-200",
+    IN_PROGRESS: "bg-blue-50 text-blue-700 border border-blue-200",
+    RESOLVED: "bg-green-50 text-green-700 border border-green-200",
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,32 +63,35 @@ export default function TicketDetailsPage() {
     }
   };
 
-  if (loading)
-    return (
-      <div className="p-6 text-gray-500 text-sm">
-        Loading ticket...
-      </div>
-    );
+  if (loading) {
+    return <div className="p-6 text-gray-500 text-sm">Loading ticket...</div>;
+  }
 
-  if (!ticket)
-    return (
-      <div className="p-6 text-gray-500 text-sm">
-        Ticket not found
-      </div>
-    );
+  if (!ticket) {
+    return <div className="p-6 text-gray-500 text-sm">Ticket not found</div>;
+  }
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col max-w-3xl mx-auto border rounded-xl bg-white shadow-sm">
-
+    <div className="flex flex-col h-full max-w-3xl mx-auto border rounded-xl bg-white shadow-sm">
       {/* Header */}
-      <div className="p-4 border-b">
-        <h1 className="font-semibold text-gray-900">
-          {ticket.title}
-        </h1>
+      <div className="p-4 border-b flex items-start justify-between">
+        <div>
+          <h1 className="font-semibold text-gray-900 text-lg">
+            {ticket.subject}
+          </h1>
 
-        <p className="text-xs text-gray-500 mt-1">
-          Status: {ticket.status}
-        </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Ticket ID: #{ticket._id.slice(-6)}
+          </p>
+        </div>
+
+        <span
+          className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+            statusStyles[ticket.status as TicketStatus]
+          }`}
+        >
+          {ticket.status.replace("_", " ")}
+        </span>
       </div>
 
       {/* Messages */}
@@ -97,7 +108,7 @@ export default function TicketDetailsPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Reply box */}
+      {/* Reply Box */}
       <div className="border-t p-3 flex gap-2 bg-white">
         <input
           type="text"
@@ -105,12 +116,15 @@ export default function TicketDetailsPage() {
           className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/20"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleReply();
+          }}
         />
 
         <button
           onClick={handleReply}
           disabled={sending || !message.trim()}
-          className="px-4 py-2 text-sm bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+          className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
         >
           {sending ? "Sending..." : "Send"}
         </button>
