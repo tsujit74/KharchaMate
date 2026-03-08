@@ -82,6 +82,13 @@ export default function Navbar() {
             </Link>
 
             <Link
+              href="/dashboard/support"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm rounded-lg hover:bg-slate-100"
+            >
+              Support
+            </Link>
+
+            <Link
               href="/groups/create"
               className="flex items-center gap-1 bg-black text-white
                          px-3 py-1.5 rounded-md text-sm
@@ -187,6 +194,24 @@ export default function Navbar() {
                                hover:bg-gray-100 transition"
                   >
                     Dashboard
+                  </Link>
+
+                  <Link
+                    href="/dashboard/insights"
+                    onClick={() => setOpenMenu(false)}
+                    className="block px-4 py-2.5 text-sm text-gray-700
+                               hover:bg-gray-100 transition"
+                  >
+                    Insights
+                  </Link>
+
+                  <Link
+                    href="/dashboard/support"
+                    onClick={() => setOpenMenu(false)}
+                    className="block px-4 py-2.5 text-sm text-gray-700
+                               hover:bg-gray-100 transition"
+                  >
+                    Support
                   </Link>
 
                   <div className="border-t" />
