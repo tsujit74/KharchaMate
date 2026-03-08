@@ -99,25 +99,26 @@ export const getAllTicketsAdmin = async () => {
 
 export const adminReplyTicket = async (
   ticketId: string,
-  message: string
+  message: string,
+  status?:string
 ) => {
   if (!ticketId?.trim()) throw new Error("INVALID_TICKET_ID");
-  if (!message?.trim()) throw new Error("INVALID_REPLY_MESSAGE");
 
   try {
     const res = await api.post(`/ticket/admin/${ticketId}/reply`, {
-      message,
+      message: message || "",
+      status,
     });
 
     return res.data;
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
-    const status = err.response.status;
+    const code = err.response.status;
 
-    if (status === 401) throw new Error("UNAUTHORIZED");
-    if (status === 403) throw new Error("FORBIDDEN");
-    if (status === 404) throw new Error("TICKET_NOT_FOUND");
+    if (code === 401) throw new Error("UNAUTHORIZED");
+    if (code === 403) throw new Error("FORBIDDEN");
+    if (code === 404) throw new Error("TICKET_NOT_FOUND");
 
     throw new Error("FAILED_ADMIN_REPLY_TICKET");
   }

@@ -65,6 +65,13 @@ export default function Sidebar() {
           Group Management
         </Link>
 
+        <Link href="/admin/support" className={navItemClass("/admin/support")}>
+          {isActive("/admin/support") && (
+            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
+          )}
+          Ticket Support
+        </Link>
+
         <Link href="/admin/announcements" className={navItemClass("/admin/announcements")}>
           {isActive("/admin/announcements") && (
             <span className="absolute left-0 top-0 h-full w-1 bg-white" />
