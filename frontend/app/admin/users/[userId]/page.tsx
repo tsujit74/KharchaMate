@@ -12,6 +12,15 @@ import {
 
 import DashboardHeader from "../../components/DashobardHeader";
 import UserGroups from "./components/UserGroups";
+import TicketCard from "./components/TicketCard";
+
+type Ticket = {
+  _id: string;
+  subject: string;
+  priority: string;
+  status: string;
+  createdAt: string;
+};
 
 type UserDetails = {
   _id: string;
@@ -25,7 +34,10 @@ type UserDetails = {
     groupsCreated: number;
     groupsJoined: number;
     totalExpenses: number;
+    ticketsRaised: number;
   };
+
+  tickets: Ticket[];
 };
 
 export default function AdminUserDetailsPage() {
@@ -48,6 +60,7 @@ export default function AdminUserDetailsPage() {
       setUser({
         ...data.user,
         stats: data.stats,
+        tickets: data.tickets || [],
       });
 
     } catch (err: any) {
@@ -225,6 +238,30 @@ export default function AdminUserDetailsPage() {
       {/* USER GROUPS */}
 
       <UserGroups userId={user._id} />
+
+      {/* USER TICKETS */}
+
+<div className="space-y-4">
+
+  <h3 className="text-lg font-semibold text-gray-900">
+    Support Tickets <span>{`(${user.tickets?.length})`}</span>
+  </h3>
+
+  {user.tickets?.length === 0 ? (
+    <div className="bg-white border border-gray-200 p-6 text-sm text-gray-500">
+      No support tickets raised by this user.
+    </div>
+  ) : (
+
+    <div className="grid md:grid-cols-2 gap-4">
+      {user.tickets.map(ticket => (
+        <TicketCard key={ticket._id} ticket={ticket} />
+      ))}
+    </div>
+
+  )}
+
+</div>
 
     </div>
   );

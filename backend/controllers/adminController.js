@@ -303,56 +303,68 @@ export const getUserDetailsAdmin = async (req, res) => {
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
+        success: false,
         message: "Invalid user id",
       });
     }
 
     const objectUserId = new mongoose.Types.ObjectId(userId);
 
-    // Fetch user
+    // Fetch user basic details
     const user = await User.findById(objectUserId).select(
-      "name email role isBlocked createdAt",
+      "name email role isBlocked createdAt"
     );
 
     if (!user) {
       return res.status(404).json({
+        success: false,
         message: "User not found",
       });
     }
 
-    // Run stats queries in parallel
-    const [groupsCreated, groupsJoined, expensesAgg] = await Promise.all([
-      Group.countDocuments({ createdBy: objectUserId }),
+    // Run queries in parallel
+    const [groupsCreated, groupsJoined, expensesAgg, tickets] =
+      await Promise.all([
+        Group.countDocuments({ createdBy: objectUserId }),
 
-      Group.countDocuments({ members: objectUserId }),
+        Group.countDocuments({ members: objectUserId }),
 
-      Expense.aggregate([
-        {
-          $match: { paidBy: objectUserId },
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
+        Expense.aggregate([
+          {
+            $match: { paidBy: objectUserId },
           },
-        },
-      ]),
-    ]);
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$amount" },
+            },
+          },
+        ]),
+
+        // Fetch tickets raised by this user
+        Ticket.find({ user: objectUserId })
+          .select("subject priority status createdAt resolvedAt")
+          .sort({ createdAt: -1 }),
+      ]);
 
     const totalExpenses = expensesAgg.length > 0 ? expensesAgg[0].total : 0;
 
     return res.status(200).json({
+      success: true,
       user,
       stats: {
         groupsCreated,
         groupsJoined,
         totalExpenses,
+        ticketsRaised: tickets.length,
       },
+      tickets,
     });
   } catch (error) {
     console.error("Admin getUserDetails error:", error);
 
     return res.status(500).json({
+      success: false,
       message: "Failed to fetch user details",
     });
   }
