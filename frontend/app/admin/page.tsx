@@ -15,6 +15,11 @@ type Stats = {
   totalMoney: number;
   newUsersThisMonth: number;
   loggedInThisMonth: number;
+
+  totalTickets: number;
+  openTickets: number;
+  inProgressTickets: number;
+  resolvedTickets: number;
 };
 
 export default function AdminDashboard() {

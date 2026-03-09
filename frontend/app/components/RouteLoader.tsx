@@ -8,13 +8,20 @@ export default function RouteLoader() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
+    let active = true;
+
+    setTimeout(() => {
+      if (active) setLoading(true);
+    }, 0);
 
     const timer = setTimeout(() => {
-      setLoading(false);
+      if (active) setLoading(false);
     }, 800);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [pathname]);
 
   if (!loading) return null;
