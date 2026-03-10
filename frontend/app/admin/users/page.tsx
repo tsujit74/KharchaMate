@@ -11,6 +11,7 @@ import {
 import DashboardHeader from "../components/DashobardHeader";
 import UsersFilter from "./components/UsersFilter";
 import UsersTable from "./components/UsersTable";
+import RefreshButton from "../components/RefreshButton";
 
 type User = {
   _id: string;
@@ -144,26 +145,32 @@ export default function AdminUsersPage() {
     );
   }
 
-  return (
-    <div className="p-2 md:p-4 bg-gray-50 min-h-screen space-y-6">
+ return (
+  <div className="p-2 md:p-4 bg-gray-50 min-h-screen space-y-6">
+
+    <div className="flex items-center justify-between">
       <DashboardHeader
         title="User Management"
         subtitle="Manage platform users"
       />
 
-      <UsersFilter
-        search={search}
-        setSearch={setSearch}
-        status={status}
-        setStatus={setStatus}
-      />
-
-      <UsersTable
-        users={filteredUsers}
-        actionLoading={actionLoading}
-        handleBlock={handleBlock}
-        handleUnblock={handleUnblock}
-      />
+      <RefreshButton onRefresh={fetchUsers} loading={loading} />
     </div>
-  );
+
+    <UsersFilter
+      search={search}
+      setSearch={setSearch}
+      status={status}
+      setStatus={setStatus}
+    />
+
+    <UsersTable
+      users={filteredUsers}
+      actionLoading={actionLoading}
+      handleBlock={handleBlock}
+      handleUnblock={handleUnblock}
+    />
+
+  </div>
+);
 }

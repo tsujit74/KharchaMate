@@ -13,6 +13,7 @@ import {
   toggleAnnouncementAdmin,
   deleteAnnouncementAdmin,
 } from "@/app/services/admin.service";
+import RefreshButton from "../components/RefreshButton";
 
 type Announcement = {
   _id: string;
@@ -111,34 +112,41 @@ export default function AdminAnnouncementsPage() {
   }
 
   return (
-    <div className="p-2 md:p-4 bg-gray-50 min-h-screen space-y-6">
+  <div className="p-2 md:p-4 bg-gray-50 min-h-screen space-y-6">
 
+    <div className="flex items-center justify-between">
       <DashboardHeader
         title="Announcements"
         subtitle="Broadcast platform updates to all users"
       />
 
-      <div className="flex justify-end">
-        <button
-          onClick={() => setOpenModal(true)}
-          className="px-4 py-2 text-sm font-semibold bg-black text-white hover:bg-gray-800 transition"
-        >
-          + Create Announcement
-        </button>
-      </div>
-
-      <AnnouncementTable
-        announcements={announcements}
-        actionLoading={actionLoading}
-        handleToggle={handleToggle}
-        handleDelete={handleDelete}
-      />
-
-      <CreateAnnouncementModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        onCreate={handleCreate}
+      <RefreshButton
+        onRefresh={fetchAnnouncements}
+        loading={loading}
       />
     </div>
-  );
+
+    <div className="flex justify-end">
+      <button
+        onClick={() => setOpenModal(true)}
+        className="px-4 py-2 text-sm font-semibold bg-black text-white hover:bg-gray-800 transition"
+      >
+        + Create Announcement
+      </button>
+    </div>
+
+    <AnnouncementTable
+      announcements={announcements}
+      actionLoading={actionLoading}
+      handleToggle={handleToggle}
+      handleDelete={handleDelete}
+    />
+
+    <CreateAnnouncementModal
+      open={openModal}
+      onClose={() => setOpenModal(false)}
+      onCreate={handleCreate}
+    />
+  </div>
+);
 }

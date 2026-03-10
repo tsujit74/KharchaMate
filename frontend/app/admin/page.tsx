@@ -5,6 +5,7 @@ import { getAdminStats } from "@/app/services/admin.service";
 import StatsGrid from "./components/StatsGrid";
 import DashboardHeader from "./components/DashobardHeader";
 import toast from "react-hot-toast";
+import RefreshButton from "./components/RefreshButton";
 
 type Stats = {
   blockedGroups: number;
@@ -92,15 +93,21 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-10">
+  <div className="space-y-10">
+
+    <div className="flex justify-between items-center">
       <DashboardHeader
         title="Admin Dashboard"
         subtitle="Platform analytics and system overview"
       />
 
-      <div className="bg-white border border-slate-200 rounded p-8">
-        <StatsGrid stats={stats} />
-      </div>
+      <RefreshButton onRefresh={fetchStats} loading={loading} />
     </div>
-  );
+
+    <div className="bg-white border border-slate-200 rounded p-8">
+      <StatsGrid stats={stats} />
+    </div>
+
+  </div>
+);
 }

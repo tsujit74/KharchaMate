@@ -12,6 +12,7 @@ import DashboardHeader from "../components/DashobardHeader";
 import GroupsTable from "./components/GroupTables";
 import GroupStatusTabs from "./components/GroupStatusTabs";
 import GroupSearch from "./components/GroupFilter";
+import RefreshButton from "../components/RefreshButton";
 
 type Group = {
   _id: string;
@@ -115,23 +116,29 @@ const filteredGroups = groups
   }
 
   return (
-    <div className="p-1 md:p-2 bg-gray-50 min-h-screen space-y-6">
+  <div className="p-1 md:p-2 bg-gray-50 min-h-screen space-y-6">
+
+    <div className="flex items-center justify-between">
       <DashboardHeader
         title="Group Management"
         subtitle="Manage platform groups"
       />
 
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <GroupStatusTabs status={status} setStatus={setStatus} />
-        <GroupSearch search={search} setSearch={setSearch} />
-      </div>
-
-      <GroupsTable
-        groups={filteredGroups}
-        actionLoading={actionLoading}
-        handleBlock={handleBlock}
-        handleUnblock={handleUnblock}
-      />
+      <RefreshButton onRefresh={fetchGroups} loading={loading} />
     </div>
-  );
+
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <GroupStatusTabs status={status} setStatus={setStatus} />
+      <GroupSearch search={search} setSearch={setSearch} />
+    </div>
+
+    <GroupsTable
+      groups={filteredGroups}
+      actionLoading={actionLoading}
+      handleBlock={handleBlock}
+      handleUnblock={handleUnblock}
+    />
+
+  </div>
+);
 }
