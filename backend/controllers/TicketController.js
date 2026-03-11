@@ -18,6 +18,15 @@ export const createTicket = async (req, res) => {
       ],
     });
 
+    const user = await User.findById(req.user.id).select("name");
+
+    notifyAdmin({
+      title: "New Support Ticket",
+      message: `${user.name} created ticket "${subject}"`,
+      type: "NEW_TICKET",
+      relatedId: ticket._id,
+    });
+
     res.status(201).json({
       success: true,
       message: "Ticket created successfully",
@@ -33,8 +42,9 @@ export const createTicket = async (req, res) => {
 
 export const getMyTickets = async (req, res) => {
   try {
-    const tickets = await Ticket.find({ user: req.user.id })
-      .sort({ createdAt: -1 });
+    const tickets = await Ticket.find({ user: req.user.id }).sort({
+      createdAt: -1,
+    });
 
     res.json({
       success: true,
@@ -50,8 +60,10 @@ export const getMyTickets = async (req, res) => {
 
 export const getTicketById = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id)
-      .populate("messages.sender", "name email");
+    const ticket = await Ticket.findById(req.params.id).populate(
+      "messages.sender",
+      "name email",
+    );
 
     if (!ticket) {
       return res.status(404).json({

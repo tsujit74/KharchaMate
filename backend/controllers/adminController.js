@@ -5,6 +5,7 @@ import Expense from "../models/Expense.js";
 import Announcement from "../models/Announcement.js";
 import { notifyUser } from "../service/notify.js";
 import Ticket from "../models/Ticket.js";
+import AdminNotification from "../models/AdminNotification.js";
 
 export const getAdminStats = async (req, res) => {
   try {
@@ -561,6 +562,64 @@ export const adminReplyTicket = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to reply",
+    });
+  }
+};
+
+//Admin Notification
+export const getAdminNotifications = async (req, res) => {
+  try {
+    const notifications = await AdminNotification.find()
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    res.json(notifications);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch admin notifications",
+    });
+  }
+};
+
+export const getAdminUnreadCount = async (req, res) => {
+  try {
+    const count = await AdminNotification.countDocuments({
+      isRead: false,
+    });
+
+    res.json({ count });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch unread count",
+    });
+  }
+};
+
+export const markAdminNotificationRead = async (req, res) => {
+  try {
+    await AdminNotification.findByIdAndUpdate(req.params.id, {
+      isRead: true,
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to update notification",
+    });
+  }
+};
+
+export const markAllAdminNotificationsRead = async (req, res) => {
+  try {
+    await AdminNotification.updateMany(
+      { isRead: false },
+      { isRead: true }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to update notifications",
     });
   }
 };

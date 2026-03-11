@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { sendEmail } from "../service/mailService.js";
+import { notifyAdmin } from "../service/adminNotify.js";
 
 export const signup = async (req, res) => {
   try {
@@ -19,6 +20,15 @@ export const signup = async (req, res) => {
       email,
       password: hashedPassword,
       mobile: mobile || undefined,
+    });
+
+    // Notify admin
+    await notifyAdmin({
+      actor: user._id,
+      title: "New User Registered",
+      message: `${user.name} joined the platform`,
+      type: "USER_REGISTERED",
+      relatedId: user._id,
     });
 
     res.status(201).json({

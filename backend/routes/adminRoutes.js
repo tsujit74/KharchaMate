@@ -6,12 +6,16 @@ import {
   blockUser,
   createAnnouncement,
   deleteAnnouncement,
+  getAdminNotifications,
   getAdminStats,
+  getAdminUnreadCount,
   getAllAnnouncements,
   getAllGroups,
   getAllUsers,
   getUserDetailsAdmin,
   getUserGroupsAdmin,
+  markAdminNotificationRead,
+  markAllAdminNotificationsRead,
   toggleAnnouncement,
   unblockGroup,
   unblockUser,
@@ -71,6 +75,36 @@ router.delete(
   authMiddleware,
   adminMiddleware,
   deleteAnnouncement
+);
+
+/* ADMIN NOTIFICATIONS */
+
+router.get(
+  "/notifications",
+  authMiddleware,
+  adminMiddleware,
+  getAdminNotifications
+);
+
+router.get(
+  "/notifications/unread-count",
+  authMiddleware,
+  adminMiddleware,
+  getAdminUnreadCount
+);
+
+router.patch(
+  "/notifications/:id/read",
+  authMiddleware,
+  adminMiddleware,
+  markAdminNotificationRead
+);
+
+router.patch(
+  "/notifications/read-all",
+  authMiddleware,
+  adminMiddleware,
+  markAllAdminNotificationsRead
 );
 
 

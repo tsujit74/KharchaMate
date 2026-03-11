@@ -2,6 +2,7 @@ import Group from "../models/Group.js";
 import User from "../models/User.js";
 import Expense from "../models/Expense.js";
 import { notifyUser } from "../service/notify.js";
+import { notifyAdmin } from "../service/adminNotify.js";
 
 export const createGroup = async (req, res) => {
   try {
@@ -15,19 +16,28 @@ export const createGroup = async (req, res) => {
       isActive: true,
     });
 
+    const user = await User.findById(req.user.id).select("name");
+
+    await notifyAdmin({
+      actor: user._id,
+      title: "New Group Created",
+      message: `${user.name} created group "${group.name}"`,
+      type: "GROUP_CREATED",
+      relatedId: group._id,
+    });
+
     res.status(201).json(group);
   } catch (error) {
     res.status(500).json({ message: "Failed to create group" });
   }
 };
 
-
 export const addMember = async (req, res) => {
   try {
     const { email } = req.body;
     const group = req.group;
 
-     const expenseExists = await Expense.exists({ group: group._id });
+    const expenseExists = await Expense.exists({ group: group._id });
 
     if (expenseExists) {
       return res.status(400).json({
@@ -65,7 +75,6 @@ export const addMember = async (req, res) => {
   }
 };
 
-
 export const getMyGroups = async (req, res) => {
   try {
     const groups = await Group.find({
@@ -77,7 +86,6 @@ export const getMyGroups = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch groups" });
   }
 };
-
 
 export const getGroupById = async (req, res) => {
   try {
@@ -98,7 +106,6 @@ export const getGroupById = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch group" });
   }
 };
-
 
 export const removeMember = async (req, res) => {
   try {
@@ -121,13 +128,9 @@ export const removeMember = async (req, res) => {
       });
     }
 
-    group.members = group.members.filter(
-      (id) => id.toString() !== userId
-    );
+    group.members = group.members.filter((id) => id.toString() !== userId);
 
-    group.admins = group.admins.filter(
-      (id) => id.toString() !== userId
-    );
+    group.admins = group.admins.filter((id) => id.toString() !== userId);
 
     await group.save();
 
@@ -147,13 +150,21 @@ export const removeMember = async (req, res) => {
   }
 };
 
-
 export const toggleGroupStatus = async (req, res) => {
   try {
     const group = req.group;
 
     group.isActive = !group.isActive;
     await group.save();
+
+    notifyAdmin({
+      title: group.isActive ? "Group Reopened" : "Group Closed",
+      message: `${req.user.name} ${
+        group.isActive ? "reopened" : "closed"
+      } group "${group.name}"`,
+      type: "GROUP_STATUS",
+      relatedId: group._id,
+    });
 
     res.json({
       message: group.isActive ? "Group reopened" : "Group closed",
