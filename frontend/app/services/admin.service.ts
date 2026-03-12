@@ -296,3 +296,46 @@ export const toggleAnnouncementAdmin = async (announcementId: string) => {
     throw new Error("FAILED_TOGGLE_ANNOUNCEMENT");
   }
 };
+
+//Notification
+export const getAdminNotifications = async () => {
+  try {
+    const res = await api.get("/admin/notifications");
+
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    throw new Error("FAILED_FETCH_NOTIFICATIONS");
+  }
+};
+export const getAdminUnreadCount = async () => {
+  try {
+    const res = await api.get("/admin/notifications/unread-count");
+    return res.data.count;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    throw new Error("FAILED_FETCH_UNREAD_COUNT");
+  }
+};
+
+export const markAdminNotificationRead = async (id: string) => {
+  try {
+    await api.patch(`/admin/notifications/${id}/read`);
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    throw new Error("FAILED_UPDATE_NOTIFICATION");
+  }
+};
+
+export const markAllAdminNotificationsRead = async () => {
+  try {
+    await api.patch("/admin/notifications/read-all");
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    throw new Error("FAILED_UPDATE_NOTIFICATIONS");
+  }
+};
