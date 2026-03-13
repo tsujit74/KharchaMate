@@ -1,7 +1,5 @@
 "use client";
 
-import AdminNotificationBell from "./AdminNotificationBell";
-
 type Props = {
   title: string;
   subtitle?: string;
@@ -27,11 +25,7 @@ export default function DashboardHeader({
             {subtitle}
           </p>
         )}
-
-        
       </div>
-
-      <AdminNotificationBell />
 
       {/* Optional Action Button */}
       {action && <div>{action}</div>}

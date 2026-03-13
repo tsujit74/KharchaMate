@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { logoutUser } from "@/app/services/auth.service";
+import AdminNotificationBell from "./AdminNotificationBell";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -35,11 +36,15 @@ export default function Sidebar() {
 
   return (
     <div className="h-full flex flex-col bg-white">
+      
       {/* Header */}
-      <div className="h-16 flex items-center px-6 border-b border-gray-200">
+      <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 tracking-tight">
           Admin Panel
         </h2>
+
+        {/* Notification Bell */}
+        <AdminNotificationBell />
       </div>
 
       {/* Navigation */}
@@ -79,7 +84,13 @@ export default function Sidebar() {
           Announcements
         </Link>
 
-        {/* Normal View */}
+        <Link href="/admin/notifications" className={navItemClass("/admin/notifications")}>
+          {isActive("/admin/notifications") && (
+            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
+          )}
+          Notifications
+        </Link>
+
         <Link href="/" className={navItemClass("/")}>
           {isActive("/") && (
             <span className="absolute left-0 top-0 h-full w-1 bg-white" />
