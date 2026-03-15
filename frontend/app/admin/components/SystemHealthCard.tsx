@@ -17,7 +17,8 @@ type HealthData = {
 export default function SystemHealthCard() {
   const [health, setHealth] = useState<HealthData | null>(null);
 
-  const fetchHealth = async () => {
+  useEffect(() => {
+  const fetchData = async () => {
     try {
       const data = await getSystemHealth();
       setHealth(data);
@@ -26,12 +27,12 @@ export default function SystemHealthCard() {
     }
   };
 
-  useEffect(() => {
-    fetchHealth();
+  fetchData();
 
-    const interval = setInterval(fetchHealth, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const interval = setInterval(fetchData, 30000);
+
+  return () => clearInterval(interval);
+}, []);
 
   if (!health) {
     return <p className="text-gray-500">Loading system health...</p>;
