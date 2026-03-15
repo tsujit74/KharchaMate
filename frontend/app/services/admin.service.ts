@@ -339,3 +339,23 @@ export const markAllAdminNotificationsRead = async () => {
     throw new Error("FAILED_UPDATE_NOTIFICATIONS");
   }
 };
+
+//Health 
+
+export const getSystemHealth = async () => {
+  try {
+    const res = await api.get("/health");
+
+    return res.data;
+
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 503) throw new Error("SERVICE_UNAVAILABLE");
+    if (status === 500) throw new Error("SERVER_ERROR");
+
+    throw new Error("FAILED_FETCH_SYSTEM_HEALTH");
+  }
+};

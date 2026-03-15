@@ -6,6 +6,7 @@ import StatsGrid from "./components/StatsGrid";
 import DashboardHeader from "./components/DashobardHeader";
 import toast from "react-hot-toast";
 import RefreshButton from "./components/RefreshButton";
+import SystemHealthCard from "./components/SystemHealthCard";
 
 type Stats = {
   blockedGroups: number;
@@ -106,6 +107,10 @@ export default function AdminDashboard() {
 
     <div className="bg-white border border-slate-200 rounded p-8">
       <StatsGrid stats={stats} />
+    </div>
+
+     <div className="bg-white border border-slate-200 rounded p-6">
+      <SystemHealthCard />
     </div>
 
   </div>
