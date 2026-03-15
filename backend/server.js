@@ -18,6 +18,8 @@ import adminRoutes from "./routes/adminRoutes.js"
 import announcementRoutes from "./routes/announcements.js"
 import ticketRoutes from "./routes/ticketRoutes.js";
 import healthRoutes from "./routes/healthRoutes.js"
+import { performanceMiddleware } from "./middleware/performanceMiddleware.js";
+import { errorLogger } from "./middleware/errorLoggerMiddleware.js";
 
 const app = express();
 
@@ -51,6 +53,8 @@ const globalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+app.use(performanceMiddleware);
+
 app.use(globalLimiter);
 
 const loginLimiter = rateLimit({
@@ -76,6 +80,8 @@ app.use("/api", healthRoutes);
 app.get("/", (req, res) => {
   res.send("KharchaMate Backend Running");
 });
+
+app.use(errorLogger);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
