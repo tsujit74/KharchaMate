@@ -1,4 +1,6 @@
 import Ticket from "../models/Ticket.js";
+import User from "../models/User.js";
+import {notifyAdmin} from "../service/adminNotify.js"
 
 export const createTicket = async (req, res) => {
   try {
