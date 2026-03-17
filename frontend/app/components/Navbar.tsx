@@ -40,19 +40,14 @@ export default function Navbar() {
         {/* Logo */}
         <Link
           href={isAdmin ? "/admin" : "/dashboard"}
-          className="flex items-center"
+          className="flex items-center gap-2"
         >
-          {" "}
-          <div className="relative h-64 w-48">
-            {" "}
-            <Image
-              src="/logo.png"
-              alt="KharchaMate Logo"
-              fill
-              priority
-              className="object-contain"
-            />{" "}
-          </div>{" "}
+          <div className="bg-blue-600 text-white px-2 py-1 rounded-md font-bold">
+            KM
+          </div>
+          <span className="text-lg font-semibold text-gray-800">
+            KharchaMate
+          </span>
         </Link>
 
         {/* Center Nav */}
