@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { adminReplyTicket } from "@/app/services/ticket.service";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
+import { MoreVertical } from "lucide-react";
 
 interface Ticket {
   _id: string;
@@ -28,14 +29,12 @@ export default function TicketTable({ tickets }: Props) {
 
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setOpenMenu(null);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
@@ -47,7 +46,6 @@ export default function TicketTable({ tickets }: Props) {
 
       await adminReplyTicket(ticketId, status, status);
 
-      // Instant UI Update
       setTicketList((prev) =>
         prev.map((ticket) =>
           ticket._id === ticketId
@@ -56,7 +54,7 @@ export default function TicketTable({ tickets }: Props) {
         )
       );
 
-      toast.success("Ticket status updated");
+      toast.success("Ticket updated");
     } catch (err: any) {
       toast.error(err.message.replaceAll("_", " "));
     } finally {
@@ -65,39 +63,53 @@ export default function TicketTable({ tickets }: Props) {
     }
   };
 
+  // 🔥 Status Badge
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "OPEN":
-        return "bg-red-100 text-red-700";
+        return "bg-red-50 text-red-600";
       case "IN_PROGRESS":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-yellow-50 text-yellow-600";
       case "RESOLVED":
-        return "bg-green-100 text-green-700";
+        return "bg-green-50 text-green-600";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-50 text-gray-600";
     }
   };
 
-  // ✅ EMPTY STATE
+  // 🔥 Priority Badge
+  const getPriorityStyle = (priority: string) => {
+    switch (priority) {
+      case "HIGH":
+        return "bg-red-100 text-red-700";
+      case "MEDIUM":
+        return "bg-orange-100 text-orange-700";
+      case "LOW":
+        return "bg-green-100 text-green-700";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
   if (!ticketList || ticketList.length === 0) {
     return (
-      <div className="bg-white border rounded-lg p-10 text-center text-gray-500">
-        No tickets found.
+      <div className="bg-white border rounded-xl p-12 text-center shadow-sm">
+        <p className="text-gray-500">No support tickets yet</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border shadow-sm rounded-lg overflow-visible">
+    <div className="bg-white border shadow-sm overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 border-b">
+        <thead className="bg-gray-50 text-gray-600">
           <tr>
             <th className="p-4 text-left font-semibold">Subject</th>
             <th className="p-4 text-left font-semibold">User</th>
             <th className="p-4 text-left font-semibold">Priority</th>
             <th className="p-4 text-left font-semibold">Status</th>
             <th className="p-4 text-left font-semibold">Created</th>
-            <th className="p-4 text-left font-semibold">Action</th>
+            <th className="p-4 text-right font-semibold">Action</th>
           </tr>
         </thead>
 
@@ -105,22 +117,38 @@ export default function TicketTable({ tickets }: Props) {
           {ticketList.map((ticket) => (
             <tr
               key={ticket._id}
-              className="border-b hover:bg-gray-50 transition"
+              className="border-t hover:bg-gray-50 transition"
             >
-              <td className="p-4 font-medium">{ticket.subject}</td>
+              {/* Subject */}
+              <td className="p-4 font-medium text-gray-800">
+                {ticket.subject}
+              </td>
 
+              {/* User */}
               <td className="p-4">
-                <div className="font-medium">{ticket.user?.name}</div>
+                <div className="font-medium text-gray-800">
+                  {ticket.user?.name}
+                </div>
                 <div className="text-xs text-gray-500">
                   {ticket.user?.email}
                 </div>
               </td>
 
-              <td className="p-4 capitalize">{ticket.priority}</td>
-
+              {/* Priority */}
               <td className="p-4">
                 <span
-                  className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusStyle(
+                  className={`text-xs px-3 py-1 rounded-full font-medium ${getPriorityStyle(
+                    ticket.priority
+                  )}`}
+                >
+                  {ticket.priority}
+                </span>
+              </td>
+
+              {/* Status */}
+              <td className="p-4">
+                <span
+                  className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusStyle(
                     ticket.status
                   )}`}
                 >
@@ -128,15 +156,17 @@ export default function TicketTable({ tickets }: Props) {
                 </span>
               </td>
 
-              <td className="p-4">
+              {/* Date */}
+              <td className="p-4 text-gray-500">
                 {new Date(ticket.createdAt).toLocaleDateString()}
               </td>
 
-              <td className="p-4 relative">
-                <div className="flex items-center gap-3">
+              {/* Actions */}
+              <td className="p-4 text-right relative">
+                <div className="flex justify-end items-center gap-3">
                   <Link
                     href={`/admin/support/${ticket._id}`}
-                    className="text-blue-600 hover:underline text-xs"
+                    className="text-blue-600 text-xs font-medium hover:underline"
                   >
                     View
                   </Link>
@@ -147,24 +177,23 @@ export default function TicketTable({ tickets }: Props) {
                         openMenu === ticket._id ? null : ticket._id
                       )
                     }
-                    className="text-xs bg-gray-200 px-2 py-1 rounded"
+                    className="p-1 rounded hover:bg-gray-100"
                   >
-                    Actions
+                    <MoreVertical size={16} />
                   </button>
                 </div>
 
-                {/* Dropdown */}
                 {openMenu === ticket._id && (
                   <div
                     ref={menuRef}
-                    className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg z-50"
+                    className="absolute right-0 mt-2 w-44 bg-white border rounded-xl shadow-lg z-50 overflow-hidden"
                   >
                     <button
                       disabled={updating === ticket._id}
                       onClick={() =>
                         handleStatus(ticket._id, "IN_PROGRESS")
                       }
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                     >
                       {updating === ticket._id && (
                         <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
@@ -177,7 +206,7 @@ export default function TicketTable({ tickets }: Props) {
                       onClick={() =>
                         handleStatus(ticket._id, "RESOLVED")
                       }
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                     >
                       {updating === ticket._id && (
                         <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
