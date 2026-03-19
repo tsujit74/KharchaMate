@@ -23,7 +23,6 @@ interface Props {
 }
 
 export default function TicketTable({ tickets }: Props) {
-  const [ticketList, setTicketList] = useState<Ticket[]>(tickets);
   const [updating, setUpdating] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -45,14 +44,6 @@ export default function TicketTable({ tickets }: Props) {
       setUpdating(ticketId);
 
       await adminReplyTicket(ticketId, status, status);
-
-      setTicketList((prev) =>
-        prev.map((ticket) =>
-          ticket._id === ticketId
-            ? { ...ticket, status: status as Ticket["status"] }
-            : ticket
-        )
-      );
 
       toast.success("Ticket updated");
     } catch (err: any) {
@@ -91,7 +82,7 @@ export default function TicketTable({ tickets }: Props) {
     }
   };
 
-  if (!ticketList || ticketList.length === 0) {
+  if (!tickets || tickets.length === 0) {
     return (
       <div className="bg-white border rounded-xl p-12 text-center shadow-sm">
         <p className="text-gray-500">No support tickets yet</p>
@@ -114,7 +105,7 @@ export default function TicketTable({ tickets }: Props) {
         </thead>
 
         <tbody>
-          {ticketList.map((ticket) => (
+          {tickets.map((ticket) => (
             <tr
               key={ticket._id}
               className="border-t hover:bg-gray-50 transition"
