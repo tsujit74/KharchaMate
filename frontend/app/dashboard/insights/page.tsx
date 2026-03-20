@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  Legend,
 } from "recharts";
 
 import { getMyInsights } from "@/app/services/expense.service";
@@ -24,7 +25,16 @@ type InsightResponse = {
   netBalance: number;
 };
 
-const COLORS = ["#111827", "#374151", "#6B7280", "#9CA3AF", "#D1D5DB"];
+//const COLORS = ["#111827", "#374151", "#6B7280", "#9CA3AF", "#D1D5DB"];
+
+const CATEGORY_COLORS: Record<string, string> = {
+  FOOD: "#22C55E",
+  TRAVEL: "#3B82F6",
+  RENT: "#F59E0B",
+  SHOPPING: "#EC4899",
+  RECHARGE: "#6366F1",
+  OTHER: "#6B7280",
+};
 
 export default function InsightsPage() {
   const [data, setData] = useState<InsightResponse | null>(null);
@@ -39,7 +49,14 @@ export default function InsightsPage() {
     end: "",
   });
 
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -103,10 +120,14 @@ export default function InsightsPage() {
             label={!isMobile}
           >
             {data.categoryBreakdown.map((_, index) => (
-              <Cell key={index} fill={COLORS[index % COLORS.length]} />
+              <Cell
+                key={index}
+                fill={CATEGORY_COLORS[data.categoryBreakdown[index].category]}
+              />
             ))}
           </Pie>
           <Tooltip />
+          <Legend />
         </PieChart>
       );
     }
@@ -117,6 +138,7 @@ export default function InsightsPage() {
         <XAxis dataKey="category" />
         <YAxis />
         <Tooltip />
+        <Legend />
         <Bar dataKey="total" fill="#111827" />
       </BarChart>
     );
