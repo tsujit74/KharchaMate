@@ -66,7 +66,7 @@ export default function AddExpensePage() {
     };
 
     // ✅ CATEGORY (Optional)
-    const allowedCategories = ["FOOD", "TRAVEL", "RENT", "SHOPPING", "OTHER"];
+    const allowedCategories = ["FOOD", "TRAVEL", "RENT", "SHOPPING", "RECHARGE", "OTHER"];
 
     if (category) {
       if (!allowedCategories.includes(category)) {
@@ -178,6 +178,7 @@ export default function AddExpensePage() {
               <option value="TRAVEL">Travel</option>
               <option value="RENT">Rent</option>
               <option value="SHOPPING">Shopping</option>
+              <option value="RECHARGE">Recharge</option>
               <option value="OTHER">Other</option>
             </select>
           </div>
