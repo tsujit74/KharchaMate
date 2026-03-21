@@ -18,6 +18,7 @@ import {
 import { getMyInsights } from "@/app/services/expense.service";
 import toast from "react-hot-toast";
 import MonthlyExpenseList from "./components/MonthlyExpenseList";
+import CategoryTabs from "./components/CategoryTabs";
 
 type InsightResponse = {
   categoryBreakdown: { category: string; total: number }[];
@@ -49,6 +50,7 @@ export default function InsightsPage() {
     start: "",
     end: "",
   });
+  const [category, setCategory] = useState<string>("ALL");
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -67,26 +69,31 @@ export default function InsightsPage() {
     }).format(value || 0);
 
   const fetchInsights = async (params?: any) => {
-    try {
-      setLoading(true);
-      setError("");
+  try {
+    setLoading(true);
+    setError("");
 
-      const res = await getMyInsights(params || { filter });
-      setData(res);
-    } catch (err: any) {
-      const message = err.message || "Failed to load insights";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const finalParams = {
+      ...(params || { filter }),
+      ...(category !== "ALL" && { category }),
+    };
+
+    const res = await getMyInsights(finalParams);
+    setData(res);
+  } catch (err: any) {
+    const message = err.message || "Failed to load insights";
+    setError(message);
+    toast.error(message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     if (filter !== "custom") {
       fetchInsights({ filter });
     }
-  }, [filter]);
+  }, [filter,category]);
 
   const applyCustomFilter = () => {
     if (!customRange.start || !customRange.end) {
@@ -292,8 +299,13 @@ export default function InsightsPage() {
               <h3 className="text-sm font-medium text-gray-600 mb-3">
                 Monthly Expenses
               </h3>
+<CategoryTabs selected={category} onChange={setCategory} />
 
-              <MonthlyExpenseList filter={filter} customRange={customRange} />
+<MonthlyExpenseList
+  filter={filter}
+  customRange={customRange}
+  category={category}
+/>
             </div>
           </>
         )}

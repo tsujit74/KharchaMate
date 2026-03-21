@@ -16,9 +16,11 @@ type Expense = {
 export default function MonthlyExpenseList({
   filter,
   customRange,
+  category,
 }: {
   filter: "this-month" | "last-month" | "custom";
   customRange: { start: string; end: string };
+  category?: string;
 }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,10 +43,14 @@ export default function MonthlyExpenseList({
     try {
       setLoading(true);
 
-      const params =
+      const params: any =
         filter === "custom"
           ? { start: customRange.start, end: customRange.end }
           : { filter };
+
+      if (category && category !== "ALL") {
+        params.category = category;
+      }
 
       const res = await getMonthlyExpenses(params);
       setExpenses(res.expenses);
@@ -56,7 +62,7 @@ export default function MonthlyExpenseList({
 
   useEffect(() => {
     fetchData();
-  }, [filter, customRange]);
+  }, [filter, customRange, category]);
 
   // Loading Skeleton
   if (loading) {
