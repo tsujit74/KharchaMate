@@ -5,6 +5,7 @@ import {
   addExpense,
   deleteExpense,
   getGroupExpenses,
+  getMonthlyExpenses,
   getMonthlySummary,
   getMyExpenses,
   getMyInsights,
@@ -31,6 +32,8 @@ router.get("/recent", authMiddleware, getRecentExpenses);
 router.get("/my/expenses", authMiddleware, getMyExpenses);
 router.get("/my/monthly-summary", authMiddleware, getMonthlySummary);
 router.get("/my/insights", authMiddleware, getMyInsights); 
+router.get("/my/monthly-expenses", authMiddleware, getMonthlyExpenses);
+
 router.get("/:groupId", authMiddleware, groupContext, getGroupExpenses);
 
 

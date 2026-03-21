@@ -379,3 +379,89 @@ export const getMyInsights = async (req, res) => {
     res.status(500).json({ message: "FAILED_INSIGHTS" });
   }
 };
+
+
+//monthly expenses
+const getDateRange = ({ filter, start, end }) => {
+  const now = new Date();
+
+  if (filter === "this-month") {
+    return {
+      startDate: new Date(now.getFullYear(), now.getMonth(), 1),
+      endDate: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+    };
+  }
+
+  if (filter === "last-month") {
+    return {
+      startDate: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+      endDate: new Date(now.getFullYear(), now.getMonth(), 1),
+    };
+  }
+
+  if (start && end) {
+    return {
+      startDate: new Date(start),
+      endDate: new Date(end),
+    };
+  }
+
+  throw new Error("INVALID_FILTER");
+};
+
+export const getMonthlyExpenses = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { filter, start, end, page = 1, limit = 10, category } = req.query;
+
+ 
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    
+    let startDate, endDate;
+    try {
+      ({ startDate, endDate } = getDateRange({ filter, start, end }));
+    } catch {
+      return res.status(400).json({ message: "Invalid filter" });
+    }
+
+  
+    const query = {
+      createdAt: { $gte: startDate, $lt: endDate },
+      $or: [
+        { paidBy: new mongoose.Types.ObjectId(userId) },
+        { "splitBetween.user": new mongoose.Types.ObjectId(userId) },
+      ],
+    };
+
+    
+    if (category) {
+      query.category = category;
+    }
+
+   
+    const expenses = await Expense.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate("group", "name")
+      .populate("paidBy", "name email")
+      .lean();
+
+    
+    const total = await Expense.countDocuments(query);
+
+
+    res.json({
+      expenses,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+    });
+  } catch (error) {
+    console.error("MONTHLY EXPENSE ERROR:", error);
+    res.status(500).json({ message: "FAILED_MONTHLY_EXPENSES" });
+  }
+};
