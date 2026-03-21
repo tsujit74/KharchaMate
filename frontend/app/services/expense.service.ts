@@ -259,3 +259,16 @@ export const getMyInsights = async ({
     throw new Error("FAILED_FETCH_INSIGHTS");
   }
 };
+
+export const getMonthlyExpenses = async (params: any) => {
+  try {
+    const res = await api.get("/expenses/my/monthly-expenses", { params });
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401) throw new Error("UNAUTHORIZED");
+
+    throw new Error("FAILED_FETCH_MONTHLY_EXPENSES");
+  }
+};

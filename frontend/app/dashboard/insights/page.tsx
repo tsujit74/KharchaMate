@@ -17,6 +17,7 @@ import {
 
 import { getMyInsights } from "@/app/services/expense.service";
 import toast from "react-hot-toast";
+import MonthlyExpenseList from "./components/MonthlyExpenseList";
 
 type InsightResponse = {
   categoryBreakdown: { category: string; total: number }[];
@@ -287,6 +288,13 @@ export default function InsightsPage() {
                 </div>
               </div>
             )}
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-medium text-gray-600 mb-3">
+                Monthly Expenses
+              </h3>
+
+              <MonthlyExpenseList filter={filter} customRange={customRange} />
+            </div>
           </>
         )}
       </div>
