@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { getMonthlyExpenses } from "@/app/services/expense.service";
 
 type Expense = {
@@ -23,11 +23,13 @@ export default function MonthlyExpenseList({
   category?: string;
 }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const [isPending, startTransition] = useTransition();
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleString("en-IN", {
@@ -43,58 +45,67 @@ export default function MonthlyExpenseList({
       currency: "INR",
     }).format(value);
 
-  const fetchData = async (pageNumber = 1, append = false) => {
+  const buildParams = (pageNum: number) => {
+    const params: any =
+      filter === "custom"
+        ? { start: customRange.start, end: customRange.end }
+        : { filter };
+
+    if (category && category !== "ALL") {
+      params.category = category;
+    }
+
+    params.page = pageNum;
+    params.limit = 10;
+
+    return params;
+  };
+
+  // ✅ Smooth Fetch (no flicker)
+  const fetchInitial = async () => {
     try {
-      if (append) {
-        setLoadingMore(true);
-      } else {
-        setInitialLoading(true);
+      // show skeleton ONLY first time
+      if (expenses.length === 0) {
+        setLoading(true);
       }
 
-      const params: any =
-        filter === "custom"
-          ? { start: customRange.start, end: customRange.end }
-          : { filter };
+      setPage(1);
 
-      if (category && category !== "ALL") {
-        params.category = category;
-      }
+      const res = await getMonthlyExpenses(buildParams(1));
 
-      params.page = pageNumber;
-      params.limit = 5;
-
-      const res = await getMonthlyExpenses(params);
-
-      if (append) {
-        setExpenses((prev) => [...prev, ...res.expenses]);
-      } else {
-        setExpenses(res.expenses);
-      }
-
-      setPage(res.page);
+      setExpenses(res.expenses);
       setTotalPages(res.totalPages);
     } catch {
     } finally {
-      setInitialLoading(false);
+      setLoading(false);
+    }
+  };
+
+  // ✅ Load More
+  const loadMore = async () => {
+    try {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+
+      const res = await getMonthlyExpenses(buildParams(nextPage));
+
+      setExpenses((prev) => [...prev, ...res.expenses]);
+      setPage(nextPage);
+    } catch {
+    } finally {
       setLoadingMore(false);
     }
   };
 
-  //  Reset when filter changes
+  // ✅ Smooth transition on filter/category change
   useEffect(() => {
-    setExpenses([]);
-    setPage(1);
-    fetchData(1);
+    startTransition(() => {
+      fetchInitial();
+    });
   }, [filter, customRange, category]);
 
-  const loadMore = () => {
-    if (page < totalPages) {
-      fetchData(page + 1, true);
-    }
-  };
-
-  // First Load
-  if (initialLoading) {
+  // ✅ Skeleton only first load
+  if (loading && expenses.length === 0) {
     return (
       <div className="bg-white border p-5 shadow-sm space-y-3 animate-pulse">
         {[...Array(5)].map((_, i) => (
@@ -104,8 +115,8 @@ export default function MonthlyExpenseList({
     );
   }
 
-  // Empty
-  if (!expenses.length) {
+  // ✅ Empty state
+  if (!loading && expenses.length === 0) {
     return (
       <div className="bg-white border p-8 shadow-sm text-center">
         <p className="text-gray-500 text-sm">
@@ -116,8 +127,13 @@ export default function MonthlyExpenseList({
   }
 
   return (
-    <div className="bg-white border p-5 shadow-sm relative">
+    <div className="bg-white border p-5 shadow-sm">
       <h2 className="font-semibold text-lg mb-4">Monthly Expenses</h2>
+
+      {/* ✅ Subtle loader instead of flicker */}
+      {(loading || isPending) && expenses.length > 0 && (
+        <p className="text-xs text-gray-400 mb-2">Updating...</p>
+      )}
 
       <div className="divide-y">
         {expenses.map((e) => (
@@ -131,9 +147,7 @@ export default function MonthlyExpenseList({
               <div className="text-xs text-gray-500 flex flex-wrap gap-2">
                 <span>{e.group?.name || "No Group"}</span>
                 <span>•</span>
-                <span className="px-2 py-0.5 bg-gray-100 rounded">
-                  {e.category}
-                </span>
+                <span>{e.category}</span>
                 <span>•</span>
                 <span>Paid by {e.paidBy.name}</span>
               </div>
@@ -151,12 +165,13 @@ export default function MonthlyExpenseList({
         ))}
       </div>
 
+      {/* Load More */}
       {page < totalPages && (
-        <div className="text-center mt-4">
+        <div className="mt-4 text-center">
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="px-4 py-2 text-sm border rounded hover:bg-gray-100 transition"
+            className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
           >
             {loadingMore ? "Loading..." : "Load More"}
           </button>
