@@ -15,6 +15,8 @@ import {
   removeMember,
   toggleGroupStatus,
   updateGroupName,
+  searchUsers,
+  getRecentUsers,
 } from "../controllers/groupController.js";
 
 const router = express.Router();
@@ -62,5 +64,9 @@ router.patch(
   isAdmin,
   updateGroupName
 );
+
+router.get("/users/search", authMiddleware, searchUsers);
+router.get("/users/recent", authMiddleware, getRecentUsers);
+
 
 export default router;

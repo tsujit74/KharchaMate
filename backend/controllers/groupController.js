@@ -34,32 +34,70 @@ export const createGroup = async (req, res) => {
 
 export const addMember = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, userId } = req.body;
     const group = req.group;
 
-    const expenseExists = await Expense.exists({ group: group._id });
+    //  Authorization check
+    if (!group.admins.includes(req.user.id)) {
+      return res.status(403).json({
+        message: "Only admins can add members",
+      });
+    }
 
+    //  Prevent adding after expenses exist
+    const expenseExists = await Expense.exists({ group: group._id });
     if (expenseExists) {
       return res.status(400).json({
         message: "Cannot add member after expenses are created",
       });
     }
 
-    const user = await User.findOne({ email });
-    if (!user) {
+    //  Validate input
+    if (!email && !userId) {
+      return res.status(400).json({
+        message: "Provide email or userId",
+      });
+    }
+
+    let user = null;
+
+    //  Fetch user safely
+    if (userId) {
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: "Invalid userId" });
+      }
+      user = await User.findById(userId);
+    } else if (email) {
+      user = await User.findOne({ email });
+    }
+
+    //  User existence check
+    if (!user || !user.isActive) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (group.members.includes(user._id)) {
+    // Prevent self-add duplication
+    if (user._id.toString() === req.user.id) {
       return res.status(400).json({
+        message: "You are already in the group",
+      });
+    }
+
+    // Prevent duplicate members
+    if (group.members.some((id) => id.toString() === user._id.toString())) {
+      return res.status(409).json({
         message: "User already in group",
       });
     }
 
-    group.members.push(user._id);
-    await group.save();
+    // Atomic update (important)
+    await Group.updateOne(
+      { _id: group._id },
+      { $addToSet: { members: user._id } }
+    );
 
-    await notifyUser({
+    //  Notification (non-blocking)
+    notifyUser({
       userId: user._id,
       actor: req.user.id,
       title: "Added to a group",
@@ -67,11 +105,12 @@ export const addMember = async (req, res) => {
       type: "GROUP",
       link: `/groups/${group._id}`,
       relatedId: group._id,
-    });
+    }).catch((err) => console.error("notifyUser error:", err));
 
-    res.json({ message: "Member added successfully" });
+    return res.json({ message: "Member added successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Failed to add member" });
+    console.error("addMember error:", error);
+    return res.status(500).json({ message: "Failed to add member" });
   }
 };
 
@@ -194,5 +233,80 @@ export const updateGroupName = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to update group name" });
+  }
+};
+
+//Search Users
+export const searchUsers = async (req, res) => {
+  try {
+    let { q } = req.query;
+
+    if (!q || typeof q !== "string") {
+      return res.status(400).json({ message: "Valid search query required" });
+    }
+
+    q = q.trim();
+
+    if (q.length < 2) {
+      return res.status(400).json({
+        message: "Search query must be at least 2 characters",
+      });
+    }
+
+    const users = await User.find({
+      $or: [
+        { name: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } },
+      ],
+      isActive: true,
+      _id: { $ne: req.user.id },
+    })
+      .select("_id name email")
+      .limit(10)
+      .lean();
+
+    return res.json(users);
+  } catch (error) {
+    console.error("searchUsers error:", error);
+    return res.status(500).json({ message: "Failed to search users" });
+  }
+};
+
+//Recent users
+export const getRecentUsers = async (req, res) => {
+  try {
+    const groups = await Group.find({
+      members: req.user.id,
+      isActive: true,
+    })
+      .select("members")
+      .lean();
+
+    const userIds = new Set();
+
+    for (const g of groups) {
+      for (const id of g.members) {
+        if (id.toString() !== req.user.id) {
+          userIds.add(id.toString());
+        }
+      }
+    }
+
+    if (userIds.size === 0) {
+      return res.json([]);
+    }
+
+    const users = await User.find({
+      _id: { $in: Array.from(userIds) },
+      isActive: true,
+    })
+      .select("_id name email")
+      .limit(10)
+      .lean();
+
+    return res.json(users);
+  } catch (error) {
+    console.error("getRecentUsers error:", error);
+    return res.status(500).json({ message: "Failed to fetch recent users" });
   }
 };
