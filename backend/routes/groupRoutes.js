@@ -21,13 +21,16 @@ import {
 
 const router = express.Router();
 
+router.get("/users/search", authMiddleware, searchUsers);
+router.get("/users/recent", authMiddleware, getRecentUsers);
+
 router.post("/create", authMiddleware, createGroup);
 router.get("/my-groups", authMiddleware, getMyGroups);
 
-router.get("/:groupId", authMiddleware, groupContext, getGroupById);
+
 
 router.post(
-  "/add-member",
+  "/:groupId/add-member",
   authMiddleware,
   groupContext,
   checkGroupBlocked,
@@ -65,8 +68,9 @@ router.patch(
   updateGroupName
 );
 
-router.get("/users/search", authMiddleware, searchUsers);
-router.get("/users/recent", authMiddleware, getRecentUsers);
+
+router.get("/:groupId", authMiddleware, groupContext, getGroupById);
+
 
 
 export default router;

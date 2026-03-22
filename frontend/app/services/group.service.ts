@@ -56,25 +56,35 @@ export const getGroupById = async (groupId: string) => {
   }
 };
 
-export const addMember = async (groupId: string, email: string) => {
-  if (!groupId || !email?.trim()) throw new Error("INVALID_DATA");
+export const addMember = async (
+  groupId: string,
+  payload: { userId?: string; email?: string }
+) => {
+  if (!groupId || (!payload?.userId && !payload?.email?.trim())) {
+    throw new Error("INVALID_DATA");
+  }
 
   try {
-    const res = await api.post("/groups/add-member", {
-      groupId,
-      email: email.trim(),
+    const res = await api.post(`/groups/${groupId}/add-member`, {
+      userId: payload.userId,
+      email: payload.email?.trim(),
     });
 
     return res.data;
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
-    if (err.response.status === 401) throw new Error("UNAUTHORIZED");
+    const status = err.response.status;
+    const message = err.response.data?.message;
 
-    if (err.response.status === 403) throw new Error("FORBIDDEN");
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 404) throw new Error("USER_NOT_FOUND");
+    if (status === 409) throw new Error("ALREADY_MEMBER");
 
-    if (err.response.status === 400)
-      throw new Error(err.response.data?.message || "FAILED_ADD_MEMBER");
+    if (status === 400) {
+      throw new Error(message || "FAILED_ADD_MEMBER");
+    }
 
     throw new Error("FAILED_ADD_MEMBER");
   }
@@ -171,5 +181,33 @@ export const updateGroupName = async (groupId: string, name: string) => {
       throw new Error(err.response.data?.message || "INVALID_NAME");
 
     throw new Error("FAILED_UPDATE_GROUP_NAME");
+  }
+};
+
+//Search users
+
+export const searchUsers = async (query: string) => {
+  if (!query?.trim()) return [];
+
+  try {
+    const res = await api.get(`/groups/users/search?q=${query.trim()}`);
+
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    throw new Error("FAILED_SEARCH_USERS");
+  }
+};
+
+export const getRecentUsers = async () => {
+  try {
+    const res = await api.get("/groups/users/recent");
+
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    throw new Error("FAILED_RECENT_USERS");
   }
 };

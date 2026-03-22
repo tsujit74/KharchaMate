@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Group from "../models/Group.js";
 import User from "../models/User.js";
 import Expense from "../models/Expense.js";
@@ -37,14 +38,14 @@ export const addMember = async (req, res) => {
     const { email, userId } = req.body;
     const group = req.group;
 
-    //  Authorization check
-    if (!group.admins.includes(req.user.id)) {
+    // ✅ Admin check FIRST
+    if (!group.admins.some((id) => id.toString() === req.user.id)) {
       return res.status(403).json({
         message: "Only admins can add members",
       });
     }
 
-    //  Prevent adding after expenses exist
+    // ✅ Prevent expense lock
     const expenseExists = await Expense.exists({ group: group._id });
     if (expenseExists) {
       return res.status(400).json({
@@ -52,51 +53,52 @@ export const addMember = async (req, res) => {
       });
     }
 
-    //  Validate input
+    // ✅ Validate input
     if (!email && !userId) {
       return res.status(400).json({
         message: "Provide email or userId",
       });
     }
 
+    // ✅ Declare BEFORE use
     let user = null;
 
-    //  Fetch user safely
+    // ✅ Fetch user
     if (userId) {
       if (!mongoose.Types.ObjectId.isValid(userId)) {
         return res.status(400).json({ message: "Invalid userId" });
       }
       user = await User.findById(userId);
-    } else if (email) {
+    } else {
       user = await User.findOne({ email });
     }
 
-    //  User existence check
-    if (!user || !user.isActive) {
+    // ✅ NOW check user
+    if (!user || user.isBlocked) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Prevent self-add duplication
+    // ✅ Prevent self add
     if (user._id.toString() === req.user.id) {
       return res.status(400).json({
         message: "You are already in the group",
       });
     }
 
-    // Prevent duplicate members
+    // ✅ Prevent duplicate
     if (group.members.some((id) => id.toString() === user._id.toString())) {
       return res.status(409).json({
         message: "User already in group",
       });
     }
 
-    // Atomic update (important)
+    // ✅ Add member
     await Group.updateOne(
       { _id: group._id },
-      { $addToSet: { members: user._id } }
+      { $addToSet: { members: user._id } },
     );
 
-    //  Notification (non-blocking)
+    // ✅ Notify (optional)
     notifyUser({
       userId: user._id,
       actor: req.user.id,
@@ -105,7 +107,7 @@ export const addMember = async (req, res) => {
       type: "GROUP",
       link: `/groups/${group._id}`,
       relatedId: group._id,
-    }).catch((err) => console.error("notifyUser error:", err));
+    }).catch(() => {});
 
     return res.json({ message: "Member added successfully" });
   } catch (error) {
@@ -253,13 +255,19 @@ export const searchUsers = async (req, res) => {
       });
     }
 
+    const currentUserId = req.user.id.toString();
+
     const users = await User.find({
-      $or: [
-        { name: { $regex: q, $options: "i" } },
-        { email: { $regex: q, $options: "i" } },
+      $and: [
+        {
+          $or: [
+            { name: { $regex: q, $options: "i" } },
+            { email: { $regex: q, $options: "i" } },
+          ],
+        },
+        { isBlocked: false },
+        { _id: { $ne: currentUserId } },
       ],
-      isActive: true,
-      _id: { $ne: req.user.id },
     })
       .select("_id name email")
       .limit(10)
@@ -275,8 +283,10 @@ export const searchUsers = async (req, res) => {
 //Recent users
 export const getRecentUsers = async (req, res) => {
   try {
+    const currentUserId = req.user.id.toString();
+
     const groups = await Group.find({
-      members: req.user.id,
+      members: currentUserId,
       isActive: true,
     })
       .select("members")
@@ -286,8 +296,10 @@ export const getRecentUsers = async (req, res) => {
 
     for (const g of groups) {
       for (const id of g.members) {
-        if (id.toString() !== req.user.id) {
-          userIds.add(id.toString());
+        const idStr = id.toString();
+
+        if (idStr !== currentUserId) {
+          userIds.add(idStr);
         }
       }
     }
@@ -297,8 +309,8 @@ export const getRecentUsers = async (req, res) => {
     }
 
     const users = await User.find({
-      _id: { $in: Array.from(userIds) },
-      isActive: true,
+      _id: { $in: [...userIds] },
+      isBlocked: false, // FIXED
     })
       .select("_id name email")
       .limit(10)
