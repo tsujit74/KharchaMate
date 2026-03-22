@@ -2,16 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Mail, UserPlus, ArrowRight } from "lucide-react";
+import { Mail, ArrowRight } from "lucide-react";
 
 import {
   addMember,
   searchUsers,
   getRecentUsers,
 } from "@/app/services/group.service";
-
 import { useAuth } from "@/app/context/authContext";
 import toast from "react-hot-toast";
+
+import RecentUsers from "./components/RecentAddedUser"; 
 
 type User = {
   _id: string;
@@ -32,30 +33,25 @@ export default function AddMemberPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
-
   const [error, setError] = useState("");
 
-  // ✅ Auth check
+  // ✅ Auth & group check
   useEffect(() => {
     if (loading) return;
-
     if (!isAuthenticated) {
       router.replace("/login");
       return;
     }
-
     if (!groupId) {
       setError("Invalid group");
       return;
     }
-
     setPageLoading(false);
   }, [loading, isAuthenticated, groupId]);
 
   // ✅ Fetch recent users
   useEffect(() => {
     if (!groupId) return;
-
     getRecentUsers()
       .then(setRecent)
       .catch(() => {});
@@ -103,7 +99,6 @@ export default function AddMemberPage() {
       }
 
       toast.success("Member added successfully");
-
       setSelectedUser(null);
       setQuery("");
       setResults([]);
@@ -127,14 +122,10 @@ export default function AddMemberPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white p-6 shadow">
-        <h1 className="text-lg font-bold mb-4 text-center">
-          Add Group Member
-        </h1>
+        <h1 className="text-lg font-bold mb-4 text-center">Add Group Member</h1>
 
         {/* Error */}
-        {error && (
-          <p className="text-red-500 text-sm mb-3 text-center">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-sm mb-3 text-center">{error}</p>}
 
         {/* Input */}
         <div className="relative mb-4">
@@ -177,30 +168,19 @@ export default function AddMemberPage() {
           </div>
         )}
 
-        {/* Selected */}
+        {/* Selected User */}
         {selectedUser && (
           <div className="p-3 bg-green-50 mb-4 text-sm">
             Selected: {selectedUser.name}
           </div>
         )}
 
-        {/* Recent Users */}
-        {!query && recent.length > 0 && (
-          <div className="mb-4">
-            <p className="text-xs text-gray-500 mb-2">Recent</p>
-            {recent.map((u) => (
-              <div
-                key={u._id}
-                onClick={() => setSelectedUser(u)}
-                className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-              >
-                {u.name}
-              </div>
-            ))}
-          </div>
+        {/* ✅ Recent Users Component */}
+        {!query && (
+          <RecentUsers users={recent} onSelect={(user) => setSelectedUser(user)} />
         )}
 
-        {/* Button */}
+        {/* Add Button */}
         <button
           onClick={handleAdd}
           disabled={btnLoading}
@@ -210,7 +190,7 @@ export default function AddMemberPage() {
           <ArrowRight className="w-4 h-4" />
         </button>
 
-        {/* Back */}
+        {/* Back Button */}
         <button
           onClick={() => router.back()}
           className="mt-4 text-sm text-gray-500 block mx-auto"
