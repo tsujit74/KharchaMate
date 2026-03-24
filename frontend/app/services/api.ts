@@ -1,3 +1,5 @@
+"use client";
+
 import axios from "axios";
 
 export const api = axios.create({
@@ -5,19 +7,24 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-  
+    // ✅ Ignore expected 401 from /auth/me
     if (
-      typeof window !== "undefined" &&
-      error.response?.status === 401
+      error.response?.status === 401 &&
+      error.config?.url?.includes("/auth/me")
     ) {
-   
-      if (!window.location.pathname.includes("/login")) {
-        window.location.href = "/login";
-      }
+      return Promise.reject(error);
+    }
+
+    // Optional: log other errors only
+    if (process.env.NODE_ENV === "development") {
+      console.error(
+        "API Error:",
+        error?.response?.status,
+        error?.response?.data
+      );
     }
 
     return Promise.reject(error);

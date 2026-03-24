@@ -39,7 +39,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto flex items-center justify-between h-full px-4">
         {/* Logo */}
         <Link
-          href={isAdmin ? "/admin" : "/dashboard"}
+          href={isAuthenticated ? (isAdmin ? "/admin" : "/dashboard") : "/"}
           className="flex items-center gap-2"
         >
           <div className="bg-blue-600 text-white px-2 py-1 rounded-md font-bold">
