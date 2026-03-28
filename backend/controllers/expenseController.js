@@ -84,12 +84,12 @@ export const addExpense = async (req, res) => {
 export const getGroupExpenses = async (req, res) => {
   try {
     const { groupId } = req.params;
-    const page = parseInt(req.query.page) || 1; 
-    const limit = parseInt(req.query.limit) || 10; 
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     const expenses = await Expense.find({ group: groupId })
-      .sort({ createdAt: -1 }) 
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("paidBy", "name email")
@@ -109,7 +109,6 @@ export const getGroupExpenses = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch expenses" });
   }
 };
-
 
 export const getRecentExpenses = async (req, res) => {
   try {
@@ -134,20 +133,59 @@ export const getRecentExpenses = async (req, res) => {
 // GET /expenses/my-expense
 export const getMyExpenses = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id;
 
-    const expenses = await Expense.find({
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    // pagination params
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const skip = (page - 1) * limit;
+
+    const query = {
       $or: [{ paidBy: userId }, { "splitBetween.user": userId }],
-    })
-      .sort({ createdAt: -1 })
-      .populate("group", "name")
-      .populate("paidBy", "name email")
-      .lean();
+    };
 
-    res.status(200).json(expenses);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to fetch recent expenses" });
+    // fetch data + total count in parallel
+    const [expenses, total] = await Promise.all([
+      Expense.find(query, {
+        title: 1,
+        amount: 1,
+        group: 1,
+        paidBy: 1,
+        splitBetween: 1,
+        createdAt: 1,
+      })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate({ path: "group", select: "name" })
+        .populate({ path: "paidBy", select: "name email" })
+        .lean(),
+
+      Expense.countDocuments(query),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      data: expenses,
+    });
+  } catch (error) {
+    console.error("GET_MY_EXPENSES_ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch expenses",
+    });
   }
 };
 
@@ -380,7 +418,6 @@ export const getMyInsights = async (req, res) => {
   }
 };
 
-
 //monthly expenses
 const getDateRange = ({ filter, start, end }) => {
   const now = new Date();
@@ -414,12 +451,10 @@ export const getMonthlyExpenses = async (req, res) => {
     const userId = req.user.id;
     const { filter, start, end, page = 1, limit = 10, category } = req.query;
 
- 
     const pageNum = Number(page) || 1;
     const limitNum = Number(limit) || 10;
     const skip = (pageNum - 1) * limitNum;
 
-    
     let startDate, endDate;
     try {
       ({ startDate, endDate } = getDateRange({ filter, start, end }));
@@ -427,7 +462,6 @@ export const getMonthlyExpenses = async (req, res) => {
       return res.status(400).json({ message: "Invalid filter" });
     }
 
-  
     const query = {
       createdAt: { $gte: startDate, $lt: endDate },
       $or: [
@@ -436,12 +470,10 @@ export const getMonthlyExpenses = async (req, res) => {
       ],
     };
 
-    
     if (category) {
       query.category = category;
     }
 
-   
     const expenses = await Expense.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -450,9 +482,7 @@ export const getMonthlyExpenses = async (req, res) => {
       .populate("paidBy", "name email")
       .lean();
 
-    
     const total = await Expense.countDocuments(query);
-
 
     res.json({
       expenses,
