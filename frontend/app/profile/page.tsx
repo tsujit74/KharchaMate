@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/authContext";
 import { getMyGroups } from "../services/group.service";
-import { getMyExpenses } from "../services/expense.service";
 import {
   getPendingSettlements,
   getMySettlementHistory,
@@ -13,18 +12,10 @@ import { formatDateTime } from "../utils/formatDateTime";
 import { Users, CreditCard, Clock, Repeat } from "lucide-react";
 import MonthlyExpenseSummary from "../components/Profile/MonthlyExpenses";
 import AppSkeleton from "../components/ui/AppSkeleton";
+import ExpensesList from "./components/ExpensesList";
 import toast from "react-hot-toast";
 
 type Group = { _id: string; name: string };
-
-type Expense = {
-  _id: string;
-  description: string;
-  amount: number;
-  group: Group;
-  paidBy: { _id: string; name: string };
-  createdAt: string;
-};
 
 type Settlement = {
   _id: string;
@@ -66,11 +57,8 @@ export default function ProfilePage() {
   const router = useRouter();
 
   const [groups, setGroups] = useState<Group[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settlements, setSettlements] = useState<PendingSettlementRaw[]>([]);
-
   const [history, setHistory] = useState<Settlement[]>([]);
-
   const [loadingData, setLoadingData] = useState(true);
 
   const [activeTab, setActiveTab] = useState<
@@ -93,15 +81,13 @@ export default function ProfilePage() {
     const fetchData = async () => {
       try {
         setLoadingData(true);
-        const [grpData, expData, settleData, historyData] = await Promise.all([
+        const [grpData, settleData, historyData] = await Promise.all([
           getMyGroups(),
-          getMyExpenses(),
           getPendingSettlements(),
           getMySettlementHistory(),
         ]);
 
         setGroups(grpData || []);
-        setExpenses(expData || []);
         setSettlements(settleData || []);
         setHistory(historyData || []);
       } catch (err: any) {
@@ -176,17 +162,7 @@ export default function ProfilePage() {
               createdAt: s.settledAt || s.createdAt,
               status: s.status,
             }))
-        : expenses
-            .filter((e) => e.paidBy._id === user.id)
-            .map((e) => ({
-              _id: e._id,
-              description: e.description,
-              amount: e.amount,
-              group: e.group,
-              from: e.paidBy,
-              to: { _id: "", name: "" },
-              createdAt: e.createdAt,
-            }));
+        : [];
 
   const monthFiltered = baseItems.filter((e) =>
     e.createdAt ? filterByMonth(e.createdAt) : true,
@@ -215,6 +191,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Summary */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="bg-white border rounded-2xl p-6">
           <MonthlyExpenseSummary />
@@ -222,7 +199,7 @@ export default function ProfilePage() {
       </div>
 
       {/* KPIs */}
-      <div className="max-w-7xl mx-auto grid sm:grid-cols-4 gap-4 mb-8">
+      <div className="max-w-7xl mx-auto grid sm:grid-cols-3 gap-4 mb-8">
         {[
           {
             label: "Total Groups",
@@ -239,13 +216,6 @@ export default function ProfilePage() {
             color: "text-red-500",
           },
           {
-            label: "Total Expenses",
-            value: expenses.filter((e) => e.paidBy._id === user.id).length,
-            icon: CreditCard,
-            bg: "bg-green-50",
-            color: "text-green-600",
-          },
-          {
             label: "Payment History",
             value: history.length,
             icon: Repeat,
@@ -255,8 +225,7 @@ export default function ProfilePage() {
         ].map((kpi) => (
           <div
             key={kpi.label}
-            className="bg-white border rounded-2xl p-5 flex items-center gap-4
-            transition-all duration-200 ease-out hover:shadow-md hover:-translate-y-[2px]"
+            className="bg-white border rounded-2xl p-5 flex items-center gap-4"
           >
             <div className={`p-3 rounded-xl ${kpi.bg}`}>
               <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
@@ -270,129 +239,68 @@ export default function ProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div className="max-w-7xl mx-auto mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex bg-gray-100 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
-          {["all", "paid", "pending", "history"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab as any);
-                setCurrentPage(1);
-              }}
-              className={`flex-1 sm:flex-none px-3 py-2 text-sm rounded-lg transition-all whitespace-nowrap
-                ${activeTab === tab ? "bg-white shadow text-gray-900 font-medium" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
-            >
-              {tab === "all"
-                ? "All"
-                : tab === "paid"
-                  ? "Paid by me"
-                  : tab === "pending"
-                    ? "Pending"
-                    : "History"}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === "history" && (
-          <div className="w-full sm:w-auto sm:ml-4 flex gap-2">
-            <button
-              className={`px-3 py-2 text-sm border rounded-lg ${historyFilter === "sent" ? "bg-purple-100" : ""}`}
-              onClick={() => setHistoryFilter("sent")}
-            >
-              Sent
-            </button>
-            <button
-              className={`px-3 py-2 text-sm border rounded-lg ${historyFilter === "received" ? "bg-purple-100" : ""}`}
-              onClick={() => setHistoryFilter("received")}
-            >
-              Received
-            </button>
-          </div>
-        )}
-
-        <div className="w-full sm:w-auto sm:ml-4">
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => {
-              setSelectedMonth(e.target.value);
+      <div className="max-w-7xl mx-auto mb-6 flex flex-wrap gap-3">
+        {["all", "paid", "pending", "history"].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => {
+              setActiveTab(tab as any);
               setCurrentPage(1);
             }}
-            className="border rounded-lg px-3 py-2 text-sm w-full sm:w-auto"
-          />
-        </div>
+            className={`px-3 py-2 text-sm rounded-lg ${
+              activeTab === tab ? "bg-black text-white" : "bg-gray-100"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {/* List */}
-      <div className="max-w-7xl mx-auto space-y-3">
-        {paginatedItems.length === 0 && (
-          <p className="text-gray-500 text-sm">No records found.</p>
-        )}
+      {/* LIST */}
+      <div className="max-w-7xl mx-auto">
+        {activeTab === "all" ? (
+          <ExpensesList userId={user.id} mode="all" />
+        ) : activeTab === "paid" ? (
+          <ExpensesList userId={user.id} mode="paid" />
+        ) : (
+          <>
+            <div className="space-y-3">
+              {paginatedItems.length === 0 && (
+                <p className="text-gray-500 text-sm">No records found.</p>
+              )}
 
-        {paginatedItems.map((item) => {
-          const dateLabel = item.createdAt
-            ? formatDateTime(item.createdAt).dateLabel
-            : "";
-          const paidByText =
-            activeTab === "pending"
-              ? `You owe ${item.to.name}`
-              : activeTab === "history"
-                ? `${item.from._id === user.id ? `You paid ${item.to.name}` : `${item.from.name} paid you`}`
-                : "Paid by you";
+              {paginatedItems.map((item) => {
+                const dateLabel = item.createdAt
+                  ? formatDateTime(item.createdAt).dateLabel
+                  : "";
 
-          return (
-            <div
-              key={
-                item._id ||
-                `${item.group._id}-${item.from._id}-${item.to._id}-${item.amount}`
-              }
-              className={`rounded-2xl border p-4 flex justify-between items-center transition-all duration-200 ease-out hover:shadow-md hover:-translate-y-[2px] ${activeTab === "pending" ? "bg-red-50/80 border-red-200 hover:border-red-300" : "bg-white border-gray-200 hover:border-gray-300"}`}
-            >
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  {item.description}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {item.group.name || "No group"} • {paidByText}
-                </p>
-                {dateLabel && (
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    {dateLabel}
-                  </p>
-                )}
-              </div>
-              <p
-                className={`text-sm font-semibold tabular-nums ${activeTab === "pending" ? "text-red-600" : "text-gray-900"}`}
-              >
-                ₹{item.amount}
-              </p>
+                const paidByText =
+                  activeTab === "pending"
+                    ? `You owe ${item.to.name}`
+                    : item.from._id === user.id
+                      ? `You paid ${item.to.name}`
+                      : `${item.from.name} paid you`;
+
+                return (
+                  <div
+                    key={item._id}
+                    className="border p-4 rounded-xl flex justify-between"
+                  >
+                    <div>
+                      <p>{item.description}</p>
+                      <p className="text-xs text-gray-500">
+                        {item.group.name} • {paidByText}
+                      </p>
+                      {dateLabel && <p className="text-xs">{dateLabel}</p>}
+                    </div>
+                    <p>₹{item.amount}</p>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </>
+        )}
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-6">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-            className="px-3 py-1.5 text-sm border rounded-lg transition hover:bg-gray-50 disabled:opacity-40"
-          >
-            Prev
-          </button>
-          <span className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-            className="px-3 py-1.5 text-sm border rounded-lg transition hover:bg-gray-50 disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
-      )}
     </main>
   );
 }

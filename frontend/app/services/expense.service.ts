@@ -94,19 +94,37 @@ export const getRecentExpenses = async () => {
   }
 };
 
-export const getMyExpenses = async (month?: string) => {
+export const getMyExpenses = async ({
+  page = 1,
+  limit = 10,
+  month,
+}: {
+  page?: number;
+  limit?: number;
+  month?: string;
+}) => {
   try {
     const res = await api.get("/expenses/my/expenses", {
-      params: month ? { month } : {},
+      params: {
+        page,
+        limit,
+        ...(month && { month }),
+      },
     });
 
-    return Array.isArray(res.data) ? res.data : [];
+    return {
+      data: res.data?.data || [],
+      total: res.data?.total || 0,
+      totalPages: res.data?.totalPages || 0,
+      page: res.data?.page || 1,
+      limit: res.data?.limit || 10,
+    };
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
     if (err.response.status === 401) throw new Error("UNAUTHORIZED");
 
-    throw new Error("FAILED_MY_EXPENSES");
+    throw new Error(err.response?.data?.message || "FAILED_MY_EXPENSES");
   }
 };
 

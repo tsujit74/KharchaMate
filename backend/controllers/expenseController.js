@@ -142,7 +142,6 @@ export const getMyExpenses = async (req, res) => {
       });
     }
 
-    // pagination params
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit) || 10, 50);
     const skip = (page - 1) * limit;
@@ -151,16 +150,8 @@ export const getMyExpenses = async (req, res) => {
       $or: [{ paidBy: userId }, { "splitBetween.user": userId }],
     };
 
-    // fetch data + total count in parallel
     const [expenses, total] = await Promise.all([
-      Expense.find(query, {
-        title: 1,
-        amount: 1,
-        group: 1,
-        paidBy: 1,
-        splitBetween: 1,
-        createdAt: 1,
-      })
+      Expense.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -171,13 +162,35 @@ export const getMyExpenses = async (req, res) => {
       Expense.countDocuments(query),
     ]);
 
+    const transformed = expenses.map((exp) => {
+      const userSplit = exp.splitBetween.find(
+        (s) => s.user.toString() === userId.toString()
+      );
+
+      const userShare = userSplit ? userSplit.amount : 0;
+
+      let type = "PAID"; 
+
+      if (exp.paidBy._id.toString() === userId.toString()) {
+        type = userShare < exp.amount ? "RECEIVABLE" : "PAID";
+      } else {
+        type = "PAYABLE";
+      }
+
+      return {
+        ...exp,
+        userShare,
+        type,
+      };
+    });
+
     return res.status(200).json({
       success: true,
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      data: expenses,
+      data: transformed,
     });
   } catch (error) {
     console.error("GET_MY_EXPENSES_ERROR:", error);
