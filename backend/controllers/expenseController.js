@@ -17,8 +17,14 @@ export const addExpense = async (req, res) => {
     const { groupId, description, amount, splitBetween, category } = req.body;
 
     const group = await Group.findById(groupId);
+
     if (!group) {
       return res.status(404).json({ message: "Group not found" });
+    }
+
+    // Ensure user is part of group
+    if (!group.members.some((m) => String(m) === String(req.user.id))) {
+      return res.status(403).json({ message: "You are not part of this group" });
     }
 
     let finalSplit = [];
@@ -27,13 +33,13 @@ export const addExpense = async (req, res) => {
     if (Array.isArray(splitBetween) && splitBetween.length > 0) {
       const totalSplit = splitBetween.reduce(
         (sum, s) => sum + Number(s.amount),
-        0,
+        0
       );
 
       if (round(totalSplit) !== round(Number(amount))) {
-        return res
-          .status(400)
-          .json({ message: "Split total must equal amount" });
+        return res.status(400).json({
+          message: "Split total must equal amount",
+        });
       }
 
       finalSplit = splitBetween;
@@ -58,20 +64,23 @@ export const addExpense = async (req, res) => {
       splitBetween: finalSplit,
     });
 
+    // ONLY OTHER MEMBERS (NOT CREATOR)
+    const otherMembers = group.members.filter(
+      (m) => String(m) !== String(req.user.id)
+    );
+
     await Promise.all(
-      group.members
-        .filter((m) => m.toString() !== req.user.id)
-        .map((memberId) =>
-          notifyUser({
-            userId: memberId,
-            actor: req.user.id,
-            title: "New expense added",
-            message: `added ₹${amount} for "${description}"`,
-            type: "EXPENSE",
-            link: `/groups/${group._id}`,
-            relatedId: expense._id,
-          }),
-        ),
+      otherMembers.map((memberId) =>
+        notifyUser({
+          userId: memberId,
+          actor: req.user.id,
+          title: "New expense added",
+          message: `added ₹${amount} for "${description}"`,
+          type: "EXPENSE",
+          link: `/groups/${group._id}`,
+          relatedId: expense._id,
+        })
+      )
     );
 
     res.status(201).json(expense);
