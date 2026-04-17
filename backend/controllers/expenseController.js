@@ -24,7 +24,9 @@ export const addExpense = async (req, res) => {
 
     // Ensure user is part of group
     if (!group.members.some((m) => String(m) === String(req.user.id))) {
-      return res.status(403).json({ message: "You are not part of this group" });
+      return res
+        .status(403)
+        .json({ message: "You are not part of this group" });
     }
 
     let finalSplit = [];
@@ -33,7 +35,7 @@ export const addExpense = async (req, res) => {
     if (Array.isArray(splitBetween) && splitBetween.length > 0) {
       const totalSplit = splitBetween.reduce(
         (sum, s) => sum + Number(s.amount),
-        0
+        0,
       );
 
       if (round(totalSplit) !== round(Number(amount))) {
@@ -66,7 +68,7 @@ export const addExpense = async (req, res) => {
 
     // ONLY OTHER MEMBERS (NOT CREATOR)
     const otherMembers = group.members.filter(
-      (m) => String(m) !== String(req.user.id)
+      (m) => String(m) !== String(req.user.id),
     );
 
     await Promise.all(
@@ -79,8 +81,8 @@ export const addExpense = async (req, res) => {
           type: "EXPENSE",
           link: `/groups/${group._id}`,
           relatedId: expense._id,
-        })
-      )
+        }),
+      ),
     );
 
     res.status(201).json(expense);
@@ -173,12 +175,12 @@ export const getMyExpenses = async (req, res) => {
 
     const transformed = expenses.map((exp) => {
       const userSplit = exp.splitBetween.find(
-        (s) => s.user.toString() === userId.toString()
+        (s) => s.user.toString() === userId.toString(),
       );
 
       const userShare = userSplit ? userSplit.amount : 0;
 
-      let type = "PAID"; 
+      let type = "PAID";
 
       if (exp.paidBy._id.toString() === userId.toString()) {
         type = userShare < exp.amount ? "RECEIVABLE" : "PAID";
@@ -311,18 +313,23 @@ export const deleteExpense = async (req, res) => {
     const userId = req.user.id;
 
     const expense = await Expense.findById(expenseId);
+
     if (!expense) {
       return res.status(404).json({ message: "Expense not found" });
     }
 
-    if (expense.paidBy.toString() !== userId) {
+    // FIXED OWNER CHECK
+    const paidById =
+      typeof expense.paidBy === "object" ? expense.paidBy._id : expense.paidBy;
+
+    if (String(paidById) !== String(userId)) {
       return res.status(403).json({ message: "Not allowed" });
     }
 
     if (!canModifyExpense(expense)) {
-      return res
-        .status(400)
-        .json({ message: "Expense can only be deleted within 5 hours" });
+      return res.status(400).json({
+        message: "Expense can only be deleted within 5 hours",
+      });
     }
 
     await expense.deleteOne();
