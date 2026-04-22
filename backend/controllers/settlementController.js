@@ -171,50 +171,49 @@ export const markPaymentDone = async (req, res) => {
 
 export const getPendingSettlements = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id.toString();
 
-    //  Fetch all groups where user is a member
-    const groups = await Group.find({ members: userId }).populate(
-      "members",
-      "name email",
-    );
+    const groups = await Group.find({ members: userId })
+      .populate("members", "name email")
+      .lean();
 
     const result = [];
 
-    //  Loop through groups
     for (const group of groups) {
       const members = group.members;
+      if (!members || members.length < 2) continue;
 
-      // Skip groups without members
-      if (!members.length) continue;
+      const [expenses, settlementsDone] = await Promise.all([
+        Expense.find({ group: group._id }).lean(),
+        Settlement.find({
+          group: group._id,
+          status: "COMPLETED",
+        }).lean(),
+      ]);
 
-      // Fetch all expenses in this group
-      const expenses = await Expense.find({ group: group._id });
-
-      // Fetch completed settlements
-      const settlementsDone = await Settlement.find({
-        group: group._id,
-        status: "COMPLETED",
-      });
-
-      // Initialize balances
       const balanceMap = {};
+
+      // init
       members.forEach((m) => {
         balanceMap[m._id.toString()] = 0;
       });
 
-      // Add paid amounts
       expenses.forEach((e) => {
-        balanceMap[e.paidBy.toString()] += e.amount;
+        const paidBy = e.paidBy.toString();
+
+        if (balanceMap[paidBy] !== undefined) {
+          balanceMap[paidBy] += e.amount;
+        }
+
+        e.splitBetween?.forEach((s) => {
+          const uid = s.user.toString();
+          if (balanceMap[uid] !== undefined) {
+            balanceMap[uid] -= s.amount;
+          }
+        });
       });
 
-      // Subtract equal share
-      const totalSpent = expenses.reduce((s, e) => s + e.amount, 0);
-      const perPersonShare = totalSpent / members.length;
-      members.forEach((m) => {
-        balanceMap[m._id.toString()] -= perPersonShare;
-      });
-
+      // settlements already done
       settlementsDone.forEach((s) => {
         balanceMap[s.from.toString()] += s.amount;
         balanceMap[s.to.toString()] -= s.amount;
@@ -225,20 +224,22 @@ export const getPendingSettlements = async (req, res) => {
 
       members.forEach((m) => {
         const bal = Number(balanceMap[m._id.toString()].toFixed(2));
+
         if (bal > 0.01) creditors.push({ user: m, amount: bal });
-        else if (bal < -0.01) debtors.push({ user: m, amount: -bal });
+        else if (bal < -0.01)
+          debtors.push({ user: m, amount: -bal });
       });
 
-      let i = 0,
-        j = 0;
-      const settlements = [];
+      let i = 0;
+      let j = 0;
 
       while (i < debtors.length && j < creditors.length) {
         const debtor = debtors[i];
         const creditor = creditors[j];
+
         const amount = Math.min(debtor.amount, creditor.amount);
 
-        settlements.push({
+        const settlement = {
           groupId: group._id,
           groupName: group.name,
           from: debtor.user._id,
@@ -246,7 +247,15 @@ export const getPendingSettlements = async (req, res) => {
           to: creditor.user._id,
           toName: creditor.user.name,
           amount: Number(amount.toFixed(2)),
-        });
+        };
+
+        //  Only push if current user involved
+        if (
+          settlement.from.toString() === userId ||
+          settlement.to.toString() === userId
+        ) {
+          result.push(settlement);
+        }
 
         debtor.amount -= amount;
         creditor.amount -= amount;
@@ -254,19 +263,14 @@ export const getPendingSettlements = async (req, res) => {
         if (debtor.amount <= 0.01) i++;
         if (creditor.amount <= 0.01) j++;
       }
-
-      //Filter only settlements related to current user
-      settlements
-        .filter(
-          (s) => s.from.toString() === userId || s.to.toString() === userId,
-        )
-        .forEach((s) => result.push(s));
     }
 
     res.json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to fetch pending settlements" });
+    console.error("PENDING SETTLEMENT ERROR:", err);
+    res.status(500).json({
+      message: "Failed to fetch pending settlements",
+    });
   }
 };
 
