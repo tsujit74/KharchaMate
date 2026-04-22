@@ -38,13 +38,16 @@ export const addMember = async (req, res) => {
     const { email, userId } = req.body;
     const group = req.group;
 
-    // ✅ Admin check FIRST
-    if (!group.admins.some((id) => id.toString() === req.user.id)) {
-      return res.status(403).json({
-        message: "Only admins can add members",
-      });
-    }
+   const isCreator = group.createdBy.toString() === req.user.id.toString();
+const isAdmin = group.admins.some(
+  (id) => id.toString() === req.user.id.toString()
+);
 
+if (!isCreator && !isAdmin) {
+  return res.status(403).json({
+    message: "Only admins or the group creator can add members",
+  });
+}
     // ✅ Prevent expense lock
     const expenseExists = await Expense.exists({ group: group._id });
     if (expenseExists) {
