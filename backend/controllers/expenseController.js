@@ -215,16 +215,22 @@ export const getMyExpenses = async (req, res) => {
 
 export const getMonthlySummary = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { month } = req.query;
+    const userId = new mongoose.Types.ObjectId(req.user.id);
+    const { month } = req.query; // format: "2026-04"
 
-    const start = new Date(`${month}-01`);
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + 1);
+    if (!month) {
+      return res.status(400).json({ message: "Month is required (YYYY-MM)" });
+    }
+    const [year, monthIndex] = month.split("-").map(Number);
+    const start = new Date(year, monthIndex - 1, 1);
+    const end = new Date(year, monthIndex, 1);
 
     const expenses = await Expense.find({
       createdAt: { $gte: start, $lt: end },
-      $or: [{ paidBy: userId }, { "splitBetween.user": userId }],
+      $or: [
+        { paidBy: userId },
+        { "splitBetween.user": userId }
+      ],
     }).lean();
 
     let paidByYou = 0;
@@ -232,29 +238,30 @@ export const getMonthlySummary = async (req, res) => {
 
     for (const expense of expenses) {
       // A) Paid by you
-      if (expense.paidBy.toString() === userId) {
-        paidByYou += expense.amount;
+      if (expense.paidBy?.toString() === userId.toString()) {
+        paidByYou += expense.amount || 0;
       }
 
       // B) Your share
-      const yourSplit = expense.splitBetween.find(
-        (s) => s.user.toString() === userId,
+      const yourSplit = expense.splitBetween?.find(
+        (s) => s.user?.toString() === userId.toString()
       );
 
       if (yourSplit) {
-        yourExpense += yourSplit.amount;
+        yourExpense += yourSplit.amount || 0;
       }
     }
 
     const netBalance = paidByYou - yourExpense;
 
-    res.json({
-      paidByYou: Math.round(paidByYou * 100) / 100,
-      yourExpense: Math.round(yourExpense * 100) / 100,
-      netBalance: Math.round(netBalance * 100) / 100,
+    return res.json({
+      paidByYou: Number(paidByYou.toFixed(2)),
+      yourExpense: Number(yourExpense.toFixed(2)),
+      netBalance: Number(netBalance.toFixed(2)),
     });
+
   } catch (err) {
-    console.error(err);
+    console.error("MONTHLY SUMMARY ERROR:", err);
     res.status(500).json({ message: "FAILED_MONTHLY_SUMMARY" });
   }
 };
