@@ -136,44 +136,44 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 px-4 sm:px-6 lg:px-10 py-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 px-4 sm:px-6 lg:px-10 py-5 sm:py-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         <Announcements />
 
         {/* Header */}
-       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 pb-4 border-b border-slate-200">
-  <div className="min-w-0">
-    <p className="text-[10px] sm:text-xs font-semibold text-blue-600 uppercase tracking-wider">
-      Dashboard
-    </p>
+        <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] sm:text-xs font-semibold text-blue-600 uppercase tracking-wider">
+              Dashboard
+            </p>
 
-    <h2 className="mt-1 text-xl sm:text-3xl font-black text-slate-950 tracking-tight leading-tight truncate">
-      Hey, {user?.name?.split(" ")[0] || "User"}.
-    </h2>
+            <h2 className="mt-1 text-lg sm:text-3xl font-black text-slate-950 tracking-tight leading-tight truncate">
+              Hey, {user?.name?.split(" ")[0] || "User"}.
+            </h2>
 
-    <p className="hidden sm:block mt-1 text-sm sm:text-base text-slate-500 leading-relaxed">
-      Your expense ecosystem at a glance.
-    </p>
-  </div>
+            <p className="hidden sm:block mt-1 text-sm sm:text-base text-slate-500 leading-relaxed">
+              Your expense ecosystem at a glance.
+            </p>
+          </div>
 
-  <div className="flex items-center gap-2 shrink-0">
-    <Link
-      href="/dashboard/insights"
-      className="inline-flex items-center justify-center p-2 sm:px-4 sm:py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
-    >
-      <TrendingUp className="w-4 h-4 text-blue-600" />
-      <span className="hidden sm:inline ml-1">Insights</span>
-    </Link>
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
+            <Link
+              href="/dashboard/insights"
+              className="inline-flex items-center justify-center h-10 w-10 sm:w-auto sm:px-4 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
+            >
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+              <span className="hidden sm:inline ml-1">Insights</span>
+            </Link>
 
-    <Link
-      href="/groups/create"
-      className="inline-flex items-center justify-center p-2 sm:px-4 sm:py-2 rounded-xl bg-slate-950 text-white text-sm font-medium hover:bg-slate-800 transition shadow"
-    >
-      <Plus className="w-4 h-4" />
-      <span className="hidden sm:inline ml-1">New Group</span>
-    </Link>
-  </div>
-</div>
+            <Link
+              href="/groups/create"
+              className="inline-flex items-center justify-center h-10 w-10 sm:w-auto sm:px-4 rounded-xl bg-slate-950 text-white text-sm font-medium hover:bg-slate-800 transition shadow"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline ml-1">New Group</span>
+            </Link>
+          </div>
+        </div>
 
         {/* Summary Cards */}
         <section className="hidden sm:grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -205,15 +205,18 @@ export default function DashboardPage() {
 
         {/* Groups */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-slate-950">Your Groups</h3>
-            <p className="text-sm text-slate-500">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <h3 className="text-base sm:text-xl font-bold text-slate-950 truncate">
+              Your Groups
+            </h3>
+
+            <p className="text-[11px] sm:text-sm text-slate-500 text-right whitespace-nowrap">
               {activeGroups} active, {archivedGroups} archived, {blockedGroups}{" "}
               blocked
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {groups.map((group) => {
               const isBlockedByAdmin = group.isBlocked;
               const isClosed = !group.isActive && !isBlockedByAdmin;
@@ -237,13 +240,13 @@ export default function DashboardPage() {
                         : `/groups/${group._id}`,
                     )
                   }
-                  className={`group relative p-6 rounded-[1rem] border cursor-pointer transition-all duration-300 ${
+                  className={`group relative p-4 sm:p-6 rounded-[1rem] border cursor-pointer transition-all duration-300 ${
                     isClosed
                       ? "bg-slate-50 border-slate-200"
                       : "bg-white border-slate-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50"
                   }`}
                 >
-                  <div className="flex items-start justify-between mb-5">
+                  <div className="flex items-start justify-between mb-4 sm:mb-5 gap-3">
                     <div className="flex flex-wrap gap-2">
                       <span
                         className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
@@ -255,7 +258,7 @@ export default function DashboardPage() {
                         }`}
                       >
                         {isBlockedByAdmin
-                          ? "Blocked BY ADMIN"
+                          ? "Blocked by Admin"
                           : isClosed
                             ? "Archived"
                             : "Active"}
@@ -328,7 +331,7 @@ export default function DashboardPage() {
                     Updated {formatDateTime(group.updatedAt).dateLabel}
                   </p>
 
-                  <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center justify-between mt-5 sm:mt-6">
                     <div className="flex -space-x-3">
                       {group.members.slice(0, 4).map((m, i) => (
                         <div
@@ -358,10 +361,10 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Recent Expenses */}
-        <section className="grid xl:grid-cols-2 gap-6">
-          <div className="bg-white border border-slate-200 rounded-[1rem] p-6 shadow-sm">
-            <h3 className="text-xl font-bold text-slate-950 mb-4">
+        {/* Recent Expenses + Pending Settlements */}
+        <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="bg-white border border-slate-200 rounded-[1rem] p-4 sm:p-6 shadow-sm">
+            <h3 className="text-lg sm:text-xl font-bold text-slate-950 mb-4">
               Recent Expenses
             </h3>
 
@@ -400,20 +403,24 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Pending Settlements */}
-          <div className="bg-white border border-slate-200 rounded-[1rem] p-6 shadow-sm min-h-[220px] flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-slate-950 mb-4">
-              Pending Settlements
-            </h3>
+          <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm min-h-[220px] flex flex-col justify-center">
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-950">
+                Pending Settlements
+              </h3>
+              <span className="rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-600">
+                {pendingSettlements.length} items
+              </span>
+            </div>
 
             {pendingLoading ? (
               <div className="flex items-center justify-center py-12">
                 <p className="text-sm text-slate-500">Loading…</p>
               </div>
             ) : pendingSettlements.length === 0 ? (
-              <div className="flex flex-1 items-center justify-center py-12 text-center">
+              <div className="flex flex-1 items-center justify-center py-10 text-center">
                 <div>
-                  <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700">
@@ -426,31 +433,65 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {pendingSettlements.map((s, i) => (
-                  <Link
-                    key={i}
-                    href={`/groups/${s.groupId}`}
-                    className="flex items-center justify-between gap-4 px-4 py-4 rounded-2xl border border-slate-200 hover:bg-slate-50 transition"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <Wallet className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-sm truncate">
-                          {s.fromName} → {s.toName}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          Settle this balance
-                        </p>
-                      </div>
-                    </div>
+                {pendingSettlements.map((s, i) => {
+                  const isUserPayer =
+                    s.from?.toString() === user?.id?.toString();
+                  const isUserReceiver =
+                    s.to?.toString() === user?.id?.toString();
 
-                    <strong className="text-slate-950 whitespace-nowrap">
-                      ₹{s.amount}
-                    </strong>
-                  </Link>
-                ))}
+                  const rowClass = isUserPayer
+                    ? "border-rose-200 bg-rose-50/70 hover:bg-rose-100"
+                    : isUserReceiver
+                      ? "border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100"
+                      : "border-slate-200 bg-slate-50/60 hover:border-indigo-200 hover:bg-indigo-50/40";
+
+                  const iconClass = isUserPayer
+                    ? "bg-rose-100 text-rose-600"
+                    : isUserReceiver
+                      ? "bg-emerald-100 text-emerald-600"
+                      : "bg-indigo-100 text-indigo-600";
+
+                  const amountClass = isUserPayer
+                    ? "bg-rose-100 text-rose-700"
+                    : isUserReceiver
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-amber-50 text-amber-700";
+
+                  return (
+                    <Link
+                      key={i}
+                      href={`/groups/${s.groupId}`}
+                      className={`flex items-center justify-between gap-4 rounded-2xl border px-4 py-4 transition ${rowClass}`}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div
+                          className={`flex h-10 w-10 items-center justify-center rounded-full ${iconClass}`}
+                        >
+                          <Wallet className="w-4 h-4" />
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900">
+                            {s.fromName} → {s.toName}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {isUserPayer
+                              ? "You need to pay this"
+                              : isUserReceiver
+                                ? "You will receive this"
+                                : "Settle this balance"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <strong
+                        className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-bold ${amountClass}`}
+                      >
+                        ₹{s.amount}
+                      </strong>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
