@@ -5,12 +5,23 @@ import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { logoutUser } from "@/app/services/auth.service";
 import AdminNotificationBell from "./AdminNotificationBell";
+import {
+  LayoutDashboard,
+  Users,
+  Layers3,
+  Ticket,
+  Megaphone,
+  Bell,
+  Globe,
+  LogOut,
+} from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) =>
+    path === "/admin" ? pathname === "/admin" : pathname.startsWith(path);
 
   const handleLogout = async () => {
     try {
@@ -23,96 +34,94 @@ export default function Sidebar() {
   };
 
   const navItemClass = (path: string) => `
-    group relative flex items-center
-    px-3 py-2.5 text-sm font-medium
-    transition-colors
-    border-1
+    group relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition
     ${
       isActive(path)
-        ? "bg-gray-900 text-white"
-        : "text-gray-700 hover:bg-gray-100"
+        ? "bg-slate-950 text-white shadow-lg shadow-slate-950/10"
+        : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
     }
   `;
 
-  return (
-    <div className="h-full flex flex-col bg-white">
-      
-      {/* Header */}
-      <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 tracking-tight">
-          Admin Panel
-        </h2>
+  const navIconClass = (path: string) =>
+    isActive(path) ? "text-white" : "text-slate-400 group-hover:text-slate-700";
 
-        {/* Notification Bell */}
-        <AdminNotificationBell />
+  return (
+    <div className="flex h-full flex-col bg-white">
+      <div className="border-b border-slate-200 px-2 py-0">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              Admin Panel
+            </p>
+            <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950">
+              Control Center
+            </h2>
+          </div>
+          
+        </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-6 space-y-1">
+      <nav className="flex-1 space-y-1 px-3 py-5">
         <Link href="/admin" className={navItemClass("/admin")}>
           {isActive("/admin") && (
-            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
+            <span className="absolute left-0 top-0 h-full w-1 rounded-r-full bg-white" />
           )}
-          Dashboard
+          <LayoutDashboard className={`h-4 w-4 ${navIconClass("/admin")}`} />
+          <span>Dashboard</span>
         </Link>
 
         <Link href="/admin/users" className={navItemClass("/admin/users")}>
-          {isActive("/admin/users") && (
-            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
-          )}
-          User Management
+          <Users className={`h-4 w-4 ${navIconClass("/admin/users")}`} />
+          <span>User Management</span>
         </Link>
 
         <Link href="/admin/groups" className={navItemClass("/admin/groups")}>
-          {isActive("/admin/groups") && (
-            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
-          )}
-          Group Management
+          <Layers3 className={`h-4 w-4 ${navIconClass("/admin/groups")}`} />
+          <span>Group Management</span>
         </Link>
 
         <Link href="/admin/support" className={navItemClass("/admin/support")}>
-          {isActive("/admin/support") && (
-            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
-          )}
-          Ticket Support
+          <Ticket className={`h-4 w-4 ${navIconClass("/admin/support")}`} />
+          <span>Ticket Support</span>
         </Link>
 
-        <Link href="/admin/announcements" className={navItemClass("/admin/announcements")}>
-          {isActive("/admin/announcements") && (
-            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
-          )}
-          Announcements
+        <Link
+          href="/admin/announcements"
+          className={navItemClass("/admin/announcements")}
+        >
+          <Megaphone className={`h-4 w-4 ${navIconClass("/admin/announcements")}`} />
+          <span>Announcements</span>
         </Link>
 
-        <Link href="/admin/notifications" className={navItemClass("/admin/notifications")}>
-          {isActive("/admin/notifications") && (
-            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
-          )}
-          Notifications
+        <Link
+          href="/admin/notifications"
+          className={navItemClass("/admin/notifications")}
+        >
+          <Bell className={`h-4 w-4 ${navIconClass("/admin/notifications")}`} />
+          <span>Notifications</span>
         </Link>
 
         <Link href="/" className={navItemClass("/")}>
-          {isActive("/") && (
-            <span className="absolute left-0 top-0 h-full w-1 bg-white" />
-          )}
-          Normal View
+          <Globe className={`h-4 w-4 ${navIconClass("/")}`} />
+          <span>Normal View</span>
         </Link>
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="border-t border-slate-200 p-4">
+        <div className="mb-4 rounded-2xl bg-slate-50 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Session
+          </p>
+          <p className="mt-1 text-sm font-medium text-slate-700">
+            Admin access active
+          </p>
+        </div>
+
         <button
           onClick={handleLogout}
-          className="
-            w-full
-            px-3 py-2.5
-            text-sm font-medium
-            text-red-600
-            border border-red-200
-            hover:bg-red-50
-            transition-colors
-          "
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-200 px-4 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
         >
+          <LogOut className="h-4 w-4" />
           Logout
         </button>
       </div>

@@ -17,7 +17,6 @@ type Stats = {
   totalMoney: number;
   newUsersThisMonth: number;
   loggedInThisMonth: number;
-
   totalTickets: number;
   openTickets: number;
   inProgressTickets: number;
@@ -33,9 +32,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       setError(null);
-
       const data = await getAdminStats();
-
       setStats(data);
     } catch (err: any) {
       let message = "Failed to load dashboard statistics.";
@@ -59,32 +56,36 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  // Loading
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-64 bg-gray-200 animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="h-20 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-pulse">
+          <div className="h-6 w-56 rounded bg-slate-200" />
+          <div className="mt-3 h-4 w-80 rounded bg-slate-100" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="h-28 bg-white border animate-pulse rounded-lg"
+              className="h-28 rounded-2xl border border-slate-200 bg-white shadow-sm animate-pulse"
             />
           ))}
         </div>
+
+        <div className="h-64 rounded-2xl border border-slate-200 bg-white shadow-sm animate-pulse" />
       </div>
     );
   }
 
-  // Error
   if (error) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <p className="mb-4 text-red-600">{error}</p>
           <button
             onClick={fetchStats}
-            className="px-5 py-2 bg-black text-white rounded hover:opacity-90"
+            className="rounded-xl bg-slate-950 px-5 py-2 text-white transition hover:bg-slate-800"
           >
             Retry
           </button>
@@ -94,25 +95,22 @@ export default function AdminDashboard() {
   }
 
   return (
-  <div className="space-y-10">
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <DashboardHeader
+          title="Admin Dashboard"
+          subtitle="Platform analytics and system overview"
+        />
+        <RefreshButton onRefresh={fetchStats} loading={loading} />
+      </div>
 
-    <div className="flex justify-between items-center">
-      <DashboardHeader
-        title="Admin Dashboard"
-        subtitle="Platform analytics and system overview"
-      />
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <StatsGrid stats={stats} />
+      </section>
 
-      <RefreshButton onRefresh={fetchStats} loading={loading} />
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <SystemHealthCard />
+      </section>
     </div>
-
-    <div className="bg-white border border-slate-200 rounded p-8">
-      <StatsGrid stats={stats} />
-    </div>
-
-     <div className="bg-white border border-slate-200 rounded p-6">
-      <SystemHealthCard />
-    </div>
-
-  </div>
-);
+  );
 }

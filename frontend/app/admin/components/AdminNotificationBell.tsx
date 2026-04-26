@@ -28,7 +28,7 @@ export default function AdminNotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 z-50 w-80">
+        <div className="absolute right-0 top-full mt-2 z-50 w-80">
           <AdminNotificationsDropdown />
         </div>
       )}

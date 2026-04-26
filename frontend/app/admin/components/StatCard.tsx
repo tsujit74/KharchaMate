@@ -8,7 +8,7 @@ type StatCardProps = {
   value: number | string;
   subtitle?: string;
   icon?: ReactNode;
-  href?: string; // optional link
+  href?: string;
 };
 
 export default function StatCard({
@@ -18,23 +18,23 @@ export default function StatCard({
   icon,
   href,
 }: StatCardProps) {
-  const cardContent = (
-    <div className="group relative bg-white border border-slate-200 rounded-1xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-      <div className="flex items-start justify-between cursor-pointer">
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+  const content = (
+    <div className="group relative rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/60 sm:p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
             {title}
           </p>
-
-          <p className="text-2xl font-bold text-slate-900">{value}</p>
-
+          <p className="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+            {value}
+          </p>
           {subtitle && (
-            <p className="text-xs text-slate-400">{subtitle}</p>
+            <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
           )}
         </div>
 
         {icon && (
-          <div className="p-2 bg-slate-100 rounded-xl text-slate-600 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-slate-600 ring-1 ring-slate-100 transition group-hover:bg-slate-950 group-hover:text-white">
             {icon}
           </div>
         )}
@@ -42,6 +42,11 @@ export default function StatCard({
     </div>
   );
 
-  // Wrap with Link if href exists
-  return href ? <Link href={href}>{cardContent}</Link> : cardContent;
+  return href ? (
+    <Link href={href} className="block">
+      {content}
+    </Link>
+  ) : (
+    content
+  );
 }
