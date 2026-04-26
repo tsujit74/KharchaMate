@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight, Clock3, Ticket } from "lucide-react";
 
 type TicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
 
@@ -14,65 +15,72 @@ interface Ticket {
 
 export default function TicketCard({ ticket }: { ticket: Ticket }) {
   const statusStyles: Record<TicketStatus, string> = {
-    OPEN: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-    IN_PROGRESS: "bg-blue-50 text-blue-700 border border-blue-200",
-    RESOLVED: "bg-green-50 text-green-700 border border-green-200",
+    OPEN: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+    IN_PROGRESS: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+    RESOLVED: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
   };
 
-  const createdTime = new Date(ticket.createdAt).toLocaleDateString(
-    "en-US",
-    {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }
-  );
+  const statusDot: Record<TicketStatus, string> = {
+    OPEN: "bg-amber-500",
+    IN_PROGRESS: "bg-blue-500",
+    RESOLVED: "bg-emerald-500",
+  };
+
+  const createdTime = new Date(ticket.createdAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
     <Link href={`/dashboard/support/${ticket._id}`} className="block group">
-      <div className="max-w-xl bg-white border border-gray-200 rounded-xl px-5 py-4 transition-all duration-200 hover:shadow-lg hover:border-gray-300 hover:-translate-y-[2px]">
+      <article className="relative w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/60">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-sm">
+              <Ticket className="h-5 w-5" />
+            </div>
 
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug group-hover:text-gray-950 transition">
-            {ticket.subject}
-          </h3>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="truncate text-sm font-bold text-slate-950 group-hover:text-slate-700">
+                  {ticket.subject}
+                </h3>
+              </div>
 
-          <span
-            className={`text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${
-              statusStyles[ticket.status]
-            }`}
-          >
+              <p className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                <span className={`h-2 w-2 rounded-full ${statusDot[ticket.status]}`} />
+                <span>{ticket.status.replace("_", " ")}</span>
+              </p>
+            </div>
+          </div>
+
+          <span className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold ${statusStyles[ticket.status]}`}>
             {ticket.status.replace("_", " ")}
           </span>
         </div>
 
-        {/* Description */}
         {ticket.description && (
-          <p className="text-sm text-gray-500 mt-2 line-clamp-2 leading-relaxed">
+          <p className="line-clamp-2 text-sm leading-relaxed text-slate-600">
             {ticket.description}
           </p>
         )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between mt-4 text-xs text-gray-400">
-
-          <span className="flex items-center gap-2">
-            <span className="font-mono text-gray-500">
-              #{ticket._id.slice(-6)}
+        <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-slate-400">#{ticket._id.slice(-6)}</span>
+            <span className="flex items-center gap-1">
+              <Clock3 className="h-3.5 w-3.5" />
+              {createdTime}
             </span>
+          </div>
 
-            <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-
-            <span>{createdTime}</span>
-          </span>
-
-          <span className="text-gray-400 group-hover:text-gray-600 transition">
-            View →
-          </span>
-
+          <div className="flex items-center gap-1 font-medium text-slate-700 transition group-hover:translate-x-0.5 group-hover:text-slate-950">
+            <span>View</span>
+            <ChevronRight className="h-4 w-4" />
+          </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
