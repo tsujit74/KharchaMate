@@ -21,86 +21,96 @@ export default function AnnouncementTable({
   handleToggle,
   handleDelete,
 }: Props) {
+  const formatDate = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   return (
-    <div className="bg-white border overflow-hidden">
-
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-
         <table className="min-w-full text-sm">
-
-          <thead className="bg-gray-100/70">
-            <tr className="text-gray-600">
-              <th className="p-4 text-left font-semibold">Title</th>
-              <th className="p-4 text-left font-semibold">Message</th>
-              <th className="p-4 text-left font-semibold">Created</th>
-              <th className="p-4 text-left font-semibold">Status</th>
-              <th className="p-4 text-left font-semibold">Actions</th>
+          <thead className="bg-slate-50">
+            <tr className="text-left text-[11px] uppercase tracking-wider text-slate-500">
+              <th className="px-4 py-3 font-semibold">Title</th>
+              <th className="px-4 py-3 font-semibold">Message</th>
+              <th className="px-4 py-3 font-semibold">Created</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
 
-          <tbody>
-            {announcements.map((a) => (
-              <tr
-                key={a._id}
-                className="border-t hover:bg-gray-50 transition"
-              >
-                <td className="p-4 font-semibold">
-                  {a.title}
-                </td>
+          <tbody className="divide-y divide-slate-100">
+            {announcements.length > 0 ? (
+              announcements.map((a) => (
+                <tr key={a._id} className="transition hover:bg-slate-50/80">
+                  <td className="px-4 py-4">
+                    <p className="font-semibold text-slate-950">{a.title}</p>
+                  </td>
 
-                <td className="p-4 text-gray-600 max-w-sm truncate">
-                  {a.message}
-                </td>
+                  <td className="max-w-[420px] px-4 py-4 text-slate-600">
+                    <p className="line-clamp-2">{a.message}</p>
+                  </td>
 
-                <td className="p-4 text-gray-500">
-                  {new Date(a.createdAt).toLocaleDateString()}
-                </td>
+                  <td className="px-4 py-4 text-slate-500">
+                    {formatDate(a.createdAt)}
+                  </td>
 
-                <td className="p-4">
-                  {a.isActive ? (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-50 text-green-600 border border-green-200">
-                      ● Active
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600 border">
-                      ● Disabled
-                    </span>
-                  )}
-                </td>
+                  <td className="px-4 py-4">
+                    {a.isActive ? (
+                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                        Disabled
+                      </span>
+                    )}
+                  </td>
 
-                <td className="p-4 flex gap-2">
+                  <td className="px-4 py-4">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        disabled={actionLoading === a._id}
+                        onClick={() => handleToggle(a._id)}
+                        className="inline-flex items-center rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {a.isActive ? "Disable" : "Enable"}
+                      </button>
 
-                  <button
-                    disabled={actionLoading === a._id}
-                    onClick={() => handleToggle(a._id)}
-                    className="px-3 py-1 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    {a.isActive ? "Disable" : "Enable"}
-                  </button>
-
-                  <button
-                    disabled={actionLoading === a._id}
-                    onClick={() => handleDelete(a._id)}
-                    className="px-3 py-1 text-xs font-semibold bg-red-600 text-white hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-
+                      <button
+                        disabled={actionLoading === a._id}
+                        onClick={() => handleDelete(a._id)}
+                        className="inline-flex items-center rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="px-4 py-14 text-center">
+                  <div className="mx-auto max-w-sm">
+                    <p className="text-sm font-medium text-slate-700">
+                      No announcements found
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Create one to display important updates to users.
+                    </p>
+                  </div>
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
-
         </table>
-
       </div>
-
-      {announcements.length === 0 && (
-        <div className="p-10 text-center text-gray-500">
-          No announcements
-        </div>
-      )}
-
     </div>
   );
 }

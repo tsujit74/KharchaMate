@@ -20,14 +20,12 @@ export default function CreateAnnouncementModal({
 
   const isValid = title.trim().length > 0 && message.trim().length > 0;
 
-  // ESC key close
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
 
     if (open) document.addEventListener("keydown", handleEsc);
-
     return () => document.removeEventListener("keydown", handleEsc);
   }, [open, onClose]);
 
@@ -36,11 +34,9 @@ export default function CreateAnnouncementModal({
   const handleSubmit = async () => {
     if (!isValid || isSubmitting) return;
 
-    setIsSubmitting(true);
-
     try {
+      setIsSubmitting(true);
       await onCreate(title.trim(), message.trim());
-
       setTitle("");
       setMessage("");
       onClose();
@@ -51,71 +47,69 @@ export default function CreateAnnouncementModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center
-      bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-white shadow-xl
-        p-6 space-y-5 animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-2xl"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Create Announcement
-          </h2>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-950">
+              Create Announcement
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Add a new notice for admins or users.
+            </p>
+          </div>
 
           <button
             onClick={onClose}
-            className="p-1  hover:bg-gray-100 transition"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Title */}
-        <div className="space-y-1">
-          <label className="text-xs text-gray-500">Title</label>
-          <input
-            type="text"
-            maxLength={80}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="System maintenance notice"
-            className="w-full border  px-3 py-2 text-sm
-            focus:outline-none focus:ring-2 focus:ring-black/80"
-          />
-          <p className="text-xs text-gray-400 text-right">
-            {title.length}/80
-          </p>
+        <div className="space-y-4 px-5 py-5">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+              Title
+            </label>
+            <input
+              type="text"
+              maxLength={80}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="System maintenance notice"
+              className="h-11 w-full rounded-xl border border-slate-200 px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            />
+            <p className="text-right text-xs text-slate-400">{title.length}/80</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+              Message
+            </label>
+            <textarea
+              rows={5}
+              maxLength={300}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="We will be performing scheduled maintenance..."
+              className="w-full resize-none rounded-xl border border-slate-200 px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            />
+            <p className="text-right text-xs text-slate-400">
+              {message.length}/300
+            </p>
+          </div>
         </div>
 
-        {/* Message */}
-        <div className="space-y-1">
-          <label className="text-xs text-gray-500">Message</label>
-
-          <textarea
-            rows={4}
-            maxLength={300}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="We will be performing scheduled maintenance..."
-            className="w-full border  px-3 py-2 text-sm resize-none
-            focus:outline-none focus:ring-2 focus:ring-black/80"
-          />
-
-          <p className="text-xs text-gray-400 text-right">
-            {message.length}/300
-          </p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm border 
-            hover:bg-gray-100 transition"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
           >
             Cancel
           </button>
@@ -123,10 +117,7 @@ export default function CreateAnnouncementModal({
           <button
             onClick={handleSubmit}
             disabled={!isValid || isSubmitting}
-            className="px-4 py-2 text-sm font-medium 
-            bg-black text-white transition
-            disabled:opacity-50 disabled:cursor-not-allowed
-            hover:bg-gray-900"
+            className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "Creating..." : "Create"}
           </button>

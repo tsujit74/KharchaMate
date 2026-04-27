@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-
 import DashboardHeader from "../components/DashobardHeader";
 import AnnouncementTable from "./components/AnnouncementTable";
 import CreateAnnouncementModal from "./components/CreateAnnouncementModal";
-
 import {
   getAllAnnouncementsAdmin,
   createAnnouncementAdmin,
@@ -27,16 +25,14 @@ export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-
   const [openModal, setOpenModal] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchAnnouncements = async () => {
     try {
       setLoading(true);
-
       const data = await getAllAnnouncementsAdmin();
-
-      setAnnouncements(data);
+      setAnnouncements(data || []);
     } catch {
       toast.error("Failed to load announcements");
     } finally {
@@ -48,7 +44,16 @@ export default function AdminAnnouncementsPage() {
     fetchAnnouncements();
   }, []);
 
-  // CREATE
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await fetchAnnouncements();
+      toast.success("Refreshed");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleCreate = async (title: string, message: string) => {
     try {
       const newAnnouncement = await createAnnouncementAdmin({
@@ -57,46 +62,40 @@ export default function AdminAnnouncementsPage() {
       });
 
       setAnnouncements((prev) => [newAnnouncement, ...prev]);
-
       toast.success("Announcement created");
+      setOpenModal(false);
     } catch {
       toast.error("Failed to create announcement");
     }
   };
 
-  // TOGGLE ACTIVE
   const handleToggle = async (id: string) => {
+    const prev = announcements;
+
     try {
       setActionLoading(id);
-
-      setAnnouncements((prev) =>
-        prev.map((a) =>
-          a._id === id ? { ...a, isActive: !a.isActive } : a
-        )
+      setAnnouncements((current) =>
+        current.map((a) => (a._id === id ? { ...a, isActive: !a.isActive } : a))
       );
-
       await toggleAnnouncementAdmin(id);
     } catch {
-      fetchAnnouncements();
+      setAnnouncements(prev);
       toast.error("Action failed");
     } finally {
       setActionLoading(null);
     }
   };
 
-  // DELETE
   const handleDelete = async (id: string) => {
+    const prev = announcements;
+
     try {
       setActionLoading(id);
-
+      setAnnouncements((current) => current.filter((a) => a._id !== id));
       await deleteAnnouncementAdmin(id);
-
-      setAnnouncements((prev) =>
-        prev.filter((a) => a._id !== id)
-      );
-
       toast.success("Announcement deleted");
     } catch {
+      setAnnouncements(prev);
       toast.error("Delete failed");
     } finally {
       setActionLoading(null);
@@ -105,48 +104,47 @@ export default function AdminAnnouncementsPage() {
 
   if (loading) {
     return (
-      <div className="p-10 text-center text-gray-500">
-        Loading announcements...
+      <div className="flex min-h-[60vh] items-center justify-center bg-slate-50">
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-600 shadow-sm">
+          Loading announcements...
+        </div>
       </div>
     );
   }
 
   return (
-  <div className="p-2 md:p-4 bg-gray-50 min-h-screen space-y-6">
+    <div className="min-h-screen bg-slate-50 px-3 py-3 md:px-4 md:py-4">
+      <div className="mx-auto max-w-[1400px] space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <DashboardHeader
+            title="Announcements"
+            subtitle="Broadcast platform updates to all users"
+          />
+          <RefreshButton onRefresh={handleRefresh} loading={refreshing} />
+        </div>
 
-    <div className="flex items-center justify-between">
-      <DashboardHeader
-        title="Announcements"
-        subtitle="Broadcast platform updates to all users"
-      />
+        <div className="flex justify-end">
+          <button
+            onClick={() => setOpenModal(true)}
+            className="inline-flex items-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            + Create Announcement
+          </button>
+        </div>
 
-      <RefreshButton
-        onRefresh={fetchAnnouncements}
-        loading={loading}
-      />
+        <AnnouncementTable
+          announcements={announcements}
+          actionLoading={actionLoading}
+          handleToggle={handleToggle}
+          handleDelete={handleDelete}
+        />
+
+        <CreateAnnouncementModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          onCreate={handleCreate}
+        />
+      </div>
     </div>
-
-    <div className="flex justify-end">
-      <button
-        onClick={() => setOpenModal(true)}
-        className="px-4 py-2 text-sm font-semibold bg-black text-white hover:bg-gray-800 transition"
-      >
-        + Create Announcement
-      </button>
-    </div>
-
-    <AnnouncementTable
-      announcements={announcements}
-      actionLoading={actionLoading}
-      handleToggle={handleToggle}
-      handleDelete={handleDelete}
-    />
-
-    <CreateAnnouncementModal
-      open={openModal}
-      onClose={() => setOpenModal(false)}
-      onCreate={handleCreate}
-    />
-  </div>
-);
+  );
 }
