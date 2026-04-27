@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { getAdminNotifications } from "@/app/services/admin.service";
 
 type Notification = {
+  type: ReactNode;
   _id: string;
   title: string;
   message: string;
