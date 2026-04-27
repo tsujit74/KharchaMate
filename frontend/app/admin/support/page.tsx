@@ -1,22 +1,23 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getAllTicketsAdmin } from "@/app/services/ticket.service";
 import { toast } from "react-hot-toast";
 import TicketTable from "@/app/admin/support/components/TicketTable";
 import DashboardHeader from "../components/DashobardHeader";
 import RefreshButton from "../components/RefreshButton";
-
 import TicketFiltersTabs from "./components/TicketFilterTabs";
 import TicketSearch from "./components/TicketSearch";
 
 interface Ticket {
   _id: string;
   subject: string;
-  description: string;
+  description?: string;
   priority: string;
-  status: "OPEN" | "IN_PROGRESS" | "RESOLVED";
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | string;
   createdAt: string;
+  updatedAt?: string;
+  resolvedAt?: string;
   user: {
     _id: string;
     name: string;
@@ -24,10 +25,11 @@ interface Ticket {
   };
 }
 
+
 export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
 
@@ -37,7 +39,7 @@ export default function AdminSupportPage() {
       const res = await getAllTicketsAdmin();
       setTickets(res.tickets || []);
     } catch (error: any) {
-      toast.error(error.message.replaceAll("_", " "));
+      toast.error(error?.message?.replaceAll("_", " ") || "Failed to load tickets");
     } finally {
       setLoading(false);
     }
@@ -47,46 +49,61 @@ export default function AdminSupportPage() {
     fetchTickets();
   }, []);
 
-  //Filter + Search
-  const filteredTickets = useMemo(() => {
-    return tickets.filter((t) => {
-      const matchesFilter =
-        filter === "ALL"
-          ? true
-          : t.status?.toUpperCase() === filter;
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await fetchTickets();
+      toast.success("Refreshed");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
+  const filteredTickets = useMemo(() => {
+    const q = search.toLowerCase().trim();
+
+    return tickets.filter((t) => {
+      const matchesFilter = filter === "ALL" ? true : t.status?.toUpperCase() === filter;
       const matchesSearch =
-        t.subject?.toLowerCase().includes(search.toLowerCase()) ||
-        t.user?.name?.toLowerCase().includes(search.toLowerCase());
+        !q ||
+        t.subject?.toLowerCase().includes(q) ||
+        t.description?.toLowerCase().includes(q) ||
+        t.user?.name?.toLowerCase().includes(q) ||
+        t.user?.email?.toLowerCase().includes(q);
 
       return matchesFilter && matchesSearch;
     });
   }, [tickets, filter, search]);
 
   if (loading) {
-    return <div className="p-6 text-sm text-gray-500">Loading tickets...</div>;
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-600 shadow-sm">
+          Loading tickets...
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-1 md:p-2 bg-gray-50 min-h-screen space-y-6">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <DashboardHeader
-          title="Support Ticket"
-          subtitle="Manage platform tickets"
-        />
-        <RefreshButton onRefresh={fetchTickets} loading={loading} />
-      </div>
+    <div className="min-h-screen bg-slate-50 px-3 py-3 md:px-4 md:py-4">
+      <div className="mx-auto max-w-[1400px] space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <DashboardHeader
+            title="Support Ticket"
+            subtitle="Manage platform tickets"
+          />
+          <RefreshButton onRefresh={handleRefresh} loading={refreshing} />
+        </div>
 
-      {/* Filters + Search */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <TicketFiltersTabs status={filter} setStatus={setFilter} />
-        <TicketSearch search={search} setSearch={setSearch} />
-      </div>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <TicketFiltersTabs status={filter} setStatus={setFilter} />
+          <TicketSearch search={search} setSearch={setSearch} />
+        </div>
 
-      {/* Table */}
-      <TicketTable tickets={filteredTickets} />
+        <TicketTable tickets={filteredTickets} setTickets={setTickets} />
+
+      </div>
     </div>
   );
 }
