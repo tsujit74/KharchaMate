@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   getAllGroupsAdmin,
@@ -17,7 +17,11 @@ import RefreshButton from "../components/RefreshButton";
 type Group = {
   _id: string;
   name: string;
-  createdBy?: { name: string };
+  createdBy?: {
+    _id?: string;
+    name?: string;
+    email?: string;
+  };
   totalMembers: number;
   totalExpenses: number;
   isBlocked: boolean;
@@ -28,17 +32,17 @@ export default function AdminGroupsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
-
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchGroups = async () => {
     try {
       setLoading(true);
       const data = await getAllGroupsAdmin();
-      setGroups(data);
+      setGroups(data || []);
     } catch (err: any) {
-      toast.error("Failed to load groups");
+      toast.error(err?.message || "Failed to load groups");
     } finally {
       setLoading(false);
     }
@@ -48,97 +52,101 @@ export default function AdminGroupsPage() {
     fetchGroups();
   }, []);
 
-  // BLOCK
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await fetchGroups();
+      toast.success("Refreshed");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleBlock = async (id: string) => {
     try {
       setActionLoading(id);
-
       setGroups((prev) =>
-        prev.map((g) =>
-          g._id === id ? { ...g, isBlocked: true } : g
-        )
+        prev.map((g) => (g._id === id ? { ...g, isBlocked: true } : g))
       );
-
       await blockGroupAdmin(id);
       toast.success("Group blocked");
     } catch {
       fetchGroups();
+      toast.error("Failed to block group");
     } finally {
       setActionLoading(null);
     }
   };
 
-  // UNBLOCK
   const handleUnblock = async (id: string) => {
     try {
       setActionLoading(id);
-
       setGroups((prev) =>
-        prev.map((g) =>
-          g._id === id ? { ...g, isBlocked: false } : g
-        )
+        prev.map((g) => (g._id === id ? { ...g, isBlocked: false } : g))
       );
-
       await unblockGroupAdmin(id);
       toast.success("Group unblocked");
     } catch {
       fetchGroups();
+      toast.error("Failed to unblock group");
     } finally {
       setActionLoading(null);
     }
   };
 
-  // FILTERS
-const filteredGroups = groups
-  .filter((g) => {
-    if (status === "blocked") return g.isBlocked;
-    if (status === "active") return !g.isBlocked;
-    return true;
-  })
-  .filter((g) => {
-    const query = search.toLowerCase();
+  const filteredGroups = useMemo(() => {
+    const query = search.toLowerCase().trim();
 
-    const nameMatch = g.name.toLowerCase().includes(query);
+    return groups
+      .filter((g) => {
+        if (status === "blocked") return g.isBlocked;
+        if (status === "active") return !g.isBlocked;
+        return true;
+      })
+      .filter((g) => {
+        if (!query) return true;
 
-    const creatorMatch = g.createdBy?.name
-      ?.toLowerCase()
-      .includes(query);
+        const nameMatch = g.name.toLowerCase().includes(query);
+        const creatorMatch = g.createdBy?.name?.toLowerCase().includes(query);
+        const emailMatch = g.createdBy?.email?.toLowerCase().includes(query);
 
-    return nameMatch || creatorMatch;
-  });
+        return nameMatch || creatorMatch || emailMatch;
+      });
+  }, [groups, search, status]);
 
   if (loading) {
     return (
-      <div className="p-10 text-center text-gray-500">
-        Loading groups...
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-600 shadow-sm">
+          Loading groups...
+        </div>
       </div>
     );
   }
 
   return (
-  <div className="p-1 md:p-2 bg-gray-50 min-h-screen space-y-6">
+    <div className="min-h-screen bg-slate-50 px-3 py-3 md:px-4 md:py-4">
+      <div className="mx-auto max-w-[1400px] space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <DashboardHeader
+            title="Group Management"
+            subtitle="Manage platform groups"
+          />
+          <RefreshButton onRefresh={handleRefresh} loading={refreshing} />
+        </div>
 
-    <div className="flex items-center justify-between">
-      <DashboardHeader
-        title="Group Management"
-        subtitle="Manage platform groups"
-      />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <GroupStatusTabs status={status} setStatus={setStatus} />
+          <GroupSearch search={search} setSearch={setSearch} />
+        </div>
 
-      <RefreshButton onRefresh={fetchGroups} loading={loading} />
+        <GroupsTable
+          groups={filteredGroups}
+          actionLoading={actionLoading}
+          handleBlock={handleBlock}
+          handleUnblock={handleUnblock}
+        />
+      </div>
     </div>
-
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <GroupStatusTabs status={status} setStatus={setStatus} />
-      <GroupSearch search={search} setSearch={setSearch} />
-    </div>
-
-    <GroupsTable
-      groups={filteredGroups}
-      actionLoading={actionLoading}
-      handleBlock={handleBlock}
-      handleUnblock={handleUnblock}
-    />
-
-  </div>
-);
+  );
 }
