@@ -65,7 +65,6 @@ export const getAdminStats = async (req, res) => {
       blockedUsers,
       blockedGroups,
 
-      
       totalTickets,
       openTickets,
       inProgressTickets,
@@ -313,7 +312,7 @@ export const getUserDetailsAdmin = async (req, res) => {
 
     // Fetch user basic details
     const user = await User.findById(objectUserId).select(
-      "name email role isBlocked createdAt"
+      "name email role isBlocked createdAt",
     );
 
     if (!user) {
@@ -390,6 +389,86 @@ export const getUserGroupsAdmin = async (req, res) => {
     console.error("Admin getUserGroups error:", error);
     res.status(500).json({
       message: "Failed to fetch groups",
+    });
+  }
+};
+
+// controllers/admin/groupController.ts
+
+export const getGroupDetailsAdmin = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(groupId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid group id",
+      });
+    }
+
+    const objectGroupId = new mongoose.Types.ObjectId(groupId);
+
+    // 1. Fetch group (with members)
+    const group = await Group.findById(objectGroupId)
+      .populate("createdBy", "name email")
+      .select("name createdBy members isBlocked isActive createdAt updatedAt");
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Group not found",
+      });
+    }
+
+    // 2. Compute totalMembers
+    const totalMembers = group.members.length;
+
+    // 3. Pagination + expenses
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(5, Number(req.query.limit) || 10));
+    const skip = (page - 1) * limit;
+
+    const [expenses, totalCount] = await Promise.all([
+      // Paginated expenses
+      Expense.find({ group: objectGroupId })
+        .populate("paidBy", "name email")
+        .populate("splitBetween.user", "name email")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+
+      // Count all expenses for this group
+      Expense.countDocuments({ group: objectGroupId }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // 4. Compute totalExpenses (sum of all expense amounts)
+    const totalExpenses =
+      expenses.reduce((sum, exp) => sum + exp.amount, 0) || 0;
+
+    return res.status(200).json({
+      success: true,
+      group: {
+        ...group.toObject(),
+        totalMembers,
+        totalExpenses,
+      },
+      expenses,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Admin getGroupDetailsAdmin error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch group details",
     });
   }
 };
@@ -611,10 +690,7 @@ export const markAdminNotificationRead = async (req, res) => {
 
 export const markAllAdminNotificationsRead = async (req, res) => {
   try {
-    await AdminNotification.updateMany(
-      { isRead: false },
-      { isRead: true }
-    );
+    await AdminNotification.updateMany({ isRead: false }, { isRead: true });
 
     res.json({ success: true });
   } catch (error) {

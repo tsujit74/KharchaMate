@@ -1,5 +1,61 @@
 import { api } from "./api";
 
+type Expense = {
+  _id: string;
+  description: string;
+  amount: number;
+  category: string;
+  paidBy: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  splitBetween: Array<{
+    user: {
+      _id: string;
+      name: string;
+      email: string;
+    };
+    amount: number;
+    _id: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Group = {
+  _id: string;
+  name: string;
+  createdBy: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  members: string[];
+  totalMembers: number;
+  totalExpenses: number;
+  isBlocked: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+};
+
+export type GroupDetailsResponse = {
+  success: boolean;
+  group: Group;
+  expenses: Expense[];
+  pagination: PaginationMeta;
+};
+
 // Get Admin Dashboard Stats
 export const getAdminStats = async () => {
   try {
@@ -8,11 +64,9 @@ export const getAdminStats = async () => {
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
-    if (err.response.status === 401)
-      throw new Error("UNAUTHORIZED");
+    if (err.response.status === 401) throw new Error("UNAUTHORIZED");
 
-    if (err.response.status === 403)
-      throw new Error("FORBIDDEN");
+    if (err.response.status === 403) throw new Error("FORBIDDEN");
 
     throw new Error("FAILED_FETCH_ADMIN_STATS");
   }
@@ -23,17 +77,13 @@ export const getAllUsers = async () => {
   try {
     const res = await api.get("/admin/users");
 
-    return Array.isArray(res.data?.users)
-      ? res.data.users
-      : [];
+    return Array.isArray(res.data?.users) ? res.data.users : [];
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
-    if (err.response.status === 401)
-      throw new Error("UNAUTHORIZED");
+    if (err.response.status === 401) throw new Error("UNAUTHORIZED");
 
-    if (err.response.status === 403)
-      throw new Error("FORBIDDEN");
+    if (err.response.status === 403) throw new Error("FORBIDDEN");
 
     throw new Error("FAILED_FETCH_USERS");
   }
@@ -41,13 +91,10 @@ export const getAllUsers = async () => {
 
 // Block User
 export const blockUser = async (userId: string) => {
-  if (!userId?.trim())
-    throw new Error("INVALID_USER_ID");
+  if (!userId?.trim()) throw new Error("INVALID_USER_ID");
 
   try {
-    const res = await api.patch(
-      `/admin/user/${userId}/block`
-    );
+    const res = await api.patch(`/admin/user/${userId}/block`);
 
     return res.data;
   } catch (err: any) {
@@ -55,14 +102,11 @@ export const blockUser = async (userId: string) => {
 
     const status = err.response.status;
 
-    if (status === 401)
-      throw new Error("UNAUTHORIZED");
+    if (status === 401) throw new Error("UNAUTHORIZED");
 
-    if (status === 403)
-      throw new Error("FORBIDDEN");
+    if (status === 403) throw new Error("FORBIDDEN");
 
-    if (status === 404)
-      throw new Error("USER_NOT_FOUND");
+    if (status === 404) throw new Error("USER_NOT_FOUND");
 
     throw new Error("FAILED_BLOCK_USER");
   }
@@ -70,13 +114,10 @@ export const blockUser = async (userId: string) => {
 
 // Unblock User
 export const unblockUser = async (userId: string) => {
-  if (!userId?.trim())
-    throw new Error("INVALID_USER_ID");
+  if (!userId?.trim()) throw new Error("INVALID_USER_ID");
 
   try {
-    const res = await api.patch(
-      `/admin/user/${userId}/unblock`
-    );
+    const res = await api.patch(`/admin/user/${userId}/unblock`);
 
     return res.data;
   } catch (err: any) {
@@ -84,14 +125,11 @@ export const unblockUser = async (userId: string) => {
 
     const status = err.response.status;
 
-    if (status === 401)
-      throw new Error("UNAUTHORIZED");
+    if (status === 401) throw new Error("UNAUTHORIZED");
 
-    if (status === 403)
-      throw new Error("FORBIDDEN");
+    if (status === 403) throw new Error("FORBIDDEN");
 
-    if (status === 404)
-      throw new Error("USER_NOT_FOUND");
+    if (status === 404) throw new Error("USER_NOT_FOUND");
 
     throw new Error("FAILED_UNBLOCK_USER");
   }
@@ -101,9 +139,7 @@ export const getAllGroupsAdmin = async () => {
   try {
     const res = await api.get("/admin/groups");
 
-    return Array.isArray(res.data?.groups)
-      ? res.data.groups
-      : [];
+    return Array.isArray(res.data?.groups) ? res.data.groups : [];
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
@@ -179,7 +215,6 @@ export const getUserDetailsAdmin = async (userId: string) => {
   }
 };
 
-
 // Get Groups Created/Joined by User (Admin)
 export const getUserGroupsAdmin = async (userId: string) => {
   if (!userId?.trim()) throw new Error("INVALID_USER_ID");
@@ -188,7 +223,6 @@ export const getUserGroupsAdmin = async (userId: string) => {
     const res = await api.get(`/admin/users/${userId}/groups`);
 
     return Array.isArray(res.data) ? res.data : [];
-
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
@@ -206,10 +240,7 @@ export const getAllAnnouncementsAdmin = async () => {
   try {
     const res = await api.get("/admin/announcements");
 
-    return Array.isArray(res.data?.announcements)
-      ? res.data.announcements
-      : [];
-
+    return Array.isArray(res.data?.announcements) ? res.data.announcements : [];
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
@@ -222,13 +253,10 @@ export const getAllAnnouncementsAdmin = async () => {
   }
 };
 
-
-
 export const createAnnouncementAdmin = async (data: {
   title: string;
   message: string;
 }) => {
-
   if (!data?.title?.trim()) throw new Error("INVALID_TITLE");
   if (!data?.message?.trim()) throw new Error("INVALID_MESSAGE");
 
@@ -236,9 +264,7 @@ export const createAnnouncementAdmin = async (data: {
     const res = await api.post("/admin/announcements", data);
 
     return res.data.announcement;
-
   } catch (err: any) {
-
     if (!err.response) throw new Error("NETWORK_ERROR");
 
     const status = err.response.status;
@@ -251,19 +277,14 @@ export const createAnnouncementAdmin = async (data: {
   }
 };
 
-
-
 export const deleteAnnouncementAdmin = async (announcementId: string) => {
-
   if (!announcementId?.trim()) throw new Error("INVALID_ANNOUNCEMENT_ID");
 
   try {
     await api.delete(`/admin/announcements/${announcementId}`);
 
     return true;
-
   } catch (err: any) {
-
     if (!err.response) throw new Error("NETWORK_ERROR");
 
     const status = err.response.status;
@@ -280,10 +301,11 @@ export const toggleAnnouncementAdmin = async (announcementId: string) => {
   if (!announcementId?.trim()) throw new Error("INVALID_ANNOUNCEMENT_ID");
 
   try {
-    const res = await api.patch(`/admin/announcements/${announcementId}/toggle`);
+    const res = await api.patch(
+      `/admin/announcements/${announcementId}/toggle`,
+    );
 
     return res.data;
-
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
@@ -340,14 +362,13 @@ export const markAllAdminNotificationsRead = async () => {
   }
 };
 
-//Health 
+//Health
 
 export const getSystemHealth = async () => {
   try {
     const res = await api.get("/health");
 
     return res.data;
-
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
@@ -357,5 +378,36 @@ export const getSystemHealth = async () => {
     if (status === 500) throw new Error("SERVER_ERROR");
 
     throw new Error("FAILED_FETCH_SYSTEM_HEALTH");
+  }
+};
+
+export const getGroupDetailsAdmin = async (
+  groupId: string,
+  { page, limit }: { page?: number; limit?: number } = {},
+): Promise<GroupDetailsResponse> => {
+  if (!groupId?.trim()) throw new Error("INVALID_GROUP_ID");
+
+  const params = new URLSearchParams();
+  if (page) params.set("page", String(page));
+  if (limit) params.set("limit", String(limit));
+
+  try {
+    const res = await api.get(`/admin/group/${groupId}`, { params });
+
+    if (!res.data?.success) {
+      throw new Error("INVALID_RESPONSE");
+    }
+
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    const status = err.response.status;
+
+    if (status === 401) throw new Error("UNAUTHORIZED");
+    if (status === 403) throw new Error("FORBIDDEN");
+    if (status === 404) throw new Error("GROUP_NOT_FOUND");
+
+    throw new Error("FAILED_FETCH_GROUP_DETAILS");
   }
 };

@@ -12,6 +12,7 @@ import {
   getAllAnnouncements,
   getAllGroups,
   getAllUsers,
+  getGroupDetailsAdmin,
   getUserDetailsAdmin,
   getUserGroupsAdmin,
   markAdminNotificationRead,
@@ -31,20 +32,32 @@ router.patch("/user/:id/unblock", authMiddleware, adminMiddleware, unblockUser);
 
 router.get("/groups", authMiddleware, adminMiddleware, getAllGroups);
 router.patch("/groups/:id/block", authMiddleware, adminMiddleware, blockGroup);
-router.patch("/groups/:id/unblock", authMiddleware, adminMiddleware, unblockGroup);
+router.patch(
+  "/groups/:id/unblock",
+  authMiddleware,
+  adminMiddleware,
+  unblockGroup,
+);
 
 router.get(
   "/users/:userId",
   authMiddleware,
   adminMiddleware,
-  getUserDetailsAdmin
+  getUserDetailsAdmin,
 );
 
 router.get(
   "/users/:userId/groups",
   authMiddleware,
   adminMiddleware,
-  getUserGroupsAdmin
+  getUserGroupsAdmin,
+);
+
+router.get(
+  "/group/:groupId",
+  authMiddleware,
+  adminMiddleware,
+  getGroupDetailsAdmin,
 );
 
 /* ANNOUNCEMENTS */
@@ -53,28 +66,28 @@ router.post(
   "/announcements",
   authMiddleware,
   adminMiddleware,
-  createAnnouncement
+  createAnnouncement,
 );
 
 router.get(
   "/announcements",
   authMiddleware,
   adminMiddleware,
-  getAllAnnouncements
+  getAllAnnouncements,
 );
 
 router.patch(
   "/announcements/:id/toggle",
   authMiddleware,
   adminMiddleware,
-  toggleAnnouncement
+  toggleAnnouncement,
 );
 
 router.delete(
   "/announcements/:id",
   authMiddleware,
   adminMiddleware,
-  deleteAnnouncement
+  deleteAnnouncement,
 );
 
 /* ADMIN NOTIFICATIONS */
@@ -83,29 +96,28 @@ router.get(
   "/notifications",
   authMiddleware,
   adminMiddleware,
-  getAdminNotifications
+  getAdminNotifications,
 );
 
 router.get(
   "/notifications/unread-count",
   authMiddleware,
   adminMiddleware,
-  getAdminUnreadCount
+  getAdminUnreadCount,
 );
 
 router.patch(
   "/notifications/:id/read",
   authMiddleware,
   adminMiddleware,
-  markAdminNotificationRead
+  markAdminNotificationRead,
 );
 
 router.patch(
   "/notifications/read-all",
   authMiddleware,
   adminMiddleware,
-  markAllAdminNotificationsRead
+  markAllAdminNotificationsRead,
 );
-
 
 export default router;

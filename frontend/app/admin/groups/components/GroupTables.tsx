@@ -19,6 +19,7 @@ type Props = {
   actionLoading: string | null;
   handleBlock: (id: string) => void;
   handleUnblock: (id: string) => void;
+  onViewGroup: (id: string) => void; 
 };
 
 function formatDate(value?: string) {
@@ -41,6 +42,7 @@ export default function GroupsTable({
   actionLoading,
   handleBlock,
   handleUnblock,
+  onViewGroup,
 }: Props) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -60,7 +62,11 @@ export default function GroupsTable({
 
           <tbody className="divide-y divide-slate-100">
             {groups.map((group) => (
-              <tr key={group._id} className="transition hover:bg-slate-50/80">
+               <tr
+                key={group._id}
+                className="transition hover:bg-slate-50/80 cursor-pointer"
+                onClick={() => onViewGroup(group._id)} // click anywhere on row
+              >
                 <td className="px-3 py-3">
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-slate-950">

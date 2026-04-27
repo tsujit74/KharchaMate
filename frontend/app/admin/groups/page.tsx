@@ -13,6 +13,7 @@ import GroupsTable from "./components/GroupTables";
 import GroupStatusTabs from "./components/GroupStatusTabs";
 import GroupSearch from "./components/GroupFilter";
 import RefreshButton from "../components/RefreshButton";
+import { useRouter } from "next/navigation";
 
 type Group = {
   _id: string;
@@ -29,6 +30,9 @@ type Group = {
 };
 
 export default function AdminGroupsPage() {
+  
+  const router = useRouter();
+
   const [groups, setGroups] = useState<Group[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
@@ -114,6 +118,10 @@ export default function AdminGroupsPage() {
       });
   }, [groups, search, status]);
 
+  const onViewGroup = (groupId: string) => {
+    router.push(`/admin/groups/${groupId}`);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -145,6 +153,7 @@ export default function AdminGroupsPage() {
           actionLoading={actionLoading}
           handleBlock={handleBlock}
           handleUnblock={handleUnblock}
+          onViewGroup={onViewGroup}
         />
       </div>
     </div>
