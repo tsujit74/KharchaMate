@@ -51,8 +51,9 @@ type Item = {
   status?: string;
 };
 
+const ITEMS_PER_PAGE = 10;
+
 export default function ProfilePage() {
-  const ITEMS_PER_PAGE = 10;
   const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
@@ -61,12 +62,10 @@ export default function ProfilePage() {
   const [history, setHistory] = useState<Settlement[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  const [activeTab, setActiveTab] = useState<
-    "all" | "paid" | "pending" | "history"
-  >("all");
-  const [historyFilter, setHistoryFilter] = useState<"sent" | "received">(
-    "sent",
+  const [activeTab, setActiveTab] = useState<"all" | "paid" | "pending" | "history">(
+    "all"
   );
+  const [historyFilter, setHistoryFilter] = useState<"sent" | "received">("sent");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -122,57 +121,58 @@ export default function ProfilePage() {
     );
   };
 
+  // Build items for pending + history (sent / received)
   const baseItems: Item[] =
     activeTab === "pending"
-      ? settlements
-          .filter((s) => s.from === user.id)
+    ? // ✅ Only pending where YOU are sender (you owe)
+      settlements
+        .filter((s) => s.from === user.id || s.to === user.id)
+        .map((s) => ({
+          _id: s._id,
+          description: `Payment to ${s.toName}`,
+          amount: parseFloat(s.amount.toFixed(2)),
+          group: {
+            _id: s.groupId,
+            name: s.groupName,
+          },
+          from: {
+            _id: s.from,
+            name: s.fromName,
+          },
+          to: {
+            _id: s.to,
+            name: s.toName,
+          },
+          createdAt: s.createdAt || "",
+          status: "pending",
+        }))
+    : activeTab === "history"
+      ? // ✅ ALL payment history
+        history
+          .filter((s) => s.from._id === user.id || s.to._id === user.id)
           .map((s) => ({
             _id: s._id,
-            description: `Payment to ${s.toName}`,
-            amount: s.amount,
-            group: {
-              _id: s.groupId,
-              name: s.groupName,
-            },
-            from: {
-              _id: s.from,
-              name: s.fromName,
-            },
-            to: {
-              _id: s.to,
-              name: s.toName,
-            },
-            createdAt: s.createdAt || "",
-            status: "pending",
+            description: `Payment ${s.status}`,
+            amount: parseFloat(s.amount.toFixed(2)),
+            group: s.group,
+            from: s.from,
+            to: s.to,
+            createdAt: s.settledAt || s.createdAt,
+            status: s.status,
           }))
-      : activeTab === "history"
-        ? history
-            .filter((s) =>
-              historyFilter === "sent"
-                ? s.from._id === user.id
-                : s.to._id === user.id,
-            )
-            .map((s) => ({
-              _id: s._id,
-              description: `Payment ${s.status}`,
-              amount: s.amount,
-              group: s.group,
-              from: s.from,
-              to: s.to,
-              createdAt: s.settledAt || s.createdAt,
-              status: s.status,
-            }))
-        : [];
+      : [];
 
   const monthFiltered = baseItems.filter((e) =>
-    e.createdAt ? filterByMonth(e.createdAt) : true,
+    e.createdAt ? filterByMonth(e.createdAt) : true
   );
 
-  const totalPages = Math.ceil(monthFiltered.length / ITEMS_PER_PAGE);
-
+  const totalPages = Math.max(
+    1,
+    Math.ceil(monthFiltered.length / ITEMS_PER_PAGE)
+  );
   const paginatedItems = monthFiltered.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
 
   return (
@@ -183,7 +183,6 @@ export default function ProfilePage() {
           <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
             <Users className="w-6 h-6 text-blue-600" />
           </div>
-
           <div>
             <h1 className="text-xl font-semibold text-gray-900">{user.name}</h1>
             <p className="text-sm text-gray-500">{user.email}</p>
@@ -264,40 +263,96 @@ export default function ProfilePage() {
           <ExpensesList userId={user.id} mode="paid" />
         ) : (
           <>
-            <div className="space-y-3">
-              {paginatedItems.length === 0 && (
-                <p className="text-gray-500 text-sm">No records found.</p>
-              )}
-
-              {paginatedItems.map((item) => {
-                const dateLabel = item.createdAt
-                  ? formatDateTime(item.createdAt).dateLabel
-                  : "";
-
-                const paidByText =
-                  activeTab === "pending"
-                    ? `You owe ${item.to.name}`
-                    : item.from._id === user.id
-                      ? `You paid ${item.to.name}`
-                      : `${item.from.name} paid you`;
-
-                return (
-                  <div
-                    key={item._id}
-                    className="border p-4 rounded-xl flex justify-between"
-                  >
-                    <div>
-                      <p>{item.description}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.group.name} • {paidByText}
-                      </p>
-                      {dateLabel && <p className="text-xs">{dateLabel}</p>}
-                    </div>
-                    <p>₹{item.amount}</p>
-                  </div>
-                );
-              })}
+            {/* Month Filter */}
+            <div className="mb-4">
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => {
+                  setSelectedMonth(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border rounded-lg px-3 py-2 text-sm"
+              />
             </div>
+
+            {/* List */}
+            <div className="space-y-3">
+              {paginatedItems.length === 0 ? (
+                <p className="text-gray-500 text-sm">
+                  {activeTab === "pending"
+                    ? "No pending payments to make."
+                    : "No payment records found."}
+                </p>
+              ) : (
+                paginatedItems.map((item) => {
+                  const dateLabel = item.createdAt
+                    ? formatDateTime(item.createdAt).dateLabel
+                    : "";
+
+                  const youAreSender = item.from._id === user.id;
+                  const youAreReceiver = item.to._id === user.id;
+
+                  const directionText = youAreSender
+                    ? `You sent ₹${item.amount.toFixed(2)} to ${item.to.name}`
+                    : `You received ₹${item.amount.toFixed(2)} from ${item.from.name}`;
+
+                  const paidByText = youAreSender
+                    ? `You paid ${item.to.name}`
+                    : `${item.from.name} paid you`;
+
+                  return (
+                    <div
+                      key={item._id}
+                      className="border p-4 rounded-xl flex justify-between items-center bg-white hover:shadow-sm transition"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {item.description}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {item.group.name} • {paidByText}
+                        </p>
+                        {dateLabel && <p className="text-[11px] text-gray-400 mt-0.5">{dateLabel}</p>}
+                      </div>
+                      <p
+                        className={`text-sm font-semibold tabular-nums ${
+                          youAreSender ? "text-red-600" : "text-green-600"
+                        }`}
+                      >
+                        {youAreSender ? "-₹" : "+₹"}
+                        {item.amount.toFixed(2)}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 mt-6">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40"
+                >
+                  Prev
+                </button>
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
