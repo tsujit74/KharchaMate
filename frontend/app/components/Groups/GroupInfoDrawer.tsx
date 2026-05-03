@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { X, Shield, UserMinus, UserPlus, Crown } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  X,
+  Shield,
+  UserMinus,
+  UserPlus,
+  Crown,
+  Loader2,
+} from "lucide-react";
 import Link from "next/link";
 import { removeMember, toggleGroupStatus } from "@/app/services/group.service";
 import toast from "react-hot-toast";
-
-type Message = {
-  type: "success" | "error";
-  text: string;
-};
 
 export default function GroupInfoDrawer({
   open,
@@ -17,18 +19,11 @@ export default function GroupInfoDrawer({
   group,
   currentUserId,
   onRefresh,
-}: {
-  open: boolean;
-  onClose: () => void;
-  group: any;
-  currentUserId?: string;
-  onRefresh: () => Promise<void> | void;
-}) {
-  const [message, setMessage] = useState<Message | null>(null);
+}: any) {
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
 
-  /* Prevent body scroll */
+  /* Lock scroll */
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -38,64 +33,69 @@ export default function GroupInfoDrawer({
 
   if (!group) return null;
 
-  const admins = Array.isArray(group.admins) ? group.admins : [];
-  const members = Array.isArray(group.members) ? group.members : [];
+  const admins = group.admins || [];
+  const members = group.members || [];
 
-  const isAdmin = admins.some((a: any) => a?._id === currentUserId);
+  const isAdmin = admins.some((a: any) => a._id === currentUserId);
+  const isCreator = group.createdBy?._id === currentUserId;
+
   const isActive = group?.isActive !== false;
   const hasExpenses = (group?.expenseCount ?? 0) > 0;
 
+  /* Derived member roles */
+  const enrichedMembers = useMemo(() => {
+    return members.map((m: any) => {
+      const creator = group.createdBy?._id === m._id;
+      const admin = admins.some((a: any) => a._id === m._id);
+
+      return {
+        ...m,
+        role: creator ? "CREATOR" : admin ? "ADMIN" : "MEMBER",
+      };
+    });
+  }, [members, admins, group.createdBy]);
+
+  /* Toggle group */
   const handleToggleStatus = async () => {
     if (!isAdmin || statusLoading) return;
 
     if (isActive) {
       const ok = window.confirm(
-        "Closing this group will lock all actions.\nContinue?",
+        "Closing this group will disable all actions.\nContinue?"
       );
       if (!ok) return;
     }
 
     try {
       setStatusLoading(true);
-
       await toggleGroupStatus(group._id);
       await onRefresh();
 
       toast.success(
-        isActive
-          ? "Group closed successfully."
-          : "Group reactivated successfully.",
+        isActive ? "Group closed" : "Group reactivated"
       );
     } catch (err: any) {
-      toast.error(err?.message || "Failed to update group status.");
+      toast.error(err?.message || "Failed to update status");
     } finally {
       setStatusLoading(false);
     }
   };
 
+  /* Remove member */
   const handleRemove = async (userId: string) => {
-    if (!isActive) {
-      toast.error("This group is closed.");
-      return;
-    }
+    if (!isActive) return toast.error("Group is closed");
+    if (hasExpenses)
+      return toast.error("Cannot remove members after expenses");
 
-    if (hasExpenses) {
-      toast.error("Cannot remove members after expenses are added.");
-      return;
-    }
-
-    const ok = window.confirm("Remove this member from the group?");
-    if (!ok) return;
+    if (!window.confirm("Remove this member?")) return;
 
     try {
       setLoadingUserId(userId);
-
       await removeMember(group._id, userId);
       await onRefresh();
-
-      toast.success("Member removed successfully.");
+      toast.success("Member removed");
     } catch (err: any) {
-      toast.error(err?.message || "Failed to remove member.");
+      toast.error(err?.message || "Failed");
     } finally {
       setLoadingUserId(null);
     }
@@ -106,149 +106,150 @@ export default function GroupInfoDrawer({
       {/* Overlay */}
       <div
         onClick={onClose}
-        className={`fixed inset-x-0 top-16 bottom-0 z-40 bg-black/40 transition-opacity
-          ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-40 backdrop-blur-sm bg-black/40 transition-opacity duration-300
+        ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       />
 
       {/* Drawer */}
       <div
-        className={`fixed top-16 right-0 bottom-0 z-50 w-full sm:w-[420px]
-          bg-white shadow-2xl transition-transform duration-300
-          ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 h-full z-50 w-full sm:w-[420px]
+        bg-white shadow-2xl transform transition-transform duration-300 ease-in-out
+        ${open ? "translate-x-0" : "translate-x-full"}`}
       >
-        <div className="p-6 overflow-y-auto h-full">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Group Info</h2>
-
-            <div className="flex items-center gap-2">
-              {isAdmin && isActive && (
-                <Link
-                  href={`/groups/${group._id}/add-member`}
-                  className="p-2 rounded-lg border hover:bg-gray-50"
-                >
-                  <UserPlus className="w-4 h-4 text-gray-600" />
-                </Link>
-              )}
-              <button onClick={onClose}>
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
+        {/* HEADER */}
+        <div className="sticky top-0 bg-white z-10 border-b p-5 flex justify-between items-center">
+          <div>
+            <h2 className="font-semibold text-lg">Group Info</h2>
+            <p className="text-xs text-gray-500">
+              Manage members & settings
+            </p>
           </div>
 
-          {/* Message */}
-          {message && (
-            <div
-              className={`mb-4 rounded-md border px-4 py-3 text-sm transition-all
-                ${
-                  message.type === "success"
-                    ? "border-green-300 bg-green-50 text-green-700"
-                    : "border-red-300 bg-red-50 text-red-700"
-                }`}
-            >
-              {message.text}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {isAdmin && isActive && (
+              <Link
+                href={`/groups/${group._id}/add-member`}
+                className="p-2 rounded-lg border hover:bg-gray-100 transition"
+              >
+                <UserPlus className="w-4 h-4" />
+              </Link>
+            )}
 
-          {/* Group Name */}
-          <div className="mb-4">
-            <p className="text-xs text-gray-500">Group Name</p>
-            <p className="font-medium">{group.name}</p>
+            <button onClick={onClose}>
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
           </div>
+        </div>
 
-          {/* Status + Toggle */}
-          <div
-            className={`mb-6 rounded-xl p-4 border transition-all duration-300
+        {/* BODY */}
+        <div className="p-5 space-y-6 overflow-y-auto h-[calc(100%-80px)]">
+          {/* GROUP HEADER */}
+          <div>
+            <h3 className="text-xl font-semibold">{group.name}</h3>
+
+            <span
+              className={`inline-block mt-2 px-3 py-1 text-xs rounded-full font-medium
               ${
                 isActive
-                  ? "bg-emerald-50 border-emerald-200"
-                  : "bg-gray-50 border-gray-300"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-gray-100 text-gray-600"
               }`}
-          >
+            >
+              {isActive ? "Active" : "Closed"}
+            </span>
+          </div>
+
+          {/* STATUS CARD */}
+          <div className="rounded-xl border p-4 bg-gray-50">
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-semibold">Group Status</p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-gray-500">
                   {isActive
-                    ? "Active - members can add expenses"
-                    : "Closed - view only"}
+                    ? "Members can add expenses"
+                    : "View only mode"}
                 </p>
               </div>
 
-              {/* Toggle Switch */}
               {isAdmin && (
                 <button
                   onClick={handleToggleStatus}
                   disabled={statusLoading}
-                  className={`relative w-14 h-7 rounded-full transition-colors duration-300
-                    ${isActive ? "bg-emerald-500" : "bg-gray-400"}`}
+                  className={`relative w-14 h-7 rounded-full transition
+                  ${isActive ? "bg-emerald-500" : "bg-gray-400"}`}
                 >
                   <span
-                    className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow
-                      transition-transform duration-300
-                      ${isActive ? "translate-x-7" : "translate-x-0"}`}
+                    className={`absolute top-0.5 left-0.5 h-6 w-6 bg-white rounded-full shadow transition
+                    ${isActive ? "translate-x-7" : ""}`}
                   />
                 </button>
               )}
             </div>
           </div>
 
-          {!isActive && (
-            <div className="mb-4 rounded-md bg-yellow-50 border border-yellow-300 px-4 py-3 text-sm text-yellow-800">
-              🔒 This group is closed. All actions are disabled.
-            </div>
-          )}
-
-          {/* Members */}
+          {/* MEMBERS */}
           <div>
-            <p className="text-sm font-semibold mb-3">
+            <p className="font-semibold mb-3">
               Members ({members.length})
             </p>
 
             <div className="space-y-3">
-              {members.map((m: any) => {
-                const isCreator = group?.createdBy?._id === m._id;
-                const isMemberAdmin = admins.some((a: any) => a?._id === m._id);
+              {enrichedMembers.map((m: any) => {
+                const isYou = m._id === currentUserId;
 
-                const roleStyles = isCreator
-                  ? "border-purple-300 bg-purple-50"
-                  : isMemberAdmin
-                    ? "border-blue-300 bg-blue-50"
-                    : "border-gray-200 bg-white";
+                const roleStyle =
+                  m.role === "CREATOR"
+                    ? "bg-purple-50 border-purple-200"
+                    : m.role === "ADMIN"
+                    ? "bg-blue-50 border-blue-200"
+                    : "bg-gray-50";
 
                 return (
                   <div
                     key={m._id}
-                    className={`flex justify-between items-center border rounded-lg p-3 transition
-                      ${roleStyles}
-                      ${!isActive ? "opacity-70" : ""}`}
+                    className={`flex justify-between items-center p-3 rounded-xl border transition hover:shadow-sm ${roleStyle}`}
                   >
                     <div>
-                      <p className="text-sm font-medium flex items-center gap-1">
-                        {m.name}
-                        {m._id === currentUserId && " (You)"}
+                      <p className="text-sm font-medium">
+                        {m.name} {isYou && "(You)"}
                       </p>
-                      <p className="text-xs text-gray-500">{m.email}</p>
+                      <p className="text-xs text-gray-500">
+                        {m.email}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {m.mobile}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {isCreator && (
+                      {/* ROLE BADGE */}
+                      <span className="text-[10px] px-2 py-1 rounded-full font-semibold bg-black text-white">
+                        {m.role}
+                      </span>
+
+                      {/* ICON */}
+                      {m.role === "CREATOR" && (
                         <Crown className="w-4 h-4 text-purple-500" />
                       )}
-                      {isMemberAdmin && !isCreator && (
+                      {m.role === "ADMIN" && (
                         <Shield className="w-4 h-4 text-blue-500" />
                       )}
 
+                      {/* REMOVE */}
                       {isAdmin &&
                         isActive &&
-                        !isCreator &&
-                        m._id !== currentUserId && (
+                        m.role !== "CREATOR" &&
+                        !isYou && (
                           <button
                             disabled={loadingUserId === m._id}
                             onClick={() => handleRemove(m._id)}
-                            className="text-red-500 disabled:opacity-40"
+                            className="text-red-500 hover:scale-110 transition"
                           >
-                            <UserMinus className="w-4 h-4" />
+                            {loadingUserId === m._id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <UserMinus className="w-4 h-4" />
+                            )}
                           </button>
                         )}
                     </div>
@@ -257,15 +258,10 @@ export default function GroupInfoDrawer({
               })}
             </div>
           </div>
-          <div className="mt-8 pt-4 border-t">
-            <p className="text-xs text-gray-500 flex items-start gap-2">
-              <Shield className="w-4 h-4 text-gray-400 mt-0.5" />
-              Only{" "}
-              <span className="font-medium text-gray-600">
-                group admins
-              </span>{" "}
-              can activate or close this group.
-            </p>
+
+          {/* FOOTER */}
+          <div className="text-xs text-gray-500 border-t pt-4">
+            🔐 Only admins can manage members and group settings.
           </div>
         </div>
       </div>
