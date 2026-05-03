@@ -23,7 +23,7 @@ export default function GroupInfoDrawer({
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
 
-  /* Lock scroll */
+  /* ✅ ALWAYS first */
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -31,19 +31,18 @@ export default function GroupInfoDrawer({
     };
   }, [open]);
 
-  if (!group) return null;
-
-  const admins = group.admins || [];
-  const members = group.members || [];
+  /* ✅ SAFE values (no crash if group null) */
+  const admins = group?.admins ?? [];
+  const members = group?.members ?? [];
 
   const isAdmin = admins.some((a: any) => a._id === currentUserId);
-  const isCreator = group.createdBy?._id === currentUserId;
-
   const isActive = group?.isActive !== false;
   const hasExpenses = (group?.expenseCount ?? 0) > 0;
 
-  /* Derived member roles */
+  /* ✅ IMPORTANT: useMemo ALWAYS runs (no condition) */
   const enrichedMembers = useMemo(() => {
+    if (!group) return [];
+
     return members.map((m: any) => {
       const creator = group.createdBy?._id === m._id;
       const admin = admins.some((a: any) => a._id === m._id);
@@ -53,7 +52,10 @@ export default function GroupInfoDrawer({
         role: creator ? "CREATOR" : admin ? "ADMIN" : "MEMBER",
       };
     });
-  }, [members, admins, group.createdBy]);
+  }, [group, members, admins]);
+
+  /* ✅ NOW you can return */
+  if (!group) return null;
 
   /* Toggle group */
   const handleToggleStatus = async () => {
