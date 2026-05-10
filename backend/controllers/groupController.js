@@ -38,16 +38,16 @@ export const addMember = async (req, res) => {
     const { email, userId } = req.body;
     const group = req.group;
 
-   const isCreator = group.createdBy.toString() === req.user.id.toString();
-const isAdmin = group.admins.some(
-  (id) => id.toString() === req.user.id.toString()
-);
+    const isCreator = group.createdBy.toString() === req.user.id.toString();
+    const isAdmin = group.admins.some(
+      (id) => id.toString() === req.user.id.toString(),
+    );
 
-if (!isCreator && !isAdmin) {
-  return res.status(403).json({
-    message: "Only admins or the group creator can add members",
-  });
-}
+    if (!isCreator && !isAdmin) {
+      return res.status(403).json({
+        message: "Only admins or the group creator can add members",
+      });
+    }
     // ✅ Prevent expense lock
     const expenseExists = await Expense.exists({ group: group._id });
     if (expenseExists) {
@@ -121,12 +121,81 @@ if (!isCreator && !isAdmin) {
 
 export const getMyGroups = async (req, res) => {
   try {
-    const groups = await Group.find({
-      members: req.user.id,
-    }).populate("members", "name email");
+    const userId = new mongoose.Types.ObjectId(req.user.id);
+
+    const groups = await Group.aggregate([
+      {
+        $match: {
+          members: userId,
+        },
+      },
+      // member fields
+      {
+        $lookup: {
+          from: "users",
+          let: { memberIds: "$members" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $in: ["$_id", "$$memberIds"] },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+                email: 1,
+              },
+            },
+          ],
+          as: "members",
+        },
+      },
+
+      // Expense aggregation
+      {
+        $lookup: {
+          from: "expenses",
+          let: { groupId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$group", "$$groupId"] },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: "$amount" },
+                count: { $sum: 1 },
+              },
+            },
+          ],
+          as: "expenseStats",
+        },
+      },
+
+      // Add totals
+      {
+        $addFields: {
+          totalExpenses: {
+            $ifNull: [{ $arrayElemAt: ["$expenseStats.total", 0] }, 0],
+          },
+          expenseCount: {
+            $ifNull: [{ $arrayElemAt: ["$expenseStats.count", 0] }, 0],
+          },
+        },
+      },
+      {
+        $project: {
+          expenseStats: 0,
+        },
+      },
+    ]);
 
     res.json(groups);
   } catch (error) {
+    console.error("getMyGroups error:", error);
     res.status(500).json({ message: "Failed to fetch groups" });
   }
 };

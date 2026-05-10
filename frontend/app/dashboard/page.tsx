@@ -36,6 +36,8 @@ type Member = {
 };
 
 type Group = {
+  expenseCount: number;
+  totalExpenses: number;
   _id: string;
   name: string;
   createdBy: string;
@@ -204,162 +206,187 @@ export default function DashboardPage() {
         </section>
 
         {/* Groups */}
-        <section>
-          <div className="flex items-center justify-between gap-2 mb-4">
-            <h3 className="text-base sm:text-xl font-bold text-slate-950 truncate">
-              Your Groups
-            </h3>
+       <section>
+  <div className="flex items-center justify-between gap-2 mb-4">
+    <h3 className="text-base sm:text-xl font-bold text-slate-950 truncate">
+      Your Groups
+    </h3>
 
-            <p className="text-[11px] sm:text-sm text-slate-500 text-right whitespace-nowrap">
-              {activeGroups} active, {archivedGroups} archived, {blockedGroups}{" "}
-              blocked
-            </p>
-          </div>
+    <p className="text-[11px] sm:text-sm text-slate-500 text-right whitespace-nowrap">
+      {activeGroups} active, {archivedGroups} archived, {blockedGroups} blocked
+    </p>
+  </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {groups.map((group) => {
-              const isBlockedByAdmin = group.isBlocked;
-              const isClosed = !group.isActive && !isBlockedByAdmin;
+  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+    {groups.map((group) => {
+      const isBlockedByAdmin = group.isBlocked;
+      const isClosed = !group.isActive && !isBlockedByAdmin;
 
-              const isAdmin =
-                group.admins?.some(
-                  (adminId: string) =>
-                    adminId?.toString() === user?.id?.toString(),
-                ) ?? false;
+      const isAdmin =
+        group.admins?.some(
+          (adminId: string) =>
+            adminId?.toString() === user?.id?.toString(),
+        ) ?? false;
 
-              const isCreator =
-                group.createdBy?.toString() === user?.id?.toString();
+      const isCreator =
+        group.createdBy?.toString() === user?.id?.toString();
 
-              return (
-                <div
-                  key={group._id}
-                  onClick={() =>
-                    router.push(
-                      isBlockedByAdmin || isClosed
-                        ? `/groups/${group._id}?mode=readonly`
-                        : `/groups/${group._id}`,
-                    )
-                  }
-                  className={`group relative p-4 sm:p-6 rounded-[1rem] border cursor-pointer transition-all duration-300 ${
-                    isClosed
-                      ? "bg-slate-50 border-slate-200"
-                      : "bg-white border-slate-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4 sm:mb-5 gap-3">
-                    <div className="flex flex-wrap gap-2">
-                      <span
-                        className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
-                          isBlockedByAdmin
-                            ? "bg-red-50 text-red-600 border-red-200"
-                            : isClosed
-                              ? "bg-slate-100 text-slate-500 border-slate-200"
-                              : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                        }`}
+      return (
+        <div
+          key={group._id}
+          onClick={() =>
+            router.push(
+              isBlockedByAdmin || isClosed
+                ? `/groups/${group._id}?mode=readonly`
+                : `/groups/${group._id}`,
+            )
+          }
+          className={`group relative p-4 sm:p-6 rounded-[1rem] border cursor-pointer transition-all duration-300 ${
+            isClosed
+              ? "bg-slate-50 border-slate-200"
+              : "bg-white border-slate-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50"
+          }`}
+        >
+          {/* Top badges */}
+          <div className="flex items-start justify-between mb-4 sm:mb-5 gap-3">
+            <div className="flex flex-wrap gap-2">
+              <span
+                className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                  isBlockedByAdmin
+                    ? "bg-red-50 text-red-600 border-red-200"
+                    : isClosed
+                    ? "bg-slate-100 text-slate-500 border-slate-200"
+                    : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                }`}
+              >
+                {isBlockedByAdmin
+                  ? "Blocked by Admin"
+                  : isClosed
+                  ? "Archived"
+                  : "Active"}
+              </span>
+
+              {isCreator && (
+                <span className="px-3 py-1 text-[10px] font-bold rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-wider">
+                  Creator
+                </span>
+              )}
+            </div>
+
+            {!isClosed && !isBlockedByAdmin && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="relative"
+              >
+                <details className="relative">
+                  <summary className="list-none cursor-pointer p-2 rounded-xl hover:bg-slate-100 transition">
+                    <MoreVertical className="w-4 h-4 text-slate-500" />
+                  </summary>
+
+                  <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-20">
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          setEditGroupId(group._id);
+                          setEditGroupName(group.name);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
                       >
-                        {isBlockedByAdmin
-                          ? "Blocked by Admin"
-                          : isClosed
-                            ? "Archived"
-                            : "Active"}
-                      </span>
+                        <Pencil className="w-4 h-4 text-slate-500" />
+                        Edit Name
+                      </button>
+                    )}
 
-                      {isCreator && (
-                        <span className="px-3 py-1 text-[10px] font-bold rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-wider">
-                          Creator
-                        </span>
-                      )}
-                    </div>
-
-                    {!isClosed && !isBlockedByAdmin && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="relative"
+                    {isAdmin && (
+                      <Link
+                        href={`/groups/${group._id}/add-member`}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
                       >
-                        <details className="relative">
-                          <summary className="list-none cursor-pointer p-2 rounded-xl hover:bg-slate-100 transition">
-                            <MoreVertical className="w-4 h-4 text-slate-500" />
-                          </summary>
+                        <UserPlus className="w-4 h-4 text-slate-500" />
+                        Add Member
+                      </Link>
+                    )}
 
-                          <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-20">
-                            {isAdmin && (
-                              <button
-                                onClick={() => {
-                                  setEditGroupId(group._id);
-                                  setEditGroupName(group.name);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
-                              >
-                                <Pencil className="w-4 h-4 text-slate-500" />
-                                Edit Name
-                              </button>
-                            )}
-
-                            {isAdmin && (
-                              <Link
-                                href={`/groups/${group._id}/add-member`}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
-                              >
-                                <UserPlus className="w-4 h-4 text-slate-500" />
-                                Add Member
-                              </Link>
-                            )}
-
-                            {!isAdmin && (
-                              <div className="px-3 py-2 text-xs text-slate-400">
-                                Admin only actions
-                              </div>
-                            )}
-                          </div>
-                        </details>
+                    {!isAdmin && (
+                      <div className="px-3 py-2 text-xs text-slate-400">
+                        Admin only actions
                       </div>
                     )}
                   </div>
-
-                  <h2 className="text-lg font-bold text-slate-950 flex items-center gap-2 group-hover:text-blue-600 transition-colors">
-                    {group.name}
-                    {(isClosed || isBlockedByAdmin) && (
-                      <Lock
-                        className={`w-4 h-4 ${
-                          isBlockedByAdmin ? "text-red-500" : "text-slate-400"
-                        }`}
-                      />
-                    )}
-                  </h2>
-
-                  <p className="text-xs text-slate-400 mt-1">
-                    Updated {formatDateTime(group.updatedAt).dateLabel}
-                  </p>
-
-                  <div className="flex items-center justify-between mt-5 sm:mt-6">
-                    <div className="flex -space-x-3">
-                      {group.members.slice(0, 4).map((m, i) => (
-                        <div
-                          key={m._id}
-                          className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-100 border-2 border-white text-xs font-semibold text-slate-600"
-                          style={{ zIndex: 4 - i }}
-                        >
-                          {m.name?.[0]?.toUpperCase()}
-                        </div>
-                      ))}
-                      {group.members.length > 4 && (
-                        <div className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-50 border-2 border-white text-[10px] font-semibold text-slate-400">
-                          +{group.members.length - 4}
-                        </div>
-                      )}
-                    </div>
-
-                    <ArrowRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                  </div>
-
-                  <p className="text-xs text-slate-500 mt-4 font-medium">
-                    {group.members.length} members
-                  </p>
-                </div>
-              );
-            })}
+                </details>
+              </div>
+            )}
           </div>
-        </section>
+
+          {/* 🔥 Title + Total */}
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-950 flex items-center gap-2 group-hover:text-blue-600 transition-colors">
+                {group.name}
+                {(isClosed || isBlockedByAdmin) && (
+                  <Lock
+                    className={`w-4 h-4 ${
+                      isBlockedByAdmin ? "text-red-500" : "text-slate-400"
+                    }`}
+                  />
+                )}
+              </h2>
+
+              <p className="text-xs text-slate-400 mt-1">
+                Updated {formatDateTime(group.updatedAt).dateLabel}
+              </p>
+            </div>
+
+            <div className="text-right">
+              <p className="text-[11px] text-slate-400">Total</p>
+
+              <p
+                className={`text-sm font-bold ${
+                  group.totalExpenses > 0
+                    ? "text-emerald-600"
+                    : "text-slate-400"
+                }`}
+              >
+                ₹{group.totalExpenses.toLocaleString()}
+              </p>
+
+              <p className="text-[10px] text-slate-400 mt-1">
+                {group.expenseCount} expenses
+              </p>
+            </div>
+          </div>
+
+          {/* Members avatars */}
+          <div className="flex items-center justify-between mt-5 sm:mt-6">
+            <div className="flex -space-x-3">
+              {group.members.slice(0, 4).map((m, i) => (
+                <div
+                  key={m._id}
+                  className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-100 border-2 border-white text-xs font-semibold text-slate-600"
+                  style={{ zIndex: 4 - i }}
+                >
+                  {m.name?.[0]?.toUpperCase()}
+                </div>
+              ))}
+              {group.members.length > 4 && (
+                <div className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-50 border-2 border-white text-[10px] font-semibold text-slate-400">
+                  +{group.members.length - 4}
+                </div>
+              )}
+            </div>
+
+            <ArrowRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+          </div>
+
+          {/* Member count */}
+          <p className="text-xs text-slate-500 mt-4 font-medium">
+            {group.members.length} members
+          </p>
+        </div>
+      );
+    })}
+  </div>
+</section>
 
         {/* Recent Expenses + Pending Settlements */}
         <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
