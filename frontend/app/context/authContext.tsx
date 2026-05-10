@@ -76,9 +76,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUnreadNotifications(unread);
 
       if (u.role === "admin") {
-        router.push("/admin");
+        router.replace("/admin");
       } else {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }
     } catch (err: any) {
       throw err;
@@ -87,13 +87,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      await logoutUser(); // backend clears cookie
+      await logoutUser();
+      router.push("/login");
     } catch {
       // Even if backend fails, clear frontend state
     } finally {
       setUser(null);
       setUnreadNotifications(0);
       router.push("/login");
+      if (typeof window !== "undefined") {
+        window.history.pushState(null, "", "/login");
+      }
     }
   };
 

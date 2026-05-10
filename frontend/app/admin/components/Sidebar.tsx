@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { logoutUser } from "@/app/services/auth.service";
-import AdminNotificationBell from "./AdminNotificationBell";
+
 import {
   LayoutDashboard,
   Users,
@@ -15,6 +14,7 @@ import {
   Globe,
   LogOut,
 } from "lucide-react";
+import { useAuth } from "@/app/context/authContext";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -23,15 +23,17 @@ export default function Sidebar() {
   const isActive = (path: string) =>
     path === "/admin" ? pathname === "/admin" : pathname.startsWith(path);
 
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      router.push("/login");
-      toast.success("Logged out successfully");
-    } catch {
-      toast.error("Logout failed");
-    }
-  };
+  const { logout } = useAuth();
+
+const handleLogout = async () => {
+  try {
+    await logout();
+    router.push("/login");
+    toast.success("Logged out successfully");
+  } catch {
+    toast.error("Logout failed");
+  }
+};
 
   const navItemClass = (path: string) => `
     group relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition
