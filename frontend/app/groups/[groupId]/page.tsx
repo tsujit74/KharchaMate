@@ -23,6 +23,7 @@ import ReminderButton from "@/app/components/Reminder/ReminderButton";
 import GroupInfoDrawer from "@/app/components/Groups/GroupInfoDrawer";
 import AppSkeleton from "@/app/components/ui/AppSkeleton";
 import toast from "react-hot-toast";
+import AddExpensesModal from "../components/AddExpensesModal";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -40,6 +41,8 @@ export default function GroupDetailsPage() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [group, setGroup] = useState<any>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isActive = group?.isActive !== false;
 
@@ -329,10 +332,7 @@ export default function GroupDetailsPage() {
 
             {isActive ? (
               <button
-                onClick={() => {
-                  setAddExpenseLoading(true);
-                  router.push(`/groups/${groupId}/add-expense`);
-                }}
+                onClick={() => setIsModalOpen(true)}
                 disabled={addExpenseLoading}
                 className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm disabled:opacity-70"
               >
@@ -441,6 +441,13 @@ export default function GroupDetailsPage() {
         group={group}
         currentUserId={user?.id}
         onRefresh={refreshExpenses}
+      />
+
+      <AddExpensesModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        groupId={groupId}
+        onSuccess={refreshExpenses}
       />
     </main>
   );
