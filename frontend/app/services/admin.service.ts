@@ -1,4 +1,9 @@
 import { api } from "./api";
+type Member = {
+  _id: string;
+  name: string;
+  email: string;
+};
 
 type Expense = {
   _id: string;
@@ -31,7 +36,7 @@ type Group = {
     name: string;
     email: string;
   };
-  members: string[];
+  members: Member[];
   totalMembers: number;
   totalExpenses: number;
   isBlocked: boolean;

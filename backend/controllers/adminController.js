@@ -408,10 +408,13 @@ export const getGroupDetailsAdmin = async (req, res) => {
 
     const objectGroupId = new mongoose.Types.ObjectId(groupId);
 
-    // 1. Fetch group (with members)
+    // Fetch group with member details
     const group = await Group.findById(objectGroupId)
       .populate("createdBy", "name email")
-      .select("name createdBy members isBlocked isActive createdAt updatedAt");
+      .populate("members", "name email")
+      .select(
+        "name createdBy members isBlocked isActive createdAt updatedAt"
+      );
 
     if (!group) {
       return res.status(404).json({
@@ -420,16 +423,15 @@ export const getGroupDetailsAdmin = async (req, res) => {
       });
     }
 
-    // 2. Compute totalMembers
+    // totalMembers
     const totalMembers = group.members.length;
 
-    // 3. Pagination + expenses
+    // Pagination
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Math.max(5, Number(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
     const [expenses, totalCount] = await Promise.all([
-      // Paginated expenses
       Expense.find({ group: objectGroupId })
         .populate("paidBy", "name email")
         .populate("splitBetween.user", "name email")
@@ -437,13 +439,12 @@ export const getGroupDetailsAdmin = async (req, res) => {
         .skip(skip)
         .limit(limit),
 
-      // Count all expenses for this group
       Expense.countDocuments({ group: objectGroupId }),
     ]);
 
     const totalPages = Math.ceil(totalCount / limit);
 
-    // 4. Compute totalExpenses (sum of all expense amounts)
+    // totalExpenses
     const totalExpenses =
       expenses.reduce((sum, exp) => sum + exp.amount, 0) || 0;
 
@@ -466,6 +467,7 @@ export const getGroupDetailsAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("Admin getGroupDetailsAdmin error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to fetch group details",

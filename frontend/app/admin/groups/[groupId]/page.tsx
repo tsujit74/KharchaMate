@@ -17,7 +17,10 @@ import {
   Unlock,
   ArrowLeft,
   RefreshCw,
+  Receipt,
+  Eye,
 } from "lucide-react";
+import Link from "next/link";
 
 function formatDate(value?: string): string {
   if (!value) return "—";
@@ -47,16 +50,22 @@ function StatCard({
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-        {label}
-      </p>
-      <div className="mt-3 flex items-end justify-between gap-3">
-        <p className="text-2xl font-black tracking-tight text-slate-950">
-          {value}
+      {/* TOP */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          {label}
         </p>
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white">
+
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
           {icon}
         </div>
+      </div>
+
+      {/* VALUE */}
+      <div className="mt-4">
+        <p className="break-words text-xl font-black leading-tight text-slate-950 sm:text-xl xl:text-1xl">
+          {value}
+        </p>
       </div>
     </div>
   );
@@ -188,194 +197,277 @@ export default function AdminGroupDetailsPage() {
         </div>
 
         {/* Main layout */}
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20px]">
+        <div className="grid gap-4">
           <div className="min-w-0 space-y-4">
-            {/* Group overview card */}
+            {/* GROUP OVERVIEW */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="flex min-w-0 items-start gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-lg font-bold text-white">
-                    {group.name[0]?.toUpperCase()}
+              <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-start 2xl:justify-between">
+                {/* LEFT CONTENT */}
+                <div className="min-w-0 flex-1">
+                  {/* HEADER */}
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-lg font-bold text-white">
+                      {group.name[0]?.toUpperCase()}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="truncate text-xl font-bold text-slate-950">
+                          {group.name}
+                        </h2>
+
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                            group.isBlocked
+                              ? "bg-red-50 text-red-700 ring-1 ring-red-200"
+                              : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                          }`}
+                        >
+                          {group.isBlocked ? "Blocked" : "Active"}
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        Created by{" "}
+                        <span className="font-medium text-slate-800">
+                          {group.createdBy.name}
+                        </span>{" "}
+                        ({group.createdBy.email})
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-xl font-bold text-slate-950">
-                        {group.name}
-                      </h2>
-                      <span
-                        className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
-                          group.isBlocked
-                            ? "bg-red-50 text-red-700 ring-1 ring-red-200"
-                            : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                        }`}
-                      >
-                        {group.isBlocked ? "Blocked" : "Active"}
+                  {/* TAGS */}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                      {group.totalMembers} Members
+                    </span>
+
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                      Created {formatDate(group.createdAt)}
+                    </span>
+
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                      Updated {formatDate(group.updatedAt)}
+                    </span>
+
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                      ID: {group._id}
+                    </span>
+                  </div>
+
+                  {/* MEMBERS */}
+                  <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Members
+                      </h3>
+
+                      <span className="text-xs text-slate-500">
+                        {group.members.length} total
                       </span>
                     </div>
 
-                    <p className="mt-1 flex items-center gap-2 text-sm text-slate-500">
-                      <span>Created by</span>
-                      <span className="font-medium text-slate-800">
-                        {group.createdBy.name}
-                      </span>
-                      <span>({group.createdBy.email})</span>
-                    </p>
+                    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                      {group.members.map((member) => (
+                        <div
+                          key={member._id}
+                          className="rounded-lg border border-slate-200 bg-white px-3 py-2"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            {/* USER INFO */}
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-800">
+                                {member.name}
+                              </p>
 
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700">
-                        {group.totalMembers} members
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                        Created {formatDate(group.createdAt)}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                        Last updated {formatDate(group.updatedAt)}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                        Group ID : {(group._id)}
-                      </span>
+                              <p className="truncate text-[11px] text-slate-500">
+                                {member.email}
+                              </p>
+                            </div>
+
+                            {/* ACTION */}
+                            <Link
+                              href={`/admin/users/${member._id}`}
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 w-full lg:w-[520px] xl:w-[560px]">
+                {/* STATS */}
+                <div className="grid grid-cols-2 gap-1 2xl:w-[320px]">
                   <StatCard
                     label="Members"
                     value={group.totalMembers ?? 0}
                     icon={<Users className="h-5 w-5" />}
                   />
+
                   <StatCard
-                    label="Total Expenses"
+                    label="Expenses"
                     value={formatAmount(group.totalExpenses ?? 0)}
                     icon={<IndianRupee className="h-5 w-5" />}
                   />
+
                   <StatCard
-                    label="Expenses Count"
+                    label="Entries"
                     value={expenses.length}
                     icon={<Ticket className="h-5 w-5" />}
                   />
+
                   <StatCard
-                    label="Total Records"
-                    value={`${pagination.total} entries`}
-                    icon={<IndianRupee className="h-5 w-5" />}
+                    label="Records"
+                    value={pagination.total}
+                    icon={<Receipt className="h-5 w-5" />}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Expenses table */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold text-slate-950">
-                  Expenses
-                </h3>
+            {/* EXPENSE TABLE */}
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              {/* HEADER */}
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Expenses
+                  </h3>
+
+                  <p className="text-sm text-slate-500">
+                    Showing {expenses.length} of {pagination.total} records
+                  </p>
+                </div>
+
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                  {expenses.length} of {pagination.total}
+                  Page {pagination.page} / {pagination.totalPages}
                 </span>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-  <table className="min-w-full text-sm">
-    <thead className="bg-slate-50 text-slate-600">
-      <tr>
-        <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
-          Date
-        </th>
-        <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
-          Description
-        </th>
-        <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
-          Category
-        </th>
-        <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
-          Paid by
-        </th>
-        <th className="w-[120px] px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.1em]">
-          Amount
-        </th>
-        <th className="w-[240px] px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
-          Split
-        </th>
-      </tr>
-    </thead>
-    <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
-      {expenses.length === 0 ? (
-        <tr>
-          <td
-            colSpan={6}
-            className="px-4 py-10 text-center text-sm text-slate-500"
-          >
-            No expenses in this group.
-          </td>
-        </tr>
-      ) : (
-        expenses.map((exp) => (
-          <tr
-            key={exp._id}
-            className="transition hover:bg-slate-25 hover:bg-opacity-60"
-          >
-            <td className="px-4 py-3 text-xs text-slate-600">
-              {formatDate(exp.createdAt)}
-            </td>
-            <td className="px-4 py-3 text-sm text-slate-900 font-medium">
-              {exp.description}
-            </td>
-            <td className="px-4 py-3 text-xs text-slate-600 capitalize">
-              {exp.category.toLowerCase()}
-            </td>
-            <td className="px-4 py-3 text-sm text-slate-800 font-medium">
-              <div className="min-w-0">
-                <p className="truncate">{exp.paidBy.name}</p>
-                <p className="truncate text-xs text-slate-500">
-                  {exp.paidBy.email}
-                </p>
-              </div>
-            </td>
-            <td className="px-4 py-3 text-right text-sm font-medium text-slate-900">
-              {formatAmount(exp.amount)}
-            </td>
-            <td className="px-4 py-3 text-xs text-slate-600">
-              <p className="mb-1">
-                Split among {exp.splitBetween.length} people
-              </p>
-              <div className="space-y-0.5 text-xs">
-                {exp.splitBetween.map((spl) => (
-                  <div key={spl._id} className="truncate">
-                    <span className="text-slate-800 font-medium">
-                      {spl.user.name}
-                    </span>:
-                    <span className="ml-1 text-slate-700 font-medium">
-                      ₹{spl.amount.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </td>
-          </tr>
-        ))
-      )}
-    </tbody>
-  </table>
-</div>
+              {/* TABLE */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
+                        Date
+                      </th>
 
-              {/* Pagination */}
-              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                <div className="text-sm text-slate-500">
-                  Showing {expenses.length} of {pagination.total}
-                </div>
-                <div className="flex gap-2">
+                      <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
+                        Description
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
+                        Category
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
+                        Paid By
+                      </th>
+
+                      <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.1em]">
+                        Amount
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
+                        Split Details
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {expenses.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-4 py-10 text-center text-sm text-slate-500"
+                        >
+                          No expenses found.
+                        </td>
+                      </tr>
+                    ) : (
+                      expenses.map((exp) => (
+                        <tr key={exp._id} className="hover:bg-slate-50">
+                          <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">
+                            {formatDate(exp.createdAt)}
+                          </td>
+
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-slate-900">
+                              {exp.description}
+                            </p>
+                          </td>
+
+                          <td className="px-4 py-3">
+                            <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium capitalize text-slate-700">
+                              {exp.category.toLowerCase()}
+                            </span>
+                          </td>
+
+                          <td className="px-4 py-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-slate-800">
+                                {exp.paidBy.name}
+                              </p>
+
+                              <p className="truncate text-xs text-slate-500">
+                                {exp.paidBy.email}
+                              </p>
+                            </div>
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-slate-900">
+                            {formatAmount(exp.amount)}
+                          </td>
+
+                          <td className="px-4 py-3">
+                            <div className="space-y-1">
+                              {exp.splitBetween.map((spl) => (
+                                <div
+                                  key={spl._id}
+                                  className="flex items-center justify-between gap-2 text-xs"
+                                >
+                                  <span className="truncate text-slate-700">
+                                    {spl.user.name}
+                                  </span>
+
+                                  <span className="font-medium text-slate-900">
+                                    ₹{spl.amount.toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* PAGINATION */}
+              <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
+                <p className="text-sm text-slate-500">
+                  Showing {expenses.length} results
+                </p>
+
+                <div className="flex items-center gap-2">
                   <button
                     disabled={pagination.page <= 1}
                     onClick={() => setPage(pagination.page - 1)}
-                    className="rounded-lg px-4 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Previous
                   </button>
+
                   <button
                     disabled={pagination.page >= pagination.totalPages}
                     onClick={() => setPage(pagination.page + 1)}
-                    className="rounded-lg px-4 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Next
                   </button>
@@ -383,8 +475,6 @@ export default function AdminGroupDetailsPage() {
               </div>
             </div>
           </div>
-
-          
         </div>
       </div>
     </div>
