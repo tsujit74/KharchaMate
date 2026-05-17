@@ -310,9 +310,18 @@ export const getUserDetailsAdmin = async (req, res) => {
 
     const objectUserId = new mongoose.Types.ObjectId(userId);
 
-    // Fetch user basic details
+    // Fetch user details
     const user = await User.findById(objectUserId).select(
-      "name email role isBlocked createdAt",
+      `
+        name
+        email
+        mobile
+        role
+        isBlocked
+        createdAt
+        updatedAt
+        lastLoginAt
+      `
     );
 
     if (!user) {
@@ -322,42 +331,132 @@ export const getUserDetailsAdmin = async (req, res) => {
       });
     }
 
-    // Run queries in parallel
-    const [groupsCreated, groupsJoined, expensesAgg, tickets] =
-      await Promise.all([
-        Group.countDocuments({ createdBy: objectUserId }),
+    // Parallel queries
+    const [
+      groupsCreatedCount,
+      groupsJoinedCount,
+      createdGroups,
+      joinedGroups,
+      expensesAgg,
+      expensesCount,
+      latestExpenses,
+      tickets,
+    ] = await Promise.all([
+      // Stats
+      Group.countDocuments({ createdBy: objectUserId }),
 
-        Group.countDocuments({ members: objectUserId }),
+      Group.countDocuments({ members: objectUserId }),
 
-        Expense.aggregate([
-          {
-            $match: { paidBy: objectUserId },
+      // Created groups
+      Group.find({ createdBy: objectUserId })
+        .select("name isActive isBlocked createdAt members")
+        .sort({ createdAt: -1 })
+        .limit(5),
+
+      // Joined groups
+      Group.find({ members: objectUserId })
+        .select("name isActive isBlocked createdAt")
+        .sort({ createdAt: -1 })
+        .limit(5),
+
+      // Total expenses paid
+      Expense.aggregate([
+        {
+          $match: {
+            paidBy: objectUserId,
           },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: "$amount" },
+        },
+        {
+          $group: {
+            _id: null,
+            total: {
+              $sum: "$amount",
             },
           },
-        ]),
+        },
+      ]),
 
-        // Fetch tickets raised by this user
-        Ticket.find({ user: objectUserId })
-          .select("subject priority status createdAt resolvedAt")
-          .sort({ createdAt: -1 }),
-      ]);
+      // Expense count
+      Expense.countDocuments({
+        paidBy: objectUserId,
+      }),
 
-    const totalExpenses = expensesAgg.length > 0 ? expensesAgg[0].total : 0;
+      // Latest expenses
+      Expense.find({
+        paidBy: objectUserId,
+      })
+        .populate("group", "name")
+        .select(
+          "description amount category createdAt group"
+        )
+        .sort({ createdAt: -1 })
+        .limit(10),
+
+      // Tickets
+      Ticket.find({
+        user: objectUserId,
+      })
+        .select(
+          `
+            subject
+            description
+            priority
+            status
+            createdAt
+            resolvedAt
+          `
+        )
+        .sort({ createdAt: -1 }),
+    ]);
+
+    const totalExpenses =
+      expensesAgg.length > 0 ? expensesAgg[0].total : 0;
+
+    // Ticket stats
+    const openTickets = tickets.filter(
+      (t) => t.status !== "RESOLVED"
+    ).length;
+
+    const resolvedTickets = tickets.filter(
+      (t) => t.status === "RESOLVED"
+    ).length;
 
     return res.status(200).json({
       success: true,
-      user,
-      stats: {
-        groupsCreated,
-        groupsJoined,
-        totalExpenses,
-        ticketsRaised: tickets.length,
+
+      // USER DETAILS
+      user: {
+        ...user.toObject(),
       },
+
+      // ADMIN STATS
+      stats: {
+        groupsCreated: groupsCreatedCount,
+        groupsJoined: groupsJoinedCount,
+        totalExpenses,
+        expensesCount,
+        ticketsRaised: tickets.length,
+        openTickets,
+        resolvedTickets,
+      },
+
+      // CREATED GROUPS
+      createdGroups: createdGroups.map((group) => ({
+        _id: group._id,
+        name: group.name,
+        totalMembers: group.members.length,
+        isActive: group.isActive,
+        isBlocked: group.isBlocked,
+        createdAt: group.createdAt,
+      })),
+
+      // JOINED GROUPS
+      joinedGroups,
+
+      // RECENT EXPENSES
+      recentExpenses: latestExpenses,
+
+      // TICKETS
       tickets,
     });
   } catch (error) {
