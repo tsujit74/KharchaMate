@@ -8,9 +8,9 @@ type Props = {
 
 export default function DashboardHeader({ title, subtitle, action }: Props) {
   return (
-    <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+        <h1 className="text-1xl font-black tracking-tight text-slate-950 sm:text-2xl">
           {title}
         </h1>
         {subtitle && (

@@ -95,7 +95,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <DashboardHeader
           title="Admin Dashboard"
@@ -104,11 +104,11 @@ export default function AdminDashboard() {
         <RefreshButton onRefresh={fetchStats} loading={loading} />
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-6">
         <StatsGrid stats={stats} />
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-6">
         <SystemHealthCard />
       </section>
     </div>
