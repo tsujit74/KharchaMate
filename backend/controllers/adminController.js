@@ -226,22 +226,30 @@ export const blockGroup = async (req, res) => {
       group.blockedAt = new Date();
     }
 
-    await group.save();
+    const otherMembers = group.members.filter(
+      (m) => String(m) !== String(req.user.id),
+    );
+
+    console.log(otherMembers);
 
     try {
-      await notifyUser({
-        userId: group.createdBy,
-        actor: null,
-        title: "Group Blocked",
-        message: `Your group "${group.name}" was blocked by admin`,
-        type: "GROUP",
-        link: `/groups/${group._id}`,
-        relatedId: group._id,
-      });
+      await Promise.all(
+        otherMembers.map((memberId) =>
+          notifyUser({
+            userId: memberId,
+            actor: null,
+            title: "Group BLOCKED",
+            message: `Your group ${group.name} was blocked by admin`,
+            type: "GROUP",
+            link: `/groups/${group._id}`,
+            relatedId: group._id,
+          }),
+        ),
+      );
     } catch (notifyError) {
       console.error("Notify error (block):", notifyError);
     }
-
+    await group.save();
     res.status(200).json({ message: "Group blocked successfully" });
   } catch (error) {
     console.error(error);
@@ -273,21 +281,31 @@ export const unblockGroup = async (req, res) => {
     group.blockedBy = null;
     group.blockedAt = null;
 
-    await group.save();
+    const otherMembers = group.members.filter(
+      (m) => String(m) !== String(req.user.id),
+    );
+
+    console.log(otherMembers);
+
     try {
-      await notifyUser({
-        userId: group.createdBy,
-        actor: null,
-        title: "Group Unblocked",
-        message: `Your group "${group.name}" was unblocked by admin`,
-        type: "GROUP",
-        link: `/groups/${group._id}`,
-        relatedId: group._id,
-      });
+      await Promise.all(
+        otherMembers.map((memberId) =>
+          notifyUser({
+            userId: memberId,
+            actor: null,
+            title: "Group UNBLOCKED",
+            message: `Your group ${group.name} was UNBLOCKED by admin`,
+            type: "GROUP",
+            link: `/groups/${group._id}`,
+            relatedId: group._id,
+          }),
+        ),
+      );
     } catch (notifyError) {
-      console.error("Notify error (unblock):", notifyError);
+      console.error("Notify error (block):", notifyError);
     }
 
+    await group.save();
     res.status(200).json({ message: "Group unblocked successfully" });
   } catch (error) {
     console.error(error);
@@ -321,7 +339,7 @@ export const getUserDetailsAdmin = async (req, res) => {
         createdAt
         updatedAt
         lastLoginAt
-      `
+      `,
     );
 
     if (!user) {
@@ -386,9 +404,7 @@ export const getUserDetailsAdmin = async (req, res) => {
         paidBy: objectUserId,
       })
         .populate("group", "name")
-        .select(
-          "description amount category createdAt group"
-        )
+        .select("description amount category createdAt group")
         .sort({ createdAt: -1 })
         .limit(10),
 
@@ -404,21 +420,18 @@ export const getUserDetailsAdmin = async (req, res) => {
             status
             createdAt
             resolvedAt
-          `
+          `,
         )
         .sort({ createdAt: -1 }),
     ]);
 
-    const totalExpenses =
-      expensesAgg.length > 0 ? expensesAgg[0].total : 0;
+    const totalExpenses = expensesAgg.length > 0 ? expensesAgg[0].total : 0;
 
     // Ticket stats
-    const openTickets = tickets.filter(
-      (t) => t.status !== "RESOLVED"
-    ).length;
+    const openTickets = tickets.filter((t) => t.status !== "RESOLVED").length;
 
     const resolvedTickets = tickets.filter(
-      (t) => t.status === "RESOLVED"
+      (t) => t.status === "RESOLVED",
     ).length;
 
     return res.status(200).json({
@@ -511,9 +524,7 @@ export const getGroupDetailsAdmin = async (req, res) => {
     const group = await Group.findById(objectGroupId)
       .populate("createdBy", "name email")
       .populate("members", "name email")
-      .select(
-        "name createdBy members isBlocked isActive createdAt updatedAt"
-      );
+      .select("name createdBy members isBlocked isActive createdAt updatedAt");
 
     if (!group) {
       return res.status(404).json({
