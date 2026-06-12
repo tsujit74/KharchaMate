@@ -298,6 +298,24 @@ export const updateGroupName = async (req, res) => {
       });
     }
 
+    const otherMembers = group.members.filter(
+      (m) => String(m) !== String(req.user.id),
+    );
+
+    await Promise.all(
+      otherMembers.map((memberId) =>
+        notifyUser({
+          userId: memberId,
+          actor: req.user.id,
+          title: "Group Name Changed",
+          message: `Group Name Changed ${group.name} to ${name}`,
+          type: "INFORMATION",
+          link: `/groups/${group._id}`,
+        }),
+      ),
+    );
+
+
     group.name = name.trim();
     await group.save();
 

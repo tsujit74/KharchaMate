@@ -31,7 +31,7 @@ const notificationSchema = new mongoose.Schema(
 
     type: {
       type: String,
-      enum: ["GROUP", "EXPENSE", "SETTLEMENT", "REMINDER"],
+      enum: ["GROUP", "EXPENSE", "SETTLEMENT", "REMINDER", "INFORMATION"],
       required: true,
     },
 
