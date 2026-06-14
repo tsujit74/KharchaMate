@@ -178,222 +178,233 @@ export default function DashboardPage() {
         </div>
 
         {/* Summary Cards */}
-        <section className="hidden sm:grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <section className="hidden sm:grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
           <StatCard
-            icon={<Users className="w-4 h-4 text-blue-600" />}
+            icon={<Users className="w-4 h-4" />}
             label="Groups"
             value={groups.length}
             subtext={`${activeGroups} active`}
+            iconStyle="text-indigo-600 bg-indigo-50 border-indigo-100"
           />
           <StatCard
-            icon={<UserPlus className="w-4 h-4 text-emerald-600" />}
+            icon={<UserPlus className="w-4 h-4" />}
             label="Members"
             value={totalMembers}
             subtext="Across all groups"
+            iconStyle="text-sky-600 bg-sky-50 border-sky-100"
           />
           <StatCard
-            icon={<ReceiptText className="w-4 h-4 text-violet-600" />}
+            icon={<ReceiptText className="w-4 h-4" />}
             label="Recent Expenses"
             value={recentExpenses.length}
             subtext="Latest entries"
+            iconStyle="text-emerald-600 bg-emerald-50 border-emerald-100"
           />
           <StatCard
-            icon={<ShieldCheck className="w-4 h-4 text-amber-600" />}
+            icon={<ShieldCheck className="w-4 h-4" />}
             label="Settlements"
             value={pendingSettlements.length}
             subtext="Pending actions"
+            iconStyle="text-amber-600 bg-amber-50 border-amber-100"
           />
         </section>
 
         {/* Groups */}
-       <section>
-  <div className="flex items-center justify-between gap-2 mb-4">
-    <h3 className="text-base sm:text-xl font-bold text-slate-950 truncate">
-      Your Groups
-    </h3>
+        <section>
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <h3 className="text-20px sm:text-xl font-extrabold text-slate-900 tracking-tight">
+              Your Groups
+            </h3>
 
-    <p className="text-[11px] sm:text-sm text-slate-500 text-right whitespace-nowrap">
-      {activeGroups} active, {archivedGroups} archived, {blockedGroups} blocked
-    </p>
-  </div>
+            <span className="text-xs bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-medium border border-slate-200/40">
+              {activeGroups} active, {archivedGroups} archived, {blockedGroups}{" "}
+              blocked
+            </span>
+          </div>
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-    {groups.map((group) => {
-      const isBlockedByAdmin = group.isBlocked;
-      const isClosed = !group.isActive && !isBlockedByAdmin;
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {groups.map((group) => {
+              const isBlockedByAdmin = group.isBlocked;
+              const isClosed = !group.isActive && !isBlockedByAdmin;
 
-      const isAdmin =
-        group.admins?.some(
-          (adminId: string) =>
-            adminId?.toString() === user?.id?.toString(),
-        ) ?? false;
+              const isAdmin =
+                group.admins?.some(
+                  (adminId: string) =>
+                    adminId?.toString() === user?.id?.toString(),
+                ) ?? false;
 
-      const isCreator =
-        group.createdBy?.toString() === user?.id?.toString();
+              const isCreator =
+                group.createdBy?.toString() === user?.id?.toString();
 
-      return (
-        <div
-          key={group._id}
-          onClick={() =>
-            router.push(
-              isBlockedByAdmin || isClosed
-                ? `/groups/${group._id}?mode=readonly`
-                : `/groups/${group._id}`,
-            )
-          }
-          className={`group relative p-4 sm:p-6 rounded-[1rem] border cursor-pointer transition-all duration-300 ${
-            isClosed
-              ? "bg-slate-50 border-slate-200"
-              : "bg-white border-slate-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50"
-          }`}
-        >
-          {/* Top badges */}
-          <div className="flex items-start justify-between mb-4 sm:mb-5 gap-3">
-            <div className="flex flex-wrap gap-2">
-              <span
-                className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
-                  isBlockedByAdmin
-                    ? "bg-red-50 text-red-600 border-red-200"
-                    : isClosed
-                    ? "bg-slate-100 text-slate-500 border-slate-200"
-                    : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                }`}
-              >
-                {isBlockedByAdmin
-                  ? "Blocked by Admin"
-                  : isClosed
-                  ? "Archived"
-                  : "Active"}
-              </span>
-
-              {isCreator && (
-                <span className="px-3 py-1 text-[10px] font-bold rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-wider">
-                  Creator
-                </span>
-              )}
-            </div>
-
-            {!isClosed && !isBlockedByAdmin && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="relative"
-              >
-                <details className="relative">
-                  <summary className="list-none cursor-pointer p-2 rounded-xl hover:bg-slate-100 transition">
-                    <MoreVertical className="w-4 h-4 text-slate-500" />
-                  </summary>
-
-                  <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-20">
-                    {isAdmin && (
-                      <button
-                        onClick={() => {
-                          setEditGroupId(group._id);
-                          setEditGroupName(group.name);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
+              return (
+                <div
+                  key={group._id}
+                  onClick={() =>
+                    router.push(
+                      isBlockedByAdmin || isClosed
+                        ? `/groups/${group._id}?mode=readonly`
+                        : `/groups/${group._id}`,
+                    )
+                  }
+                  className={`group relative p-4 sm:p-6 rounded-[1rem] border cursor-pointer transition-all duration-300 border-t-[6px] ${
+                    isBlockedByAdmin
+                      ? "border-t-red-300 bg-white border-slate-300"
+                      : isClosed
+                        ? "border-t-slate-300 bg-slate-50 border-slate-300"
+                        : "border-t-indigo-300 bg-white border-slate-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-100"
+                  }`}
+                >
+                  {/* Top badges */}
+                  <div className="flex items-start justify-between mb-4 sm:mb-5 gap-3">
+                    <div className="flex flex-wrap gap-2">
+                      <span
+                        className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                          isBlockedByAdmin
+                            ? "bg-red-50 text-red-600 border-red-200"
+                            : isClosed
+                              ? "bg-slate-100 text-slate-500 border-slate-200"
+                              : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                        }`}
                       >
-                        <Pencil className="w-4 h-4 text-slate-500" />
-                        Edit Name
-                      </button>
-                    )}
+                        {isBlockedByAdmin
+                          ? "Blocked by Admin"
+                          : isClosed
+                            ? "Archived"
+                            : "Active"}
+                      </span>
 
-                    {isAdmin && (
-                      <Link
-                        href={`/groups/${group._id}/add-member`}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
+                      {isCreator && (
+                        <span className="px-3 py-1 text-[10px] font-bold rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-wider">
+                          Creator
+                        </span>
+                      )}
+                    </div>
+
+                    {!isClosed && !isBlockedByAdmin && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="relative"
                       >
-                        <UserPlus className="w-4 h-4 text-slate-500" />
-                        Add Member
-                      </Link>
-                    )}
+                        <details className="relative">
+                          <summary className="list-none cursor-pointer p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition">
+                            <MoreVertical className="w-4 h-4" />
+                          </summary>
 
-                    {!isAdmin && (
-                      <div className="px-3 py-2 text-xs text-slate-400">
-                        Admin only actions
+                          <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-20">
+                            {isAdmin && (
+                              <button
+                                onClick={() => {
+                                  setEditGroupId(group._id);
+                                  setEditGroupName(group.name);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
+                              >
+                                <Pencil className="w-4 h-4 text-slate-500" />
+                                Edit Name
+                              </button>
+                            )}
+
+                            {isAdmin && (
+                              <Link
+                                href={`/groups/${group._id}/add-member`}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-slate-50 transition"
+                              >
+                                <UserPlus className="w-4 h-4 text-slate-500" />
+                                Add Member
+                              </Link>
+                            )}
+
+                            {!isAdmin && (
+                              <div className="px-3 py-2 text-xs text-slate-400">
+                                Admin only actions
+                              </div>
+                            )}
+                          </div>
+                        </details>
                       </div>
                     )}
                   </div>
-                </details>
-              </div>
-            )}
-          </div>
 
-          {/* 🔥 Title + Total */}
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold text-slate-950 flex items-center gap-2 group-hover:text-blue-600 transition-colors">
-                {group.name}
-                {(isClosed || isBlockedByAdmin) && (
-                  <Lock
-                    className={`w-4 h-4 ${
-                      isBlockedByAdmin ? "text-red-500" : "text-slate-400"
-                    }`}
-                  />
-                )}
-              </h2>
+                  {/* 🔥 Title + Total */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 group-hover:text-indigo-600 transition-colors tracking-tight">
+                        {group.name}
+                        {(isClosed || isBlockedByAdmin) && (
+                          <Lock
+                            className={`w-3.5 h-3.5 ${
+                              isBlockedByAdmin
+                                ? "text-red-500"
+                                : "text-slate-400"
+                            }`}
+                          />
+                        )}
+                      </h2>
 
-              <p className="text-xs text-slate-400 mt-1">
-                Updated {formatDateTime(group.updatedAt).dateLabel}
-              </p>
-            </div>
+                      <p className="text-xs text-slate-400">
+                        Updated {formatDateTime(group.updatedAt).dateLabel}
+                      </p>
+                    </div>
 
-            <div className="text-right">
-              <p className="text-[11px] text-slate-400">Total</p>
+                    <div className="text-right">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                        Total
+                      </p>
+                      <p
+                        className={`text-base font-extrabold tracking-tight ${
+                          group.totalExpenses > 0
+                            ? "text-emerald-600"
+                            : "text-slate-400"
+                        }`}
+                      >
+                        ₹{group.totalExpenses.toLocaleString()}
+                      </p>
+                      <p className="text-[10px] font-medium text-slate-400/90 mt-0.5">
+                        {group.expenseCount} expenses
+                      </p>
+                    </div>
+                  </div>
 
-              <p
-                className={`text-sm font-bold ${
-                  group.totalExpenses > 0
-                    ? "text-emerald-600"
-                    : "text-slate-400"
-                }`}
-              >
-                ₹{group.totalExpenses.toLocaleString()}
-              </p>
+                  {/* Members avatars */}
+                  <div className="flex items-center justify-between mt-5 sm:mt-6">
+                    <div className="flex -space-x-3">
+                      {group.members.slice(0, 4).map((m, i) => (
+                        <div
+                          key={m._id}
+                          className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-100 border-2 border-white text-xs font-semibold text-slate-600"
+                          style={{ zIndex: 4 - i }}
+                        >
+                          {m.name?.[0]?.toUpperCase()}
+                        </div>
+                      ))}
+                      {group.members.length > 4 && (
+                        <div className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-50 border-2 border-white text-[10px] font-semibold text-slate-400">
+                          +{group.members.length - 4}
+                        </div>
+                      )}
+                    </div>
 
-              <p className="text-[10px] text-slate-400 mt-1">
-                {group.expenseCount} expenses
-              </p>
-            </div>
-          </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  </div>
 
-          {/* Members avatars */}
-          <div className="flex items-center justify-between mt-5 sm:mt-6">
-            <div className="flex -space-x-3">
-              {group.members.slice(0, 4).map((m, i) => (
-                <div
-                  key={m._id}
-                  className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-100 border-2 border-white text-xs font-semibold text-slate-600"
-                  style={{ zIndex: 4 - i }}
-                >
-                  {m.name?.[0]?.toUpperCase()}
+                  {/* Member count */}
+                  <p className="text-xs text-slate-500 mt-2 font-medium">
+                    {group.members.length} members
+                  </p>
                 </div>
-              ))}
-              {group.members.length > 4 && (
-                <div className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-50 border-2 border-white text-[10px] font-semibold text-slate-400">
-                  +{group.members.length - 4}
-                </div>
-              )}
-            </div>
-
-            <ArrowRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              );
+            })}
           </div>
-
-          {/* Member count */}
-          <p className="text-xs text-slate-500 mt-4 font-medium">
-            {group.members.length} members
-          </p>
-        </div>
-      );
-    })}
-  </div>
-</section>
+        </section>
 
         {/* Recent Expenses + Pending Settlements */}
         <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="bg-white border border-slate-200 rounded-[1rem] p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg sm:text-xl font-bold text-slate-950 mb-4">
-              Recent Expenses
-            </h3>
+          <div className="bg-white/80 backdrop-blur-md border border-slate-200/70 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight mb-4">
+                Recent Expenses
+              </h3>
+            </div>
 
             {recentLoading ? (
               <p className="text-sm text-slate-500">Loading…</p>
@@ -405,22 +416,25 @@ export default function DashboardPage() {
                   <Link
                     key={e._id}
                     href={`/groups/${e.group._id}`}
-                    className="flex items-center justify-between gap-4 py-4 hover:bg-slate-50 rounded-2xl px-3 transition"
+                    className="flex items-center justify-between gap-4 py-3.5 hover:bg-slate-50/80 rounded-xl px-3 -mx-3 transition duration-200"
                   >
                     <div className="min-w-0">
-                      <p className="font-semibold text-sm sm:text-base truncate">
+                      <p className="font-bold text-sm text-slate-800 truncate">
                         {e.description}
                       </p>
-                      <p className="text-xs sm:text-sm text-slate-500 truncate">
-                        {e.group.name} • {e.paidBy.name}
+                      <p className="text-xs text-slate-400 truncate mt-0.5">
+                        {e.group.name} •{" "}
+                        <span className="font-medium text-slate-500">
+                          {e.paidBy.name}
+                        </span>
                       </p>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <p className="font-bold text-sm sm:text-base text-slate-950">
+                      <p className="font-bold text-sm text-slate-800 tracking-tight">
                         ₹{e.amount}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-[10px] font-medium text-slate-400 mt-0.5">
                         {new Date(e.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -430,97 +444,99 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm min-h-[220px] flex flex-col justify-center">
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-950">
-                Pending Settlements
-              </h3>
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-600">
-                {pendingSettlements.length} items
-              </span>
-            </div>
-
-            {pendingLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <p className="text-sm text-slate-500">Loading…</p>
+          <div className="rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-md p-6 shadow-sm min-h-[260px] flex flex-col justify-between">
+            <div>
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Pending Settlements
+                </h3>
+                <span className="rounded-md bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-100">
+                  {pendingSettlements.length} items
+                </span>
               </div>
-            ) : pendingSettlements.length === 0 ? (
-              <div className="flex flex-1 items-center justify-center py-10 text-center">
-                <div>
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-700">
-                    No pending settlements
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Everyone is up to date right now.
-                  </p>
+
+              {pendingLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <p className="text-sm text-slate-400 font-medium">Loading…</p>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingSettlements.map((s, i) => {
-                  const isUserPayer =
-                    s.from?.toString() === user?.id?.toString();
-                  const isUserReceiver =
-                    s.to?.toString() === user?.id?.toString();
+              ) : pendingSettlements.length === 0 ? (
+                <div className="flex flex-1 items-center justify-center py-8 text-center">
+                  <div>
+                    <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-800">
+                      No pending settlements
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400 max-w-[240px]">
+                      Everyone is up to date right now.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingSettlements.map((s, i) => {
+                    const isUserPayer =
+                      s.from?.toString() === user?.id?.toString();
+                    const isUserReceiver =
+                      s.to?.toString() === user?.id?.toString();
 
-                  const rowClass = isUserPayer
-                    ? "border-rose-200 bg-rose-50/70 hover:bg-rose-100"
-                    : isUserReceiver
-                      ? "border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100"
-                      : "border-slate-200 bg-slate-50/60 hover:border-indigo-200 hover:bg-indigo-50/40";
+                    const rowClass = isUserPayer
+                      ? "border-rose-100 bg-rose-50/50 hover:bg-rose-50"
+                      : isUserReceiver
+                        ? "border-emerald-100 bg-emerald-50/50 hover:bg-emerald-50"
+                        : "border-slate-200 bg-slate-50/40 hover:border-indigo-200 hover:bg-indigo-50/20";
 
-                  const iconClass = isUserPayer
-                    ? "bg-rose-100 text-rose-600"
-                    : isUserReceiver
-                      ? "bg-emerald-100 text-emerald-600"
-                      : "bg-indigo-100 text-indigo-600";
+                    const iconClass = isUserPayer
+                      ? "bg-rose-100 text-rose-600"
+                      : isUserReceiver
+                        ? "bg-emerald-100 text-emerald-600"
+                        : "bg-indigo-100 text-indigo-600";
 
-                  const amountClass = isUserPayer
-                    ? "bg-rose-100 text-rose-700"
-                    : isUserReceiver
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-amber-50 text-amber-700";
+                    const amountClass = isUserPayer
+                      ? "bg-rose-100 text-rose-700 border-rose-200/50"
+                      : isUserReceiver
+                        ? "bg-emerald-100 text-emerald-700 border-emerald-200/50"
+                        : "bg-amber-50 text-amber-700 border-amber-200/50";
 
-                  return (
-                    <Link
-                      key={i}
-                      href={`/groups/${s.groupId}`}
-                      className={`flex items-center justify-between gap-4 rounded-2xl border px-4 py-4 transition ${rowClass}`}
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-full ${iconClass}`}
-                        >
-                          <Wallet className="w-4 h-4" />
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">
-                            {s.fromName} → {s.toName}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {isUserPayer
-                              ? "You need to pay this"
-                              : isUserReceiver
-                                ? "You will receive this"
-                                : "Settle this balance"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <strong
-                        className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-bold ${amountClass}`}
+                    return (
+                      <Link
+                        key={i}
+                        href={`/groups/${s.groupId}`}
+                        className={`flex items-center justify-between gap-4 rounded-xl border px-4 py-3 transition-all duration-200 ${rowClass}`}
                       >
-                        ₹{s.amount}
-                      </strong>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${iconClass}`}
+                          >
+                            <Wallet className="w-4 h-4" />
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-slate-800">
+                              {s.fromName} → {s.toName}
+                            </p>
+                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                              {isUserPayer
+                                ? "You need to pay this"
+                                : isUserReceiver
+                                  ? "You will receive this"
+                                  : "Settle this balance"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <strong
+                          className={`whitespace-nowrap rounded-lg border px-2.5 py-1 text-xs font-extrabold tracking-tight ${amountClass}`}
+                        >
+                          ₹{s.amount}
+                        </strong>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </div>
@@ -541,32 +557,38 @@ function StatCard({
   label,
   value,
   subtext,
+  iconStyle,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number | string;
   subtext: string;
+  iconStyle?: string;
 }) {
   return (
-    <div className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      {/* Left side */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-100 transition-colors group-hover:bg-blue-50">
-          <span className="text-slate-700 group-hover:text-blue-600">
-            {icon}
-          </span>
+    <div className="group flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-md p-3 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.02)] hover:border-slate-300">
+      <div className="flex items-center gap-2">
+        <div
+          className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${iconStyle}`}
+        >
+          {icon}
         </div>
 
-        <div className="flex flex-col leading-tight">
-          <p className="text-sm text-slate-500">{label}</p>
-          <h4 className="text-base font-semibold text-slate-950">{value}</h4>
+        <div className="flex flex-col space-y-0.5">
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+            {label}
+          </p>
+          <h4 className="text-xl font-bold text-slate-800 tracking-tight leading-none">
+            {value}
+          </h4>
         </div>
       </div>
 
-      {/* Right side */}
-      <div className="flex flex-col items-end leading-tight">
-        <Activity className="h-4 w-4 text-slate-300 mb-1" />
-        <p className="text-xs text-slate-400">{subtext}</p>
+      <div className="flex flex-col items-end space-y-2">
+        <Activity className="h-3.5 w-3.5 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+        <p className="text-[11px] font-medium text-slate-400 whitespace-nowrap">
+          {subtext}
+        </p>
       </div>
     </div>
   );
