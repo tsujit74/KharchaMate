@@ -31,7 +31,7 @@ export default function TestimonialsSection() {
 
         <p className="text-lg text-gray-500 text-center mb-12">
           Flatmates and couples use KharchaMate to stop arguments over
-          “who paid last.”
+          &nbsp;&ldquo;who paid last.&rdquo;
         </p>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -47,7 +47,7 @@ export default function TestimonialsSection() {
               </p>
 
               <p className="text-sm text-gray-500 mt-2">
-                "{testimonial.description}"
+                &ldquo;{testimonial.description}&rdquo;
               </p>
             </div>
           ))}
