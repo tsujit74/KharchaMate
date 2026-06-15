@@ -88,15 +88,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     try {
       await logoutUser();
-      router.push("/login");
+      router.push("/");
     } catch {
       // Even if backend fails, clear frontend state
     } finally {
       setUser(null);
       setUnreadNotifications(0);
-      router.push("/login");
+      router.replace("/");
       if (typeof window !== "undefined") {
-        window.history.pushState(null, "", "/login");
+        window.history.pushState(null, "", "/");
       }
     }
   };
