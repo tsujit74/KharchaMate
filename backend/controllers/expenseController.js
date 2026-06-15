@@ -227,10 +227,7 @@ export const getMonthlySummary = async (req, res) => {
 
     const expenses = await Expense.find({
       createdAt: { $gte: start, $lt: end },
-      $or: [
-        { paidBy: userId },
-        { "splitBetween.user": userId }
-      ],
+      $or: [{ paidBy: userId }, { "splitBetween.user": userId }],
     }).lean();
 
     let paidByYou = 0;
@@ -244,7 +241,7 @@ export const getMonthlySummary = async (req, res) => {
 
       // B) Your share
       const yourSplit = expense.splitBetween?.find(
-        (s) => s.user?.toString() === userId.toString()
+        (s) => s.user?.toString() === userId.toString(),
       );
 
       if (yourSplit) {
@@ -259,7 +256,6 @@ export const getMonthlySummary = async (req, res) => {
       yourExpense: Number(yourExpense.toFixed(2)),
       netBalance: Number(netBalance.toFixed(2)),
     });
-
   } catch (err) {
     console.error("MONTHLY SUMMARY ERROR:", err);
     res.status(500).json({ message: "FAILED_MONTHLY_SUMMARY" });
@@ -277,7 +273,12 @@ export const updateExpense = async (req, res) => {
       return res.status(404).json({ message: "Expense not found" });
     }
 
-    if (expense.paidBy.toString() !== userId) {
+    const paidById =
+      typeof expense.paidBy === "object"
+        ? expense.paidBy._id || expense.paidBy
+        : expense.paidBy;
+
+    if (String(paidById) !== String(userId)) {
       return res.status(403).json({ message: "Not allowed" });
     }
 
