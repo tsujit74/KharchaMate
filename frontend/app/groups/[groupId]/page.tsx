@@ -25,12 +25,12 @@ export default function GroupDetailsPage() {
   const { isAuthenticated, loading, user } = useAuth();
 
   const {
-    group,
-    settlement,
-    loading: detailsLoading,
-    error,
-    refresh: refreshDetails,
-  } = useGroupDetails(groupId);
+  group,
+  settlement,
+  loading: detailsLoading,
+  refresh: refreshDetails,
+  error,
+} = useGroupDetails(groupId);
 
   const {
     expenses,
