@@ -35,7 +35,7 @@ export default function ReminderButton({
 
   // ✅ Check reminder already sent
   useEffect(() => {
-    checkReminder({ groupId, toUserId, amount })
+    checkReminder({ groupId, toUserId, })
       .then((res) => res.sent && setSent(true))
       .catch(() => {});
   }, [groupId, toUserId, amount]);

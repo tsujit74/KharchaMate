@@ -63,10 +63,12 @@ export const sendReminder = async (req, res) => {
 export const checkReminder = async (req, res) => {
   try {
     const fromUserId = req.user.id;
-    const { groupId, toUserId, amount } = req.query;
+    const { groupId, toUserId } = req.query;
 
-    if (!groupId || !toUserId || !amount) {
-      return res.status(400).json({ message: "Missing params" });
+    if (!groupId || !toUserId) {
+      return res.status(400).json({
+        message: "Missing params",
+      });
     }
 
     const reminder = await Reminder.findOne({
@@ -74,7 +76,10 @@ export const checkReminder = async (req, res) => {
       fromUser: fromUserId,
       toUser: toUserId,
       status: "SENT",
-    });
+      sentAt: {
+        $gte: new Date(Date.now() - REMINDER_COOLDOWN_MS),
+      },
+    }).sort({ sentAt: -1 });
 
     return res.json({
       sent: !!reminder,
@@ -82,6 +87,9 @@ export const checkReminder = async (req, res) => {
     });
   } catch (err) {
     console.error("CHECK REMINDER ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+
+    return res.status(500).json({
+      message: "Server error",
+    });
   }
 };
