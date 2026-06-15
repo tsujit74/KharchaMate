@@ -1,153 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  Users,
-  IndianRupee,
-  Plus,
-  ArrowRight,
-  UserPlus,
-  Info,
-} from "lucide-react";
+import toast from "react-hot-toast";
 
 import { useAuth } from "@/app/context/authContext";
-import {
-  getGroupSettlement,
-  settlePayment,
-} from "@/app/services/settlement.service";
-import { getGroupById, getGroupExpenses } from "@/app/services/group.service";
-import ExpenseCard from "@/app/components/Expenses/ExpenseCard";
-import ReminderButton from "@/app/components/Reminder/ReminderButton";
-import GroupInfoDrawer from "@/app/components/Groups/GroupInfoDrawer";
+
 import AppSkeleton from "@/app/components/ui/AppSkeleton";
-import toast from "react-hot-toast";
-import AddExpensesModal from "../components/AddExpensesModal";
+import GroupInfoDrawer from "./components/GroupInfoDrawer";
+
+import GroupHeader from "./components/GroupHeader";
+import SettlementSection from "./components/GroupSettlementSection";
+import GroupMembersSidebar from "./components/GroupMembersSidebar";
+import AddExpensesModal from "./components/expenses/AddExpensesModal";
+import GroupKPIs from "./components/GroupKPI";
+import GroupExpenseSection from "./components/GroupExpenseSection";
+import { useGroupDetails } from "./hooks/useGroupDetails";
+import { useGroupExpenses } from "./hooks/useGroupExpenses";
+import { useState } from "react";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
   const router = useRouter();
+
   const { isAuthenticated, loading, user } = useAuth();
 
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalExpenses, setTotalExpenses] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [settlement, setSettlement] = useState<any>(null);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [addExpenseLoading, setAddExpenseLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [infoOpen, setInfoOpen] = useState(false);
-  const [group, setGroup] = useState<any>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const {
+    group,
+    settlement,
+    loading: detailsLoading,
+    error,
+    refresh: refreshDetails,
+  } = useGroupDetails(groupId);
 
+  const {
+    expenses,
+    page,
+    totalExpenses,
+    totalPages,
+    loadingMore,
+    loadMore,
+    refresh: refreshExpenses,
+  } = useGroupExpenses(groupId);
+
+  const [infoOpen, setInfoOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isActive = group?.isActive !== false;
 
-  // Function to load expenses per page
-  const loadExpenses = async (pageNum = 1) => {
-    try {
-      const data = await getGroupExpenses(groupId, pageNum, 10); // 10 per page
-      if (pageNum === 1) {
-        setExpenses(data.expenses);
-      } else {
-        setExpenses((prev) => [...prev, ...data.expenses]);
-      }
-      setPage(data.page);
-      setTotalExpenses(data.total);
-      setTotalPages(data.totalPages);
-    } catch (err) {
-      console.error("Failed to load expenses", err);
-      toast.error("Failed to load expenses.");
-    }
-  };
-
-  // Load initial data
-  useEffect(() => {
-    if (loading) return;
-
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-
-    if (!groupId) {
-      setError("Invalid group");
-      setPageLoading(false);
-      return;
-    }
-
-    const loadData = async () => {
-      try {
-        setPageLoading(true);
-        setError("");
-
-        const [settlementData, groupData] = await Promise.all([
-          getGroupSettlement(groupId),
-          getGroupById(groupId),
-        ]);
-
-        setSettlement(settlementData);
-        setGroup(groupData);
-
-        await loadExpenses(1); // fetch first page
-      } catch (err: any) {
-        if (err.message === "FORBIDDEN") {
-          setError("You are not a member of this group.");
-          toast.error("You are not a member of this group.");
-        } else {
-          setError("Failed to load group details.");
-          toast.error("Failed to load group details.");
-        }
-      } finally {
-        setPageLoading(false);
-      }
-    };
-
-    loadData();
-  }, [loading, isAuthenticated, groupId, router]);
-
-  // Refresh expenses and group/settlement data
-  const refreshExpenses = async () => {
-    try {
-      await loadExpenses(1); // refresh first page
-      const [updatedGroup, updatedSettlement] = await Promise.all([
-        getGroupById(groupId),
-        getGroupSettlement(groupId),
-      ]);
-      setGroup(updatedGroup);
-      setSettlement(updatedSettlement);
-    } catch (err) {
-      console.error("Failed to refresh data", err);
-      toast.error("Failed to refresh group data.");
-    }
-  };
-
-  const loadMoreExpenses = async () => {
-    if (page < totalPages) {
-      try {
-        setLoadingMore(true);
-        await loadExpenses(page + 1);
-      } finally {
-        setLoadingMore(false);
-      }
-    }
-  };
-
-  // Handle settlement payments
-  const handleSettle = async (toId: string, amount: number) => {
-    try {
-      await settlePayment(groupId, toId, amount);
-      const updated = await getGroupSettlement(groupId);
-      setSettlement(updated);
-    } catch {
-      alert("Payment failed. Try again.");
-    }
-  };
-
-  if (loading || pageLoading) {
+  if (loading || detailsLoading) {
     return <AppSkeleton variant="details" />;
   }
 
@@ -165,406 +65,77 @@ export default function GroupDetailsPage() {
     );
   }
 
+  const refreshAll = async () => {
+    try {
+      await Promise.all([refreshDetails(), refreshExpenses()]);
+    } catch {
+      toast.error("Failed to refresh group.");
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#FCFCFD] flex">
+      {/* SIDEBAR */}
       <aside className="w-72 hidden md:block border-r bg-white p-4 sticky top-0 h-screen">
         <GroupMembersSidebar
           balances={settlement.balances}
           currentUserId={user?.id}
           groupId={groupId}
-          isActive={group.isActive}
+          isActive={group?.isActive}
+          hasExpenses={expenses.length > 0}
         />
       </aside>
 
+      {/* MAIN */}
       <section className="flex-1 px-4 md:px-10 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">{settlement.group}</h1>
-            <p className="text-sm text-gray-500">
-              Track expenses & settlements
-            </p>
-          </div>
+        <GroupHeader
+          title={settlement.group}
+          subtitle="Track expenses & settlements"
+          isActive={isActive}
+          onInfoClick={() => setInfoOpen(true)}
+        />
 
-          <button
-            onClick={() => setInfoOpen(true)}
-            className={`
-    group
-    flex items-center gap-2
-    px-4 py-2
-    rounded-lg
-    text-sm font-medium
-    border
-    transition-all duration-200
-    active:scale-[0.97]
+        <GroupKPIs
+          totalSpent={settlement.totalSpent}
+          yourShare={settlement.yourShare}
+          members={settlement.balances.length}
+        />
 
-    ${
-      isActive
-        ? "bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100"
-        : "bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
-    }
-  `}
-          >
-            <Info
-              className={`
-      w-4 h-4
-      transition-all duration-200
-      group-hover:translate-x-0.5
-      ${isActive ? "text-emerald-600" : "text-red-600"}
-    `}
-            />
-            Group Info
-          </button>
-        </div>
+        <SettlementSection
+          settlement={settlement}
+          userId={user?.id}
+          groupId={groupId}
+        />
 
-        {/* KPIs */}
-        <div className="max-w-6xl mx-auto grid sm:grid-cols-3 gap-4 mb-8">
-          <Stat
-            icon={IndianRupee}
-            label="Total Spent"
-            value={`₹${settlement.totalSpent}`}
-          />
-          <Stat
-            icon={Users}
-            label="Your Share"
-            value={`₹${settlement.yourShare}`}
-          />
-
-          <Stat
-            icon={Users}
-            label="Members"
-            value={settlement.balances.length}
-          />
-        </div>
-
-        {/* Settlement */}
-        <div className="max-w-6xl mx-auto bg-white rounded-xl border p-6 mb-10">
-          <h2 className="font-semibold mb-4">Settlement</h2>
-
-          {settlement.settlements.length === 0 ? (
-            <p className="text-gray-500 text-sm">Everyone is settled 🎉</p>
-          ) : (
-            settlement.settlements
-              //logged-in user's payments first
-              .sort((a: any, b: any) => {
-                const aIsMe = a.from === user?.id;
-                const bIsMe = b.from === user?.id;
-                return Number(bIsMe) - Number(aIsMe);
-              })
-              .map((s: any) => {
-                const youOwe = s.from === user?.id;
-                const someoneOwesYou = s.to === user?.id;
-                const isViewer = !youOwe && !someoneOwesYou;
-
-                const debtor = settlement.balances.find(
-                  (b: any) => b.id === s.from,
-                );
-
-                const creditor = settlement.balances.find(
-                  (b: any) => b.id === s.to,
-                );
-
-                // avoid crashes if data mismatches
-                if (!debtor || !creditor) return null;
-
-                return (
-                  <div
-                    key={`${s.from}-${s.to}`}
-                    className={`flex justify-between items-center rounded-lg p-3 mb-2 border ${
-                      youOwe
-                        ? "bg-red-50 border-red-200"
-                        : someoneOwesYou
-                          ? "bg-green-50 border-green-200"
-                          : "bg-gray-50 border-gray-200"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">{s.fromName}</span>
-                      <ArrowRight className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium">{s.toName}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {youOwe && (
-                        <button
-                          onClick={() =>
-                            router.push(
-                              `/groups/${groupId}/settle?to=${creditor.id}&amount=${s.amount}`,
-                            )
-                          }
-                          className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
-                        >
-                          Pay ₹{s.amount}
-                        </button>
-                      )}
-
-                      {someoneOwesYou && (
-                        <>
-                          <span className="text-sm font-semibold text-gray-700">
-                            ₹{s.amount}
-                          </span>
-                          <ReminderButton
-                            groupId={groupId}
-                            toUserId={debtor.id}
-                            amount={s.amount}
-                          />
-                        </>
-                      )}
-
-                      {isViewer && (
-                        <span className="text-sm font-semibold text-gray-500">
-                          ₹{s.amount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-          )}
-        </div>
-
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between mb-4">
-            <h2 className="font-semibold">Expenses ({totalExpenses})</h2>
-
-            <p className="text-sm text-gray-500">
-              Showing {expenses.length} of {totalExpenses}
-            </p>
-
-            {isActive ? (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                disabled={addExpenseLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm disabled:opacity-70"
-              >
-                {addExpenseLoading ? (
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
-                    />
-                  </svg>
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-
-                {addExpenseLoading ? "Opening..." : "Add Expense"}
-              </button>
-            ) : (
-              <button
-                disabled
-                className="flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-600 rounded-lg text-sm cursor-not-allowed"
-              >
-                <Plus className="w-4 h-4" />
-                Group Closed
-              </button>
-            )}
-          </div>
-
-          {expenses.length === 0 ? (
-            <p className="text-gray-500 text-sm">No expenses yet.</p>
-          ) : (
-            <>
-              {expenses
-                .sort(
-                  (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
-                )
-                .map((e) => (
-                  <ExpenseCard
-                    key={e._id}
-                    expense={e}
-                    currentUserId={user?.id}
-                    onDeleted={refreshExpenses}
-                    onUpdated={refreshExpenses}
-                  />
-                ))}
-
-              {page < totalPages && (
-                <div className="flex justify-center mt-4">
-                  <button
-                    onClick={loadMoreExpenses}
-                    disabled={loadingMore}
-                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2 disabled:opacity-70"
-                  >
-                    {loadingMore && (
-                      <svg
-                        className="animate-spin h-4 w-4"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
-                        />
-                      </svg>
-                    )}
-
-                    {loadingMore
-                      ? "Loading..."
-                      : `Load +${Math.min(
-                          10,
-                          totalExpenses - expenses.length,
-                        )} more`}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <GroupExpenseSection
+          expenses={expenses}
+          totalExpenses={totalExpenses}
+          isActive={isActive}
+          page={page}
+          totalPages={totalPages}
+          loadingMore={loadingMore}
+          userId={user?.id}
+          onAdd={() => setIsModalOpen(true)}
+          onLoadMore={loadMore}
+          onRefresh={refreshAll}
+        />
       </section>
+
+      {/* DRAWERS */}
       <GroupInfoDrawer
         open={infoOpen}
         onClose={() => setInfoOpen(false)}
         group={group}
         currentUserId={user?.id}
-        onRefresh={refreshExpenses}
+        onRefresh={refreshAll}
       />
 
       <AddExpensesModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         groupId={groupId}
-        onSuccess={refreshExpenses}
+        onSuccess={refreshAll}
       />
     </main>
-  );
-}
-
-function GroupMembersSidebar({
-  balances,
-  currentUserId,
-  groupId,
-  isActive,
-}: {
-  balances: {
-    id: string;
-    name: string;
-    email: string;
-    balance: number;
-    role?: "ADMIN" | "MEMBER";
-  }[];
-  currentUserId?: string;
-  groupId: string;
-  isActive: boolean;
-}) {
-  return (
-    <div className="relative flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold">Group Members</h3>
-
-        <span
-          className={`px-2 py-0.5 rounded-full text-xs font-semibold border transition
-            ${
-              isActive
-                ? "bg-emerald-100 text-emerald-700 border-emerald-300"
-                : "bg-red-100 text-red-700 border-red-300"
-            }`}
-        >
-          {isActive ? "Active" : "Closed"}
-        </span>
-      </div>
-
-      {/* Members */}
-      <div className="space-y-3 flex-1">
-        {balances.map((m) => {
-          const isYou = m.id === currentUserId;
-          const isOwed = m.balance > 0;
-          const isAdmin = m.role === "ADMIN";
-
-          return (
-            <div
-              key={m.id}
-              className={`flex justify-between items-center rounded-lg p-3 border transition
-                ${
-                  isAdmin
-                    ? "bg-indigo-50 border-indigo-200"
-                    : isOwed
-                      ? "bg-green-50 border-green-200"
-                      : "bg-red-50 border-red-200"
-                }`}
-            >
-              <div>
-                <p className="text-sm font-medium flex items-center gap-2">
-                  {m.name} {isYou && "(You)"}
-                  {isAdmin && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-600 text-white">
-                      ADMIN
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-gray-500">{m.email}</p>
-              </div>
-
-              <span
-                className={`text-sm font-semibold ${
-                  isOwed ? "text-green-600" : "text-red-500"
-                }`}
-              >
-                ₹{Math.abs(m.balance)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Add Member Button (Full Width Bottom) */}
-      <Link
-        href={isActive ? `/groups/${groupId}/add-member` : "#"}
-        onClick={(e) => {
-          if (!isActive) e.preventDefault();
-        }}
-        className={`mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition
-          ${
-            isActive
-              ? "border-gray-300 text-gray-700 hover:bg-gray-50"
-              : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-          }`}
-      >
-        <UserPlus className="w-4 h-4" />
-        Add Member
-      </Link>
-
-      {/* Bottom Info */}
-      <p className="mt-3 text-xs text-gray-500 border-t pt-2">
-        ℹ️ Only <span className="font-semibold text-indigo-600">ADMIN</span> can
-        activate or close this group.
-      </p>
-    </div>
-  );
-}
-
-function Stat({ icon: Icon, label, value }: any) {
-  return (
-    <div className="bg-white border rounded-xl p-5 flex gap-4 items-center">
-      <Icon className="w-7 h-7 text-gray-400" />
-      <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-xl font-bold">{value}</p>
-      </div>
-    </div>
   );
 }

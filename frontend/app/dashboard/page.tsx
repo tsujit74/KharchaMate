@@ -9,7 +9,7 @@ import { useDashboardData } from "./hooks/useDashboardData";
 import AppSkeleton from "../components/ui/AppSkeleton";
 import Announcements from "./components/Announcements";
 import DashboardContent from "./components/DashboardContent";
-import EditGroupNameModal from "../components/Groups/EditGroupNameModal";
+import EditGroupNameModal from "./components/EditGroupNameModal";
 
 export default function DashboardPage() {
   const router = useRouter();

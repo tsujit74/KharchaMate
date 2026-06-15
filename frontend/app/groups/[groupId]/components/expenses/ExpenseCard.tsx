@@ -4,14 +4,14 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Trash2, Edit } from "lucide-react";
 import { formatDateTime } from "@/app/utils/formatDateTime";
 import { deleteExpense } from "@/app/services/expense.service";
-import EditExpenseModal from "./EditExpenseModal";
+import EditExpenseModal from "../EditExpenseModal";
 import toast from "react-hot-toast";
 
 export default function ExpenseCard({
   expense,
   currentUserId,
   onDeleted,
-  onUpdated, // optional callback when expense is updated
+  onUpdated,
 }: {
   expense: any;
   currentUserId?: string;
