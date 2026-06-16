@@ -61,7 +61,7 @@ export default function MonthlyExpenseList({
     return params;
   };
 
-  // ✅ Smooth Fetch (no flicker)
+  // ✅ Smooth Fetch 
   const fetchInitial = async () => {
     try {
       // show skeleton ONLY first time
@@ -81,7 +81,7 @@ export default function MonthlyExpenseList({
     }
   };
 
-  // ✅ Load More
+  // Load More
   const loadMore = async () => {
     try {
       setLoadingMore(true);
@@ -97,14 +97,14 @@ export default function MonthlyExpenseList({
     }
   };
 
-  // ✅ Smooth transition on filter/category change
+  //  Smooth transition on filter/category change
   useEffect(() => {
     startTransition(() => {
       fetchInitial();
     });
   }, [filter, customRange, category]);
 
-  // ✅ Skeleton only first load
+  //  Skeleton only first load
   if (loading && expenses.length === 0) {
     return (
       <div className="bg-white border p-5 shadow-sm space-y-3 animate-pulse">
@@ -115,7 +115,7 @@ export default function MonthlyExpenseList({
     );
   }
 
-  // ✅ Empty state
+  //  Empty state
   if (!loading && expenses.length === 0) {
     return (
       <div className="bg-white border p-8 shadow-sm text-center">
@@ -130,7 +130,7 @@ export default function MonthlyExpenseList({
     <div className="bg-white border p-5 shadow-sm">
       <h2 className="font-semibold text-lg mb-4">Monthly Expenses</h2>
 
-      {/* ✅ Subtle loader instead of flicker */}
+      {/*  Subtle loader instead of flicker */}
       {(loading || isPending) && expenses.length > 0 && (
         <p className="text-xs text-gray-400 mb-2">Updating...</p>
       )}

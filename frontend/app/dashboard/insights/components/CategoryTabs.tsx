@@ -1,11 +1,13 @@
 "use client";
 
+import { CategoryType } from "../types/insight";
+
 type Props = {
-  selected: string;
-  onChange: (category: string) => void;
+  selected: CategoryType;
+  onChange: (category: CategoryType) => void;
 };
 
-const CATEGORIES = [
+const CATEGORIES: CategoryType[] = [
   "ALL",
   "FOOD",
   "TRAVEL",
@@ -15,7 +17,7 @@ const CATEGORIES = [
   "OTHER",
 ];
 
-const CATEGORY_COLORS: Record<string, string> = {
+const CATEGORY_COLORS: Record<Exclude<CategoryType, "ALL">, string> = {
   FOOD: "#22C55E",
   TRAVEL: "#3B82F6",
   RENT: "#F59E0B",
@@ -42,11 +44,13 @@ export default function CategoryTabs({ selected, onChange }: Props) {
               }
             `}
           >
-            {/* Color Dot */}
             {cat !== "ALL" && (
               <span
                 className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: CATEGORY_COLORS[cat] }}
+                style={{
+                  backgroundColor:
+                    CATEGORY_COLORS[cat as Exclude<CategoryType, "ALL">],
+                }}
               />
             )}
 

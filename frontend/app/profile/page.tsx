@@ -118,13 +118,6 @@ export default function ProfilePage() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  console.log(
-  paginatedItems.map((item) => ({
-    id: item._id,
-    description: item.description,
-    createdAt: item.createdAt,
-  }))
-);
   return (
     <main className="min-h-screen bg-[#F7F8FA] px-6 md:px-16 py-8">
       <div className="max-w-7xl mx-auto mb-8">
