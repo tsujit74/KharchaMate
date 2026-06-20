@@ -33,7 +33,7 @@ export function useDashboardData(isAuthenticated: boolean, authLoading: boolean)
   if (authLoading) return; 
 
   if (!isAuthenticated) {
-    router.replace("/login");
+    router.replace("/auth");
     return;
   }
 
@@ -56,7 +56,7 @@ export function useDashboardData(isAuthenticated: boolean, authLoading: boolean)
       toast.error(message);
 
       if (err.message === "UNAUTHORIZED") {
-        router.replace("/login");
+        router.replace("/auth");
       }
     } finally {
       setGroupLoading(false);

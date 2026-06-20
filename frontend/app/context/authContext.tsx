@@ -22,7 +22,7 @@ type AuthContextType = {
   logout: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await logoutUser();
       router.push("/");
     } catch {
-      // Even if backend fails, clear frontend state
+      router.replace("/auth")
     } finally {
       setUser(null);
       setUnreadNotifications(0);

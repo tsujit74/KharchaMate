@@ -20,7 +20,7 @@ const CreateGroupPage = () => {
     if (loading) return;
 
     if (!isAuthenticated) {
-      router.replace("/login");
+      router.replace("/auth");
     }
   }, [loading, isAuthenticated, router]);
 
@@ -49,7 +49,7 @@ const CreateGroupPage = () => {
 
       case "UNAUTHORIZED":
         toast.error("Session expired. Please login again.");
-        router.replace("/login");
+        router.replace("/auth");
         break;
 
       case "INVALID_NAME":

@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: Props) {
         setUserName(user.name || "Admin");
       } catch {
         toast.error("Please login to continue.");
-        router.replace("/login");
+        router.replace("/auth");
       } finally {
         setLoading(false);
       }

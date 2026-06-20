@@ -39,7 +39,7 @@ export default function AddMemberPage() {
   useEffect(() => {
     if (loading) return;
     if (!isAuthenticated) {
-      router.replace("/login");
+      router.replace("/auth");
       return;
     }
     if (!groupId) {
@@ -104,7 +104,7 @@ export default function AddMemberPage() {
       setResults([]);
     } catch (err: any) {
       if (err.message === "UNAUTHORIZED") {
-        router.replace("/login");
+        router.replace("/auth");
         return;
       }
 

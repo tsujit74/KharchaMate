@@ -21,7 +21,7 @@ export default function ResetPasswordPage() {
       setLoading(true);
       await resetPassword(token as string, password);
       toast.success("Password updated successfully.");
-      router.push("/login");
+      router.push("/auth");
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message || "Invalid or expired token"

@@ -38,10 +38,10 @@ export default function Footer() {
               { label: "Home", href: "/" },
               { label: "Dashboard", href: "/dashboard" },
               { label: "Groups", href: "/groups" },
-              { label: "Login", href: "/login" },
-              { label: "Sign Up", href: "/signup" },
+              { label: "Login", href: "/auth" },
+              { label: "Sign Up", href: "/auth" },
             ].map((item) => (
-              <li key={item.href}>
+              <li key={item.label}>
                 <Link
                   href={item.href}
                   className="text-gray-600 hover:text-gray-900 transition"

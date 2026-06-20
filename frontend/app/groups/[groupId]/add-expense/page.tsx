@@ -31,7 +31,7 @@ export default function AddExpensePage() {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.push("/login");
+      router.push("/auth");
     }
   }, [loading, isAuthenticated, router]);
 

@@ -34,7 +34,7 @@ export default function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Link
-              href={isAuthenticated ? "/dashboard" : "/signup"}
+              href={isAuthenticated ? "/dashboard" : "/auth"}
               className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all text-sm"
             >
               {isAuthenticated ? "Open Dashboard" : "Get Started Free"}
@@ -42,7 +42,7 @@ export default function HeroSection() {
 
             {!isAuthenticated && (
               <Link
-                href="/login"
+                href="/auth"
                 className="px-8 py-3 bg-white border border-slate-200 text-slate-700 font-semibold rounded-2xl hover:bg-slate-50 transition-all text-sm"
               >
                 Log in

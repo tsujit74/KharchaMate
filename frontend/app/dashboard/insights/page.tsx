@@ -14,8 +14,12 @@ import SkeletonLoader from "./components/SkeletonLoader";
 import NoDataMessage from "./components/NoDataMessage";
 import ExpenseSection from "./components/ExpenseSection";
 import ChartToggle from "./components/ChartToogle";
+import { useAuth } from "@/app/context/authContext";
+import { useRouter } from "next/navigation";
 
 export default function InsightsPage() {
+  const { user, isAuthenticated} = useAuth();
+  const router = useRouter();
   const {
     data,
     loading,
@@ -40,6 +44,12 @@ export default function InsightsPage() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace("/auth");
+    }
+  }, [loading, isAuthenticated, router]);
+
+  useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -49,7 +59,7 @@ export default function InsightsPage() {
   return (
     <main className="min-h-screen bg-[#F9FAFB] p-4 sm:p-6">
       <div className="max-w-5xl mx-auto space-y-8">
-        <InsightsHeader/>
+        <InsightsHeader />
 
         <FilterBar
           filter={filter}

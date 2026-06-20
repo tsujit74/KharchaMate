@@ -28,7 +28,7 @@ export function useProfileData() {
     if (loading) return;
 
     if (!isAuthenticated) {
-      router.replace("/login");
+      router.replace("/auth");
       return;
     }
 
@@ -48,7 +48,7 @@ export function useProfileData() {
       } catch (err: any) {
         if (err.message === "UNAUTHORIZED") {
           toast.error("Session expired. Please login again.");
-          router.replace("/login");
+          router.replace("/auth");
           return;
         }
         toast.error("Failed to load profile data.");
