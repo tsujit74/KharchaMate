@@ -1,9 +1,9 @@
-import HeroSection from "@/app/landing/components/Hero";
-import ProblemSection from "@/app/landing/components/ProblemSection";
-import SolutionSection from "@/app/landing/components/SolutionSection";
-import HowItWorksSection from "@/app/landing/components/HowItWorksSection";
-import TestimonialsSection from "@/app/landing/components/TestimonialsSection";
-import CTASection from "@/app/landing/components/CTASection";
+import SolutionSection from "./components/SolutionSection";
+import HowItWorksSection from "./components/HowItWorksSection";
+import TestimonialsSection from "./components/TestimonialsSection";
+import HeroSection from "./components/Hero";
+import ProblemSection from "./components/ProblemSection";
+import CTASection from "./components/CTASection";
 
 export default function HomePage() {
   return (
