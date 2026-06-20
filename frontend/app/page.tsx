@@ -1,4 +1,4 @@
-import HomePage from "./landing/HomePage";
+import HomePage from "@/app/landing/HomePage";
 
 
 
