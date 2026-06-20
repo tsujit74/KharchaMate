@@ -1,8 +1,5 @@
-import Navbar from "./components/Navbar";
-
-
-console.log("alias test");
+import HomePage from "./components/landing/HomePage";
 
 export default function Home() {
-  return <Navbar/>
+  return <HomePage/>
 }
