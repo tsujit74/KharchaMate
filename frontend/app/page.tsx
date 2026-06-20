@@ -1,4 +1,4 @@
-import HomePage from "./landing/page";
+import HomePage from "./landing/HomePage";
 
 
 
