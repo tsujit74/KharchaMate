@@ -1,4 +1,4 @@
-import HomePage from "@/app/landing/HomePage";
+import HomePage from "./landing/HomePage";
 
 console.log("alias test");
 
