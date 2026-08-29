@@ -11,6 +11,7 @@ const AuthToggle: React.FC<{
     <div className="flex justify-center mb-5">
       <div className="flex border border-gray-200 rounded-xl p-1 bg-white shadow-sm">
         <button
+          type="button"
           onClick={() => onToggle("login")}
           className={`px-8 py-2 rounded-lg font-semibold transition-all duration-300 ${
             mode === "login"
@@ -20,7 +21,9 @@ const AuthToggle: React.FC<{
         >
           Login
         </button>
+
         <button
+          type="button"
           onClick={() => onToggle("signup")}
           className={`px-8 py-2 rounded-lg font-semibold transition-all duration-300 ${
             mode === "signup"

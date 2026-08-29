@@ -30,12 +30,12 @@ const AuthForm: React.FC<{ mode: AuthMode }> = ({ mode }) => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
+   useEffect(() => {
     if (!loading && isAuthenticated) {
       router.replace(user?.role === "admin" ? "/admin" : "/dashboard");
     }
   }, [loading, isAuthenticated, router, user]);
-
+  
   // VALIDATION
   const validateLogin = () => {
     if (!email.trim()) return "Email is required";
@@ -117,7 +117,7 @@ const AuthForm: React.FC<{ mode: AuthMode }> = ({ mode }) => {
     }
   };
 
-  if (loading) return null;
+ 
 
   return (
     <form

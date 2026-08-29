@@ -44,13 +44,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           role: u.role,
         });
 
-        const unread = await getUnreadNotificationCount();
-        setUnreadNotifications(unread);
+        setLoading(false);
+
+        getUnreadNotificationCount()
+          .then((count) => {
+            setUnreadNotifications(count);
+          })
+          .catch(() => {
+            setUnreadNotifications(0);
+          });
       } catch {
-        // If cookie invalid or expired
         setUser(null);
         setUnreadNotifications(0);
-      } finally {
         setLoading(false);
       }
     };
@@ -88,16 +93,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     try {
       await logoutUser();
-      router.push("/");
-    } catch {
-      router.replace("/auth")
+    } catch (error) {
+      console.error("Logout failed:", error);
     } finally {
       setUser(null);
       setUnreadNotifications(0);
       router.replace("/");
-      if (typeof window !== "undefined") {
-        window.history.pushState(null, "", "/");
-      }
     }
   };
 
