@@ -48,21 +48,24 @@ app.use(express.json({ limit: "1mb" }));
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
 });
-
 app.use(performanceMiddleware);
 
 app.use(globalLimiter);
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: "Too many login attempts. Try again later.",
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many login attempts. Please try again later.",
+  },
 });
-
 app.use("/api/auth/login", loginLimiter);
 
 app.use("/api/auth", authRoutes);
