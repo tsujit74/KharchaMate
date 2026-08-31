@@ -21,6 +21,8 @@ import healthRoutes from "./routes/healthRoutes.js"
 import { performanceMiddleware } from "./middleware/performanceMiddleware.js";
 import { errorLogger } from "./middleware/errorLoggerMiddleware.js";
 
+import passport from "./config/passport.js";
+
 const app = express();
 
 app.set("trust proxy", 1);
@@ -34,6 +36,7 @@ process.on("unhandledRejection", (err) => {
 });
 
 app.use(cookieParser());
+app.use(passport.initialize());
 
 app.use(
   cors({
