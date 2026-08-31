@@ -21,3 +21,11 @@ export const forgotPassword = (email: string) => {
 export const resetPassword = (token: string, password: string) => {
   return api.post(`/auth/reset-password/${token}`, { password });
 };
+
+export const googleLogin = () => {
+  if (typeof window === "undefined") {
+    throw new Error("GOOGLE_LOGIN_UNAVAILABLE");
+  }
+
+  window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`;
+};

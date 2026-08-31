@@ -3,13 +3,19 @@
 import React from "react";
 import { Chrome, Github } from "lucide-react";
 import toast from "react-hot-toast";
+import { googleLogin } from "@/app/services/auth.service";
 
 const SocialLogin = () => {
   const handleGoogleLogin = () => {
-    toast("Google authentication will be available soon.", {
-      icon: "🚀",
-      position: "top-center",
-    });
+    try {
+      googleLogin();
+    } catch (error) {
+      console.error("Google login error:", error);
+
+      toast.error("Google login is currently unavailable.", {
+        position: "top-center",
+      });
+    }
   };
 
   const handleGithubLogin = () => {
