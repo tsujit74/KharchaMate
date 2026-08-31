@@ -10,6 +10,7 @@ type User = {
   name: string;
   email: string;
   role: "user" | "admin";
+  avatar?: string | null;
 };
 
 type AuthContextType = {
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           name: u.name,
           email: u.email,
           role: u.role,
+          avatar: u.avatar ?? null,
         });
 
         setLoading(false);
@@ -75,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         name: u.name,
         email: u.email,
         role: u.role,
+        avatar: u.avatar ?? null,
       });
 
       const unread = await getUnreadNotificationCount();

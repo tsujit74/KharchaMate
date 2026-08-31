@@ -136,7 +136,17 @@ export default function Navbar() {
                   className="flex items-center gap-2 pl-2 pr-2 py-1.5 rounded-full hover:bg-slate-100 transition"
                 >
                   <div className="w-9 h-9 rounded-full bg-slate-950 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
-                    {user?.name ? getInitials(user.name) : <User2 size={18} />}
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name || "User"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : user?.name ? (
+                      getInitials(user.name)
+                    ) : (
+                      <User2 size={18} />
+                    )}
                   </div>
 
                   <div className="hidden sm:block text-left leading-tight">
