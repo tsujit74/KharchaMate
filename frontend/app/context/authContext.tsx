@@ -1,9 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { socket } from "@/app/services/socket";
 import { getMe, loginUser, logoutUser } from "@/app/services/auth.service";
 import { getUnreadNotificationCount } from "@/app/services/notification.service";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { NotificationCard,Notification } from "../components/NotificationCard";
 
 type User = {
   id: string;
@@ -64,6 +67,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initAuth();
   }, []);
+
+  useEffect(() => {
+  if (!user) return;
+
+  socket.connect();
+
+  socket.on("connect", () => {
+    console.log("Socket connected:", socket.id);
+  });
+
+  socket.on("connect_error", (error) => {
+    console.error("Socket error:", error.message);
+  });
+
+  const handleNewNotification = (notification: Notification) => {
+  setUnreadNotifications((count) => count + 1);
+
+  toast.custom(
+    (t) => (
+      <div
+        className={`transition-all ${
+          t.visible ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <NotificationCard
+          notification={notification}
+          onClick={() => toast.dismiss(t.id)}
+        />
+      </div>
+    ),
+    {
+      duration: 5000,
+      position: "top-right",
+    }
+  );
+};
+
+  socket.on("notification:new", handleNewNotification);
+
+  return () => {
+    socket.off("connect");
+    socket.off("connect_error");
+    socket.off("notification:new", handleNewNotification);
+    socket.disconnect();
+  };
+}, [user]);
 
   const login = async (data: { email: string; password: string }) => {
     try {
