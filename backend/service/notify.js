@@ -4,6 +4,7 @@ import { getIO } from "../sockets/socket.js";
 export const notifyUser = async ({
   userId,
   actor = null,
+  groupId = null,
   title,
   message,
   type,
@@ -13,6 +14,7 @@ export const notifyUser = async ({
   const notification = await Notification.create({
     user: userId,
     actor,
+    group: groupId,
     title,
     message,
     type,
@@ -21,7 +23,8 @@ export const notifyUser = async ({
   });
 
   const populatedNotification = await Notification.findById(notification._id)
-    .populate("actor", "name email");
+    .populate("actor", "name email")
+    .populate("group", "name");
 
   getIO()
     .to(`user:${userId}`)

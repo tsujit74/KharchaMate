@@ -76,6 +76,7 @@ export const addExpense = async (req, res) => {
         notifyUser({
           userId: memberId,
           actor: req.user.id,
+          groupId: group._id,
           title: "New expense added",
           message: `added ₹${amount} for "${description}"`,
           type: "EXPENSE",

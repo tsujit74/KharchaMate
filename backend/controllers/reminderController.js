@@ -1,5 +1,6 @@
 import Reminder from "../models/Reminder.js";
 import Notification from "../models/Notification.js";
+import { notifyUser } from "../service/notify.js";
 
 const REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
@@ -41,9 +42,10 @@ export const sendReminder = async (req, res) => {
       sentAt: new Date(),
     });
 
-    await Notification.create({
-      user: toUserId,
+    await notifyUser({
+      userId: toUserId,
       actor: fromUserId,
+      groupId,
       title: "Payment Reminder",
       message: `You have a pending payment of ₹${amount}`,
       type: "REMINDER",

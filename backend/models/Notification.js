@@ -17,6 +17,13 @@ const notificationSchema = new mongoose.Schema(
       default: null,
     },
 
+    group: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group",
+      default: null,
+      index: true,
+    },
+
     title: {
       type: String,
       required: true,
@@ -53,7 +60,7 @@ const notificationSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.model("Notification", notificationSchema);

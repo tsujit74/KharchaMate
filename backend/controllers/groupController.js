@@ -101,10 +101,10 @@ export const addMember = async (req, res) => {
       { $addToSet: { members: user._id } },
     );
 
-    // ✅ Notify (optional)
     notifyUser({
       userId: user._id,
       actor: req.user.id,
+      groupId: group._id,
       title: "Added to a group",
       message: `added you to "${group.name}"`,
       type: "GROUP",
@@ -251,6 +251,7 @@ export const removeMember = async (req, res) => {
     await notifyUser({
       userId,
       actor: req.user.id,
+      groupId: group._id,
       title: "Removed from group",
       message: `removed you from "${group.name}"`,
       type: "GROUP",
@@ -303,15 +304,22 @@ export const updateGroupName = async (req, res) => {
       (m) => String(m) !== String(req.user.id),
     );
 
+    const oldGroupName = group.name;
+
+    group.name = name;
+    await group.save();
+
     await Promise.all(
       otherMembers.map((memberId) =>
         notifyUser({
           userId: memberId,
           actor: req.user.id,
+          groupId: group._id,
           title: "Group Name Changed",
-          message: `Group Name Changed ${group.name} to ${name}`,
+          message: `changed the group name from "${oldGroupName}" to "${name}"`,
           type: "INFORMATION",
           link: `/groups/${group._id}`,
+          relatedId: group._id,
         }),
       ),
     );

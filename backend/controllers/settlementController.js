@@ -153,13 +153,13 @@ export const markPaymentDone = async (req, res) => {
     await notifyUser({
       userId: to,
       actor: from,
+      groupId,
       title: "Payment received",
       message: `paid you ₹${Number(amount).toFixed(2)}`,
       type: "SETTLEMENT",
       link: `/groups/${groupId}`,
       relatedId: settlement._id,
     });
-
     res.status(201).json({
       message: "Payment recorded successfully",
       settlement,
@@ -226,8 +226,7 @@ export const getPendingSettlements = async (req, res) => {
         const bal = Number(balanceMap[m._id.toString()].toFixed(2));
 
         if (bal > 0.01) creditors.push({ user: m, amount: bal });
-        else if (bal < -0.01)
-          debtors.push({ user: m, amount: -bal });
+        else if (bal < -0.01) debtors.push({ user: m, amount: -bal });
       });
 
       let i = 0;

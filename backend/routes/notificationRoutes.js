@@ -14,6 +14,7 @@ router.get("/", authMiddleware, async (req, res) => {
       user: req.user.id,
     })
       .populate("actor", "name email")
+      .populate("group", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
