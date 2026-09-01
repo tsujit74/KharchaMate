@@ -145,6 +145,7 @@ export const getMyGroups = async (req, res) => {
                 _id: 1,
                 name: 1,
                 email: 1,
+                avatar: 1,
               },
             },
           ],
@@ -314,7 +315,6 @@ export const updateGroupName = async (req, res) => {
         }),
       ),
     );
-
 
     group.name = name.trim();
     await group.save();
