@@ -13,7 +13,10 @@ export type Notification = {
     name: string;
     email: string;
   };
-  groupName?: string;
+  group?: {
+    _id: string;
+    name: string;
+  };
   link?: string;
   isRead: boolean;
   createdAt: string;
@@ -62,13 +65,11 @@ export function NotificationCard({ notification, onClick }: Props) {
       "
     >
       <div className="flex items-start gap-3">
-
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600">
           <Bell size={17} strokeWidth={1.8} />
         </div>
 
         <div className="min-w-0 flex-1">
-
           <div className="flex items-start justify-between gap-3">
             <p className="text-sm font-semibold text-gray-900">
               {notification.title}
@@ -88,10 +89,10 @@ export function NotificationCard({ notification, onClick }: Props) {
             {notification.message}
           </p>
 
-          {notification.groupName && (
+          {notification.group?.name && (
             <div className="mt-2">
               <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-500 ring-1 ring-inset ring-gray-200">
-                {notification.groupName}
+                {notification.group.name}
               </span>
             </div>
           )}
@@ -99,7 +100,6 @@ export function NotificationCard({ notification, onClick }: Props) {
           <p className="mt-2.5 text-[11px] font-medium text-gray-400">
             Just now
           </p>
-
         </div>
       </div>
     </div>
