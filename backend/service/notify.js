@@ -1,4 +1,5 @@
 import Notification from "../models/Notification.js";
+import { getIO } from "../sockets/socket.js";
 
 export const notifyUser = async ({
   userId,
@@ -9,7 +10,7 @@ export const notifyUser = async ({
   link = null,
   relatedId = null,
 }) => {
-  return Notification.create({
+  const notification = await Notification.create({
     user: userId,
     actor,
     title,
@@ -18,4 +19,13 @@ export const notifyUser = async ({
     link,
     relatedId,
   });
+
+  const populatedNotification = await Notification.findById(notification._id)
+    .populate("actor", "name email");
+
+  getIO()
+    .to(`user:${userId}`)
+    .emit("notification:new", populatedNotification);
+
+  return populatedNotification;
 };

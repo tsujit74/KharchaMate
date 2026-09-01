@@ -3,6 +3,9 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
+import http from "http";
+import { initializeSocket } from "./sockets/socket.js";
+
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
@@ -24,6 +27,9 @@ import { errorLogger } from "./middleware/errorLoggerMiddleware.js";
 import passport from "./config/passport.js";
 
 const app = express();
+
+const httpServer = http.createServer(app);
+initializeSocket(httpServer);
 
 app.set("trust proxy", 1);
 
@@ -101,7 +107,7 @@ const PORT = process.env.PORT || 5000;
 
 connectDB()
   .then(() => {
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
