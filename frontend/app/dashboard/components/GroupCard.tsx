@@ -36,11 +36,10 @@ export default function GroupCard({
         isBlocked
           ? "border-t-red-300 bg-white border-slate-300"
           : isClosed
-          ? "border-t-slate-300 bg-slate-50 border-slate-300"
-          : "border-t-indigo-300 bg-white border-slate-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-100"
+            ? "border-t-slate-300 bg-slate-50 border-slate-300"
+            : "border-t-indigo-300 bg-white border-slate-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-100"
       }`}
     >
-      {/* Top badges */}
       <div className="flex items-start justify-between mb-4 sm:mb-5 gap-3">
         <div className="flex flex-wrap gap-2">
           <span
@@ -48,8 +47,8 @@ export default function GroupCard({
               isBlocked
                 ? "bg-red-50 text-red-600 border-red-200"
                 : isClosed
-                ? "bg-slate-100 text-slate-500 border-slate-200"
-                : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                  ? "bg-slate-100 text-slate-500 border-slate-200"
+                  : "bg-emerald-50 text-emerald-600 border-emerald-100"
             }`}
           >
             {isBlocked ? "Blocked" : isClosed ? "Archived" : "Active"}
@@ -62,7 +61,6 @@ export default function GroupCard({
           )}
         </div>
 
-        {/* Actions */}
         {!isClosed && !isBlocked && (
           <div
             onClick={(e) => e.stopPropagation()}
@@ -102,11 +100,11 @@ export default function GroupCard({
         )}
       </div>
 
-      {/* Title */}
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 group-hover:text-indigo-600 transition-colors tracking-tight">
             {group.name}
+
             {(isClosed || isBlocked) && (
               <Lock
                 className={`w-3.5 h-3.5 ${
@@ -142,18 +140,36 @@ export default function GroupCard({
         </div>
       </div>
 
-      {/* Members */}
       <div className="flex items-center justify-between mt-5 sm:mt-6">
         <div className="flex -space-x-3">
-          {group.members.slice(0, 4).map((m, i) => (
-            <div
-              key={m._id}
-              className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-100 border-2 border-white text-xs font-semibold text-slate-600"
-              style={{ zIndex: 4 - i }}
-            >
-              {m.name?.[0]?.toUpperCase()}
-            </div>
-          ))}
+          {group.members.slice(0, 4).map((m, i) => {
+            const initial = m.name?.trim()?.[0]?.toUpperCase() || "?";
+
+            return (
+              <div
+                key={m._id}
+                className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 border-2 border-white text-xs font-semibold text-slate-600 overflow-hidden"
+                style={{ zIndex: 4 - i }}
+                title={m.name}
+              >
+                {m.avatar ? (
+                  <img
+                    src={m.avatar}
+                    alt={m.name || "Member"}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      e.currentTarget.parentElement?.classList.add(
+                        "avatar-fallback",
+                      );
+                    }}
+                  />
+                ) : (
+                  initial
+                )}
+              </div>
+            );
+          })}
 
           {group.members.length > 4 && (
             <div className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-50 border-2 border-white text-[10px] font-semibold text-slate-400">
@@ -165,7 +181,6 @@ export default function GroupCard({
         <ArrowRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
       </div>
 
-      {/* Footer */}
       <p className="text-xs text-slate-500 mt-2 font-medium">
         {group.members.length} members
       </p>
