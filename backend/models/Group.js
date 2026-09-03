@@ -20,6 +20,12 @@ const groupSchema = new mongoose.Schema(
       },
     ],
 
+    budget: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+
     members: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -31,7 +37,7 @@ const groupSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    
+
     isBlocked: {
       type: Boolean,
       default: false,

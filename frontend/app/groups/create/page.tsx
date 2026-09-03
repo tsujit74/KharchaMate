@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, ArrowRight } from "lucide-react";
+import { Users, ArrowRight, IndianRupeeIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { createGroup } from "@/app/services/group.service";
@@ -13,6 +13,7 @@ const CreateGroupPage = () => {
   const router = useRouter();
 
   const [name, setName] = useState("");
+  const [budget, setBudget] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -24,49 +25,52 @@ const CreateGroupPage = () => {
     }
   }, [loading, isAuthenticated, router]);
 
- const handleCreate = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError("");
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
 
-  if (!name.trim()) {
-    setError("Group name is required.");
-    toast.error("Group name is required.");
-    return;
-  }
-
-  try {
-    setSubmitting(true);
-
-    await createGroup(name.trim());
-
-    toast.success("Group created successfully");
-
-    router.push("/dashboard");
-
-  } catch (err: any) {
-
-    switch (err.message) {
-
-      case "UNAUTHORIZED":
-        toast.error("Session expired. Please login again.");
-        router.replace("/auth");
-        break;
-
-      case "INVALID_NAME":
-        setError("Please enter a valid group name.");
-        toast.error("Please enter a valid group name.");
-        break;
-
-      default:
-        setError("Failed to create group. Try again.");
-        toast.error("Failed to create group. Try again.");
+    if (!name.trim()) {
+      setError("Group name is required.");
+      toast.error("Group name is required.");
+      return;
     }
 
-  } finally {
-    setSubmitting(false);
-  }
-};
+   if (
+  budget !== null &&
+  (typeof budget !== "number" || budget < 0)
+) {
+  setError("Budget must be a valid non-negative number");
+  toast.error("Budget must be a valid non-negative number");
+  return;
+}
+    try {
+      setSubmitting(true);
 
+      await createGroup(name.trim(), budget);
+
+      toast.success("Group created successfully");
+
+      router.push("/dashboard");
+    } catch (err: any) {
+      switch (err.message) {
+        case "UNAUTHORIZED":
+          toast.error("Session expired. Please login again.");
+          router.replace("/auth");
+          break;
+
+        case "INVALID_NAME":
+          setError("Please enter a valid group name.");
+          toast.error("Please enter a valid group name.");
+          break;
+
+        default:
+          setError("Failed to create group. Try again.");
+          toast.error("Failed to create group. Try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading || !isAuthenticated) {
     return (
@@ -113,6 +117,28 @@ const CreateGroupPage = () => {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-1">
+                Group Budget{" "}
+                <span className="text-xs lowercase">(Optional)</span>
+              </label>
+
+              <div className="relative">
+                <IndianRupeeIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="number"
+                  value={budget ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    setBudget(value === "" ? null : Number(value));
+                  }}
+                  className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-black transition"
+                  placeholder="50000"
+                />
+              </div>
+            </div>
+
             {/* Submit */}
             <button
               type="submit"
@@ -120,7 +146,7 @@ const CreateGroupPage = () => {
               className="w-full bg-black text-white font-bold py-4 flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {submitting ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   Create Group

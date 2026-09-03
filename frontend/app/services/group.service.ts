@@ -16,12 +16,13 @@ export const getMyGroups = async () => {
   }
 };
 
-export const createGroup = async (name: string) => {
+export const createGroup = async (name: string,budget:number|null) => {
   if (!name?.trim()) throw new Error("INVALID_NAME");
 
   try {
     const res = await api.post("/groups/create", {
       name: name.trim(),
+      budget,
     });
 
     return res.data;

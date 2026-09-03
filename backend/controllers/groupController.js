@@ -7,12 +7,26 @@ import { notifyAdmin } from "../service/adminNotify.js";
 
 export const createGroup = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, budget } = req.body;
+
+    if (!name?.trim()) {
+      return res.status(400).json({ message: "Group name is required" });
+    }
+    if (
+      budget !== undefined &&
+      budget !== null &&
+      (typeof budget !== "number" || budget < 0)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Budget must be a valid non-negative number" });
+    }
 
     const group = await Group.create({
       name,
       createdBy: req.user.id,
       admins: [req.user.id],
+      budget: budget ?? null,
       members: [req.user.id],
       isActive: true,
     });
