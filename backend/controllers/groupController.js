@@ -199,6 +199,21 @@ export const getMyGroups = async (req, res) => {
           expenseCount: {
             $ifNull: [{ $arrayElemAt: ["$expenseStats.count", 0] }, 0],
           },
+
+          remainingBudget: {
+            $cond: [
+              { $ne: ["$budget", null] },
+              {
+                $subtract: [
+                  "$budget",
+                  {
+                    $ifNull: [{ $arrayElemAt: ["$expenseStats.total", 0] }, 0],
+                  },
+                ],
+              },
+              null,
+            ],
+          },
         },
       },
       {

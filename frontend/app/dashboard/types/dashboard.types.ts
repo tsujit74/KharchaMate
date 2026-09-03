@@ -7,6 +7,8 @@ export type Member = {
 
 export type Group = {
   expenseCount: number;
+  budget?: number | null;
+  remainingBudget:number;
   totalExpenses: number;
   _id: string;
   name: string;
