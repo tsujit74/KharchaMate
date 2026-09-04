@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "../context/authContext";
@@ -10,6 +10,7 @@ import AppSkeleton from "../components/ui/AppSkeleton";
 import Announcements from "./components/Announcements";
 import DashboardContent from "./components/DashboardContent";
 import EditGroupNameModal from "./components/EditGroupNameModal";
+import SetBudgetModal from "./components/SetBudgetModal";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -17,8 +18,12 @@ export default function DashboardPage() {
 
   const dashboard = useDashboardData(isAuthenticated, loading);
 
+  // Edit group state
   const [editGroupId, setEditGroupId] = useState<string | null>(null);
   const [editGroupName, setEditGroupName] = useState("");
+
+  // Budget state
+  const [budgetGroupId, setBudgetGroupId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -26,7 +31,6 @@ export default function DashboardPage() {
     }
   }, [loading, isAuthenticated, router]);
 
-  // Loading state
   if (loading || dashboard.groupLoading) {
     return <AppSkeleton variant="dashboard" />;
   }
@@ -35,7 +39,6 @@ export default function DashboardPage() {
     return <AppSkeleton variant="dashboard" />;
   }
 
-  // Error state
   if (dashboard.error) {
     return (
       <p className="p-10 text-center text-red-500 font-medium">
@@ -61,9 +64,13 @@ export default function DashboardPage() {
           pendingLoading={dashboard.pendingLoading}
           setEditGroupId={setEditGroupId}
           setEditGroupName={setEditGroupName}
+          onSetBudget={(groupId) => {
+            setBudgetGroupId(groupId);
+          }}
         />
       </div>
 
+      {/* Edit Group Name Modal */}
       <EditGroupNameModal
         isOpen={!!editGroupId}
         groupId={editGroupId || ""}
@@ -71,9 +78,31 @@ export default function DashboardPage() {
         onClose={() => setEditGroupId(null)}
         onUpdated={(newName) => {
           dashboard.setGroups((prev) =>
-            prev.map((g) =>
-              g._id === editGroupId ? { ...g, name: newName } : g
-            )
+            prev.map((group) =>
+              group._id === editGroupId ? { ...group, name: newName } : group,
+            ),
+          );
+        }}
+      />
+
+      <SetBudgetModal
+        isOpen={!!budgetGroupId}
+        groupId={budgetGroupId || ""}
+        currentBudget={
+          dashboard.groups.find((group) => group._id === budgetGroupId)?.budget
+        }
+        onClose={() => setBudgetGroupId(null)}
+        onUpdated={(budget, remainingBudget) => {
+          dashboard.setGroups((prev) =>
+            prev.map((group) =>
+              group._id === budgetGroupId
+                ? {
+                    ...group,
+                    budget,
+                    remainingBudget,
+                  }
+                : group,
+            ),
           );
         }}
       />

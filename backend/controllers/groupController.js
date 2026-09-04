@@ -365,6 +365,77 @@ export const updateGroupName = async (req, res) => {
   }
 };
 
+
+export const updateGroupBudget = async (req, res) => {
+  try {
+    const { budget } = req.body;
+    const group = req.group;
+
+    // Validate budget
+    if (budget === undefined || budget === null || budget === "") {
+      return res.status(400).json({
+        message: "Budget is required",
+      });
+    }
+
+    const numericBudget = Number(budget);
+
+    if (!Number.isFinite(numericBudget) || numericBudget <= 0) {
+      return res.status(400).json({
+        message: "Budget must be a valid amount greater than 0",
+      });
+    }
+
+    const oldBudget = group.budget ?? null;
+
+    // Update budget
+    group.budget = numericBudget;
+
+    await group.save();
+
+    // Calculate remaining budget
+    const remainingBudget =
+      numericBudget - (group.totalExpenses ?? 0);
+
+    // Notify other members
+    const otherMembers = group.members.filter(
+      (memberId) => String(memberId) !== String(req.user.id),
+    );
+
+    await Promise.all(
+      otherMembers.map((memberId) =>
+        notifyUser({
+          userId: memberId,
+          actor: req.user.id,
+          groupId: group._id,
+          title: "Group Budget Updated",
+          message:
+            oldBudget === null
+              ? `set the group budget to ₹${numericBudget.toLocaleString()}`
+              : `updated the group budget from ₹${oldBudget.toLocaleString()} to ₹${numericBudget.toLocaleString()}`,
+          type: "INFORMATION",
+          link: `/groups/${group._id}`,
+          relatedId: group._id,
+        }),
+      ),
+    );
+
+    res.status(200).json({
+      message: "Group budget updated successfully",
+      group,
+      budget: numericBudget,
+      remainingBudget,
+    });
+  } catch (error) {
+    console.error("Update group budget error:", error);
+
+    res.status(500).json({
+      message: "Failed to update group budget",
+    });
+  }
+};
+
+
 //Search Users
 export const searchUsers = async (req, res) => {
   try {

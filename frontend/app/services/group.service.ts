@@ -16,7 +16,7 @@ export const getMyGroups = async () => {
   }
 };
 
-export const createGroup = async (name: string,budget:number|null) => {
+export const createGroup = async (name: string, budget: number | null) => {
   if (!name?.trim()) throw new Error("INVALID_NAME");
 
   try {
@@ -59,7 +59,7 @@ export const getGroupById = async (groupId: string) => {
 
 export const addMember = async (
   groupId: string,
-  payload: { userId?: string; email?: string }
+  payload: { userId?: string; email?: string },
 ) => {
   if (!groupId || (!payload?.userId && !payload?.email?.trim())) {
     throw new Error("INVALID_DATA");
@@ -182,6 +182,36 @@ export const updateGroupName = async (groupId: string, name: string) => {
       throw new Error(err.response.data?.message || "INVALID_NAME");
 
     throw new Error("FAILED_UPDATE_GROUP_NAME");
+  }
+};
+
+export const updateGroupBudget = async (groupId: string, budget: number) => {
+  if (!groupId || !Number.isFinite(budget) || budget <= 0) {
+    throw new Error("INVALID_DATA");
+  }
+
+  try {
+    const res = await api.patch(`/groups/${groupId}/update-budget`, {
+      budget,
+    });
+
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (err.response.status === 403) {
+      throw new Error("FORBIDDEN");
+    }
+
+    if (err.response.status === 400) {
+      throw new Error(err.response.data?.message || "INVALID_BUDGET");
+    }
+
+    throw new Error("FAILED_UPDATE_GROUP_BUDGET");
   }
 };
 

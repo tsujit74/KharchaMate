@@ -17,6 +17,7 @@ import {
   updateGroupName,
   searchUsers,
   getRecentUsers,
+  updateGroupBudget,
 } from "../controllers/groupController.js";
 
 const router = express.Router();
@@ -26,8 +27,6 @@ router.get("/users/recent", authMiddleware, getRecentUsers);
 
 router.post("/create", authMiddleware, createGroup);
 router.get("/my-groups", authMiddleware, getMyGroups);
-
-
 
 router.post(
   "/:groupId/add-member",
@@ -55,7 +54,7 @@ router.patch(
   groupContext,
   checkGroupBlocked,
   isAdmin,
-  toggleGroupStatus
+  toggleGroupStatus,
 );
 
 router.patch(
@@ -65,12 +64,19 @@ router.patch(
   checkGroupBlocked,
   checkGroupActive,
   isAdmin,
-  updateGroupName
+  updateGroupName,
 );
 
+router.patch(
+  "/:groupId/update-budget",
+  authMiddleware,
+  groupContext,
+  checkGroupBlocked,
+  checkGroupActive,
+  isAdmin,
+  updateGroupBudget,
+);
 
 router.get("/:groupId", authMiddleware, groupContext, getGroupById);
-
-
 
 export default router;

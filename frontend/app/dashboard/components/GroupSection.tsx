@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MoreVertical } from "lucide-react";
 import GroupCard from "./GroupCard";
 import { Group } from "../types/dashboard.types";
 
@@ -12,6 +11,7 @@ type Props = {
   activeGroups: number;
   archivedGroups: number;
   blockedGroups: number;
+  onSetBudget: (groupId: string) => void;
 };
 
 export default function GroupsSection({
@@ -21,6 +21,7 @@ export default function GroupsSection({
   activeGroups,
   archivedGroups,
   blockedGroups,
+  onSetBudget,
 }: Props) {
   const router = useRouter();
 
@@ -33,7 +34,8 @@ export default function GroupsSection({
         </h3>
 
         <span className="text-xs bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-medium border border-slate-200/40">
-          {activeGroups} active, {archivedGroups} archived, {blockedGroups} blocked
+          {activeGroups} active, {archivedGroups} archived, {blockedGroups}{" "}
+          blocked
         </span>
       </div>
 
@@ -43,8 +45,7 @@ export default function GroupsSection({
           const isBlocked = group.isBlocked;
           const isClosed = !group.isActive && !isBlocked;
 
-          const isAdmin =
-            group.admins?.includes(userId || "") ?? false;
+          const isAdmin = group.admins?.includes(userId || "") ?? false;
 
           const isCreator = group.createdBy === userId;
 
@@ -60,10 +61,12 @@ export default function GroupsSection({
                 router.push(
                   isBlocked || isClosed
                     ? `/groups/${group._id}?mode=readonly`
-                    : `/groups/${group._id}`
+                    : `/groups/${group._id}`,
                 )
               }
               onEdit={() => onEdit(group._id, group.name)}
+              onSetBudget={() => onSetBudget(group._id)}
+              onAddMember={() => router.push(`/groups/${group._id}/add-member`)}
             />
           );
         })}

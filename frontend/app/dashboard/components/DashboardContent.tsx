@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import DashboardHeader from "./DashboardHeader";
 import DashboardStats from "./DashboardStats";
 import GroupsSection from "./GroupSection";
@@ -27,6 +25,8 @@ type Props = {
 
   setEditGroupId: (id: string | null) => void;
   setEditGroupName: (name: string) => void;
+
+  onSetBudget: (groupId: string) => void;
 };
 
 export default function DashboardContent({
@@ -39,26 +39,23 @@ export default function DashboardContent({
   pendingLoading,
   setEditGroupId,
   setEditGroupName,
+  onSetBudget,
 }: Props) {
-  const [editModalOpen, setEditModalOpen] = useState(false);
-
-  const totalMembers = groups.reduce(
-    (sum, group) => sum + group.members.length,
-    0,
-  );
-
-  const activeGroups = groups.filter((g) => g.isActive && !g.isBlocked).length;
-
-  const archivedGroups = groups.filter(
-    (g) => !g.isActive && !g.isBlocked,
+  const activeGroups = groups.filter(
+    (g) => g.isActive && !g.isBlocked
   ).length;
 
-  const blockedGroups = groups.filter((g) => g.isBlocked).length;
+  const archivedGroups = groups.filter(
+    (g) => !g.isActive && !g.isBlocked
+  ).length;
+
+  const blockedGroups = groups.filter(
+    (g) => g.isBlocked
+  ).length;
 
   const handleEdit = (id: string, name: string) => {
     setEditGroupId(id);
     setEditGroupName(name);
-    setEditModalOpen(true);
   };
 
   return (
@@ -78,6 +75,7 @@ export default function DashboardContent({
         groups={groups}
         userId={userId}
         onEdit={handleEdit}
+        onSetBudget={onSetBudget}
         activeGroups={activeGroups}
         archivedGroups={archivedGroups}
         blockedGroups={blockedGroups}
