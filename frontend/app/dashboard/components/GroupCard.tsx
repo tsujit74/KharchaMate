@@ -20,7 +20,7 @@ type Props = {
   onClick: () => void;
   onEdit: () => void;
   onSetBudget: () => void;
-  onAddMember:()=>void;
+  onAddMember: () => void;
 };
 
 export default function GroupCard({
@@ -124,26 +124,23 @@ export default function GroupCard({
         </div>
 
         {!isClosed && !isBlocked && (
-  <div
-    onClick={(e) => e.stopPropagation()}
-    className="relative"
-  >
-    <details className="group/menu relative">
-      <summary
-        className="
+          <div onClick={(e) => e.stopPropagation()} className="relative">
+            <details className="group/menu relative">
+              <summary
+                className="
           list-none cursor-pointer rounded-lg p-1.5
           text-slate-400
           transition-all duration-150
           hover:bg-slate-100 hover:text-slate-600
           [&::-webkit-details-marker]:hidden
         "
-        aria-label="Group actions"
-      >
-        <MoreVertical className="h-4 w-4" />
-      </summary>
+                aria-label="Group actions"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </summary>
 
-      <div
-        className="
+              <div
+                className="
           absolute right-0 z-30 mt-2 w-48
           overflow-hidden rounded-xl
           border border-slate-200
@@ -151,14 +148,14 @@ export default function GroupCard({
           shadow-xl shadow-slate-900/10
           ring-1 ring-slate-900/5
         "
-      >
-        {isAdmin ? (
-          <>
-            {/* Edit Name */}
-            <button
-              type="button"
-              onClick={onEdit}
-              className="
+              >
+                {isAdmin ? (
+                  <>
+                    {/* Edit Name */}
+                    <button
+                      type="button"
+                      onClick={onEdit}
+                      className="
                 flex w-full items-center gap-2.5
                 rounded-lg px-3 py-2.5
                 text-left text-xs font-medium
@@ -167,19 +164,19 @@ export default function GroupCard({
                 hover:bg-indigo-50 hover:text-indigo-700
                 focus:outline-none focus:ring-2 focus:ring-indigo-100
               "
-            >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-500">
-                <Pencil className="h-3.5 w-3.5" />
-              </span>
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-500">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </span>
 
-              <span>Edit Name</span>
-            </button>
+                      <span>Edit Name</span>
+                    </button>
 
-            {/* Add Member */}
-            <button
-              type="button"
-              onClick={onAddMember}
-              className="
+                    {/* Add Member */}
+                    <button
+                      type="button"
+                      onClick={onAddMember}
+                      className="
                 flex w-full items-center gap-2.5
                 rounded-lg px-3 py-2.5
                 text-left text-xs font-medium
@@ -188,21 +185,21 @@ export default function GroupCard({
                 hover:bg-indigo-50 hover:text-indigo-700
                 focus:outline-none focus:ring-2 focus:ring-indigo-100
               "
-            >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-500">
-                <UserPlus className="h-3.5 w-3.5" />
-              </span>
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-500">
+                        <UserPlus className="h-3.5 w-3.5" />
+                      </span>
 
-              <span>Add Member</span>
-            </button>
+                      <span>Add Member</span>
+                    </button>
 
-            <div className="my-1.5 border-t border-slate-100" />
+                    <div className="my-1.5 border-t border-slate-100" />
 
-            {/* Budget */}
-            <button
-              type="button"
-              onClick={onSetBudget}
-              className="
+                    {/* Budget */}
+                    <button
+                      type="button"
+                      onClick={onSetBudget}
+                      className="
                 flex w-full items-center gap-2.5
                 rounded-lg px-3 py-2.5
                 text-left text-xs font-medium
@@ -211,39 +208,37 @@ export default function GroupCard({
                 hover:bg-indigo-50 hover:text-indigo-700
                 focus:outline-none focus:ring-2 focus:ring-indigo-100
               "
-            >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
-                <ArrowRight className="h-3.5 w-3.5" />
-              </span>
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
 
-              <span>
-                {hasBudget ? "Update Budget" : "Set Budget"}
-              </span>
-            </button>
-          </>
-        ) : (
-          <div className="px-3 py-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100">
-                <Lock className="h-3.5 w-3.5 text-slate-400" />
+                      <span>{hasBudget ? "Update Budget" : "Set Budget"}</span>
+                    </button>
+                  </>
+                ) : (
+                  <div className="px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100">
+                        <Lock className="h-3.5 w-3.5 text-slate-400" />
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-semibold text-slate-600">
+                          Admin only
+                        </p>
+
+                        <p className="mt-0.5 text-[10px] text-slate-400">
+                          You don&apos;t have permission
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-
-              <div>
-                <p className="text-xs font-semibold text-slate-600">
-                  Admin only
-                </p>
-
-                <p className="mt-0.5 text-[10px] text-slate-400">
-                  You don't have permission
-                </p>
-              </div>
-            </div>
+            </details>
           </div>
         )}
-      </div>
-    </details>
-  </div>
-)}
       </div>
 
       <div className="px-5 pb-4">
