@@ -267,11 +267,19 @@ export const updateExpense = async (req, res) => {
   try {
     const { expenseId } = req.params;
     const userId = req.user.id;
-    const { description, amount, splitBetween } = req.body;
+
+    const {
+      description,
+      amount,
+      splitBetween,
+    } = req.body;
 
     const expense = await Expense.findById(expenseId);
+
     if (!expense) {
-      return res.status(404).json({ message: "Expense not found" });
+      return res.status(404).json({
+        message: "Expense not found",
+      });
     }
 
     const paidById =
@@ -280,13 +288,26 @@ export const updateExpense = async (req, res) => {
         : expense.paidBy;
 
     if (String(paidById) !== String(userId)) {
-      return res.status(403).json({ message: "Not allowed" });
+      return res.status(403).json({
+        message: "Not allowed",
+      });
     }
 
     if (!canModifyExpense(expense)) {
-      return res
-        .status(400)
-        .json({ message: "Expense can only be modified within 5 hours" });
+      return res.status(400).json({
+        message: "Expense can only be modified within 5 hours",
+      });
+    }
+
+    const newAmount =
+      amount !== undefined
+        ? Number(amount)
+        : Number(expense.amount);
+
+    if (!Number.isFinite(newAmount) || newAmount <= 0) {
+      return res.status(400).json({
+        message: "Amount must be greater than 0",
+      });
     }
 
     if (Array.isArray(splitBetween) && splitBetween.length > 0) {
@@ -295,24 +316,30 @@ export const updateExpense = async (req, res) => {
         0,
       );
 
-      if (round(totalSplit) !== round(Number(amount))) {
-        return res
-          .status(400)
-          .json({ message: "Split total must equal amount" });
+      if (round(totalSplit) !== round(newAmount)) {
+        return res.status(400).json({
+          message: "Split total must equal amount",
+        });
       }
 
       expense.splitBetween = splitBetween;
     }
 
-    if (description) expense.description = description;
-    if (amount) expense.amount = amount;
+    if (description !== undefined) {
+      expense.description = description;
+    }
+
+    expense.amount = newAmount;
 
     await expense.save();
 
-    res.json(expense);
+    return res.json(expense);
   } catch (error) {
     console.error("UPDATE EXPENSE ERROR:", error);
-    res.status(500).json({ message: "Failed to update expense" });
+
+    return res.status(500).json({
+      message: "Failed to update expense",
+    });
   }
 };
 

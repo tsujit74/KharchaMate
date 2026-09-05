@@ -167,39 +167,57 @@ export const updateExpense = async ({
   amount: number;
   splitBetween?: { user: string; amount: number }[];
 }) => {
-  if (!expenseId?.trim()) throw new Error("INVALID_EXPENSE");
+  if (!expenseId?.trim()) {
+    throw new Error("INVALID_EXPENSE");
+  }
 
-  if (!description?.trim()) throw new Error("INVALID_DESCRIPTION");
+  if (!description?.trim()) {
+    throw new Error("INVALID_DESCRIPTION");
+  }
 
-  if (!amount || amount <= 0) throw new Error("INVALID_AMOUNT");
+  if (!amount || amount <= 0) {
+    throw new Error("INVALID_AMOUNT");
+  }
 
   try {
-    const payload: any = {
+    const payload: {
+      description: string;
+      amount: number;
+      splitBetween?: { user: string; amount: number }[];
+    } = {
       description: description.trim(),
       amount,
     };
 
     if (Array.isArray(splitBetween) && splitBetween.length > 0) {
-      const validSplit = splitBetween.filter((s) => s.user && s.amount > 0);
-
-      if (validSplit.length === 0) throw new Error("INVALID_SPLIT");
-
-      payload.splitBetween = validSplit;
+      payload.splitBetween = splitBetween;
     }
 
     const res = await api.put(`/expenses/${expenseId}`, payload);
 
     return res.data;
   } catch (err: any) {
-    if (!err.response) throw new Error("NETWORK_ERROR");
+    if (!err.response) {
+      throw new Error("NETWORK_ERROR");
+    }
 
     const status = err.response.status;
 
-    if (status === 401) throw new Error("UNAUTHORIZED");
-    if (status === 403) throw new Error("FORBIDDEN");
-    if (status === 400)
+    if (status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (status === 403) {
+      throw new Error("FORBIDDEN");
+    }
+
+    if (status === 400) {
       throw new Error(err.response.data?.message || "UPDATE_NOT_ALLOWED");
-    if (status === 404) throw new Error("EXPENSE_NOT_FOUND");
+    }
+
+    if (status === 404) {
+      throw new Error("EXPENSE_NOT_FOUND");
+    }
 
     throw new Error("FAILED_UPDATE_EXPENSE");
   }
