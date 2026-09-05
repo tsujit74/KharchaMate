@@ -268,11 +268,7 @@ export const updateExpense = async (req, res) => {
     const { expenseId } = req.params;
     const userId = req.user.id;
 
-    const {
-      description,
-      amount,
-      splitBetween,
-    } = req.body;
+    const { description, amount, splitBetween } = req.body;
 
     const expense = await Expense.findById(expenseId);
 
@@ -300,9 +296,7 @@ export const updateExpense = async (req, res) => {
     }
 
     const newAmount =
-      amount !== undefined
-        ? Number(amount)
-        : Number(expense.amount);
+      amount !== undefined ? Number(amount) : Number(expense.amount);
 
     if (!Number.isFinite(newAmount) || newAmount <= 0) {
       return res.status(400).json({
@@ -329,9 +323,44 @@ export const updateExpense = async (req, res) => {
       expense.description = description;
     }
 
+    const oldAmount = Number(expense.amount);
+
     expense.amount = newAmount;
 
     await expense.save();
+
+    const group = await Group.findById(expense.group).select("name members");
+
+    if (group) {
+      const otherMembers = group.members.filter(
+        (memberId) => String(memberId) !== String(userId),
+      );
+
+      await Promise.all(
+        otherMembers.map((memberId) => {
+          const memberSplit = expense.splitBetween?.find(
+            (split) => String(split.user) === String(memberId),
+          );
+
+          const shareAmount = memberSplit ? Number(memberSplit.amount) : 0;
+
+          return notifyUser({
+            userId: memberId,
+            actor: userId,
+            groupId: group._id,
+            title: "Expense updated",
+            message: `Expense "${expense.description}" was updated. Amount changed from ₹${oldAmount.toLocaleString(
+              "en-IN",
+            )} to ₹${newAmount.toLocaleString(
+              "en-IN",
+            )}. Your share is now ₹${shareAmount.toLocaleString("en-IN")}.`,
+            type: "EXPENSE",
+            link: `/groups/${group._id}`,
+            relatedId: expense._id,
+          });
+        }),
+      );
+    }
 
     return res.json(expense);
   } catch (error) {
