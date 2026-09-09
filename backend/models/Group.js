@@ -42,6 +42,12 @@ const groupSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    paymentLocks: {
+      type: Map,
+      of: Date,
+      default: {},
+    },
   },
   { timestamps: true },
 );

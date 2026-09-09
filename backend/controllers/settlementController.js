@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Expense from "../models/Expense.js";
 import Group from "../models/Group.js";
 import Settlement from "../models/Settlement.js";
@@ -128,44 +129,139 @@ export const getGroupSettlement = async (req, res) => {
 };
 
 export const markPaymentDone = async (req, res) => {
+  let lockKey;
+
   try {
     const from = req.user.id;
     const { to, amount } = req.body;
     const groupId = req.group._id;
 
+    const paymentAmount = Number(Number(amount).toFixed(2));
+
+    if (!to) {
+      return res.status(400).json({
+        message: "Receiver is required",
+      });
+    }
+
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+      return res.status(400).json({
+        message: "Invalid amount",
+      });
+    }
+
+    // Lock only this specific payment direction
+    lockKey = `${from}_${to}`;
+
+    const now = new Date();
+
+    // Lock expires after 10 seconds
+    const lockExpiresAt = new Date(
+      now.getTime() + 10 * 1000
+    );
+
+    // Atomically acquire the lock for this from -> to pair
+    const lockedGroup = await Group.findOneAndUpdate(
+      {
+        _id: groupId,
+        $or: [
+          {
+            [`paymentLocks.${lockKey}`]: {
+              $exists: false,
+            },
+          },
+          {
+            [`paymentLocks.${lockKey}`]: {
+              $lt: now,
+            },
+          },
+        ],
+      },
+      {
+        $set: {
+          [`paymentLocks.${lockKey}`]: lockExpiresAt,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+
+    // Another identical payment is already being processed
+    if (!lockedGroup) {
+      return res.status(409).json({
+        message: "This payment is already being processed",
+      });
+    }
+
+    // Validate current balance
     await validatePayment({
       groupId,
       from,
       to,
-      amount: Number(amount),
+      amount: paymentAmount,
     });
 
+    // Create settlement
     const settlement = await Settlement.create({
       group: groupId,
       from,
       to,
-      amount: Number(Number(amount).toFixed(2)),
+      amount: paymentAmount,
       status: "COMPLETED",
       settledAt: new Date(),
     });
 
-    // Notify receiver
+    // Release only this payment lock
+    await Group.updateOne(
+      { _id: groupId },
+      {
+        $unset: {
+          [`paymentLocks.${lockKey}`]: "",
+        },
+      },
+    );
+
     await notifyUser({
       userId: to,
       actor: from,
       groupId,
       title: "Payment received",
-      message: `paid you ₹${Number(amount).toFixed(2)}`,
+      message: `paid you ₹${paymentAmount.toFixed(2)}`,
       type: "SETTLEMENT",
       link: `/groups/${groupId}`,
       relatedId: settlement._id,
     });
-    res.status(201).json({
+
+    return res.status(201).json({
       message: "Payment recorded successfully",
       settlement,
     });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    console.error("PAYMENT ERROR:", err);
+
+    // Release lock if something failed
+    if (lockKey && req.group?._id) {
+      try {
+        await Group.updateOne(
+          { _id: req.group._id },
+          {
+            $unset: {
+              [`paymentLocks.${lockKey}`]: "",
+            },
+          },
+        );
+      } catch (unlockError) {
+        console.error(
+          "FAILED TO RELEASE PAYMENT LOCK:",
+          unlockError,
+        );
+      }
+    }
+
+    return res.status(400).json({
+      message: err.message,
+    });
   }
 };
 
