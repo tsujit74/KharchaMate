@@ -21,8 +21,8 @@ export default function GroupSettlementSection({
   const settlements = settlement?.settlements ?? [];
   const balances = settlement?.balances ?? [];
 
-  const handlePay = (toId: string, amount: number) => {
-    router.push(`/groups/${groupId}/settle?to=${toId}&amount=${amount}`);
+  const handlePay = (toId: string) => {
+    router.push(`/groups/${groupId}/settle?to=${toId}`);
   };
 
   if (!settlements.length) {
@@ -76,7 +76,7 @@ export default function GroupSettlementSection({
               <div className="flex items-center gap-2">
                 {youOwe && (
                   <button
-                    onClick={() => handlePay(s.to, s.amount)}
+                    onClick={() => handlePay(s.to)}
                     className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
                   >
                     Pay ₹{s.amount}
