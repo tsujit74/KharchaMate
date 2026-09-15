@@ -14,6 +14,7 @@ import {
   LifeBuoy,
   LogOut,
   CircleUserRound,
+  Receipt,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -75,8 +76,8 @@ export default function Navbar() {
               Groups
             </NavLink>
 
-            <NavLink href="/dashboard/activity" icon={<Activity size={16} />}>
-              Activity
+            <NavLink href="/settlement-requests" icon={<Receipt size={16} />}>
+              Payment Requests
             </NavLink>
 
             <NavLink
@@ -200,8 +201,16 @@ export default function Navbar() {
                   </DropdownItem>
 
                   <DropdownItem
+                    href="/settlement-requests"
+                    icon={<Receipt size={16} />}
+                    onClick={() => setOpenMenu(false)}
+                  >
+                    Payment Requests
+                  </DropdownItem>
+
+                  <DropdownItem
                     href="/dashboard/insights"
-                    icon={<Activity size={16} />}
+                    icon={<LayoutDashboard size={16} />}
                     onClick={() => setOpenMenu(false)}
                   >
                     Insights

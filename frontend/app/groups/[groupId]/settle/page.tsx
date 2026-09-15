@@ -53,6 +53,7 @@ export default function SettlePaymentPage() {
   const [receiver, setReceiver] = useState<Receiver | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [maxPayable, setMaxPayable] = useState(0);
+  const [pendingAmount, setPendingAmount] = useState(0);
   const [qrImage, setQrImage] = useState("");
 
   useEffect(() => {
@@ -99,9 +100,28 @@ export default function SettlePaymentPage() {
           return;
         }
 
-        setReceiver(receiverData);
-        setPaymentAmount(amount.toFixed(2));
-        setMaxPayable(amount);
+        // Find existing payments that are still waiting
+        // for the receiver to confirm.
+        const myPendingPayments = (
+          settlementData?.paymentStatuses ?? []
+        ).filter(
+          (payment: any) =>
+            payment.from?.toString() === user.id.toString() &&
+            payment.to?._id?.toString() === toUserId.toString() &&
+            payment.status === "INITIATED",
+        );
+
+        const pending = myPendingPayments.reduce(
+          (total: number, payment: any) => total + Number(payment.amount || 0),
+          0,
+        );
+
+        if (!cancelled) {
+          setPendingAmount(Number(pending.toFixed(2)));
+          setReceiver(receiverData);
+          setPaymentAmount(amount.toFixed(2));
+          setMaxPayable(amount);
+        }
       } catch (error) {
         if (cancelled) return;
 
@@ -222,7 +242,7 @@ export default function SettlePaymentPage() {
 
       setConfirmed(true);
 
-      toast.success("Settlement recorded successfully");
+      toast.success("Payment submitted. Waiting for receiver confirmation.");
 
       setTimeout(() => {
         router.push(`/groups/${groupId}`);
@@ -288,11 +308,12 @@ export default function SettlePaymentPage() {
           </div>
 
           <h1 className="text-2xl font-semibold text-gray-900 mt-5">
-            Payment Recorded
+            Payment Submitted
           </h1>
 
           <p className="text-sm text-gray-500 mt-2">
-            Your settlement has been successfully recorded.
+            Your payment has been submitted and is waiting for the receiver to
+            confirm it.
           </p>
 
           <div className="mt-6 rounded-xl bg-green-50 border border-green-100 px-4 py-3">
@@ -333,6 +354,7 @@ export default function SettlePaymentPage() {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+          {/* LEFT SIDE */}
           <section className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-5 py-4 md:px-6 border-b border-gray-100">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -428,6 +450,7 @@ export default function SettlePaymentPage() {
             </div>
           </section>
 
+          {/* RIGHT SIDE */}
           <section className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-5 py-4 md:px-6 border-b border-gray-100">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -444,6 +467,28 @@ export default function SettlePaymentPage() {
             </div>
 
             <div className="p-5 md:p-6">
+              {/* PENDING PAYMENT NOTICE */}
+              {pendingAmount > 0 && (
+                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-amber-900">
+                        Payment awaiting confirmation
+                      </p>
+
+                      <p className="text-xs text-amber-700 mt-0.5 leading-4">
+                        You already submitted this amount and are waiting for
+                        the receiver.
+                      </p>
+                    </div>
+
+                    <p className="text-sm font-bold text-amber-900 shrink-0">
+                      ₹{pendingAmount.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label
@@ -583,7 +628,7 @@ export default function SettlePaymentPage() {
                     Recording Payment...
                   </span>
                 ) : (
-                  "I Have Completed the Payment"
+                  "I Have Paid"
                 )}
               </button>
 
