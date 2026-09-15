@@ -43,6 +43,18 @@ export const validatePayment = async ({
     status: "COMPLETED",
   }).session(session);
 
+  const initiatedPayments = await Settlement.find({
+    group: groupId,
+    from,
+    to,
+    status: "INITIATED",
+  }).session(session);
+
+  const pendingAmount = initiatedPayments.reduce(
+    (total, settlement) => total + settlement.amount,
+    0,
+  );
+
   const balanceMap = {};
 
   group.members.forEach((id) => {
@@ -72,13 +84,9 @@ export const validatePayment = async ({
     balanceMap[s.to.toString()] -= s.amount;
   });
 
-  const payerBal = Number(
-    balanceMap[from.toString()].toFixed(2)
-  );
+  const payerBal = Number(balanceMap[from.toString()].toFixed(2));
 
-  const receiverBal = Number(
-    balanceMap[to.toString()].toFixed(2)
-  );
+  const receiverBal = Number(balanceMap[to.toString()].toFixed(2));
 
   if (payerBal >= -0.01) {
     throw new Error("Nothing to pay");
@@ -88,13 +96,16 @@ export const validatePayment = async ({
     throw new Error("Receiver not owed");
   }
 
-  const maxPayable = Math.min(
-    Math.abs(payerBal),
-    receiverBal
-  );
+  const maxPayable = Math.min(Math.abs(payerBal), receiverBal);
 
-  if (amount > maxPayable + 0.01) {
-    throw new Error(`Max payable ₹${maxPayable}`);
+  const availableToPay = Number((maxPayable - pendingAmount).toFixed(2));
+
+  if (availableToPay <= 0) {
+    throw new Error("Payment already pending confirmation");
+  }
+
+  if (amount > availableToPay + 0.01) {
+    throw new Error(`Max payable ₹${availableToPay}`);
   }
 
   return true;

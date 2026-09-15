@@ -25,6 +25,14 @@ export const getGroupSettlement = async (req, res) => {
       status: "COMPLETED",
     });
 
+    const mySettlementPayments = await Settlement.find({
+      group: groupId,
+      from: currentUserId,
+      status: { $in: ["INITIATED", "COMPLETED"] },
+    })
+      .populate("to", "name email mobile")
+      .sort({ createdAt: -1 });
+
     let yourShare = 0;
 
     expenses.forEach((expense) => {
@@ -122,6 +130,7 @@ export const getGroupSettlement = async (req, res) => {
         balance: Number(balanceMap[m._id.toString()].toFixed(2)),
       })),
       settlements,
+      paymentStatuses: mySettlementPayments,
     });
   } catch (err) {
     res.status(500).json({ message: "Settlement failed" });
@@ -156,9 +165,7 @@ export const markPaymentDone = async (req, res) => {
     const now = new Date();
 
     // Lock expires after 10 seconds
-    const lockExpiresAt = new Date(
-      now.getTime() + 10 * 1000
-    );
+    const lockExpiresAt = new Date(now.getTime() + 10 * 1000);
 
     // Atomically acquire the lock for this from -> to pair
     const lockedGroup = await Group.findOneAndUpdate(
@@ -202,14 +209,12 @@ export const markPaymentDone = async (req, res) => {
       amount: paymentAmount,
     });
 
-    // Create settlement
     const settlement = await Settlement.create({
       group: groupId,
       from,
       to,
       amount: paymentAmount,
-      status: "COMPLETED",
-      settledAt: new Date(),
+      status: "INITIATED",
     });
 
     // Release only this payment lock
@@ -223,18 +228,18 @@ export const markPaymentDone = async (req, res) => {
     );
 
     await notifyUser({
-      userId: to,
+      userId: settlement.to,
       actor: from,
-      groupId,
-      title: "Payment received",
-      message: `paid you ₹${paymentAmount.toFixed(2)}`,
+      groupId: settlement.group,
+      title: "Payment confirmation required",
+      message: `You received a payment claim of ₹${settlement.amount.toFixed(2)}. Please confirm if you received it.`,
       type: "SETTLEMENT",
-      link: `/groups/${groupId}`,
+      link: `/settlement-requests`,
       relatedId: settlement._id,
     });
 
     return res.status(201).json({
-      message: "Payment recorded successfully",
+      message: "Payment submitted. Waiting for receiver confirmation.",
       settlement,
     });
   } catch (err) {
@@ -252,15 +257,102 @@ export const markPaymentDone = async (req, res) => {
           },
         );
       } catch (unlockError) {
-        console.error(
-          "FAILED TO RELEASE PAYMENT LOCK:",
-          unlockError,
-        );
+        console.error("FAILED TO RELEASE PAYMENT LOCK:", unlockError);
       }
     }
 
     return res.status(400).json({
       message: err.message,
+    });
+  }
+};
+
+export const confirmSettlement = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { settlementId } = req.params;
+
+    const settlement = await Settlement.findById(settlementId);
+
+    if (!settlement) {
+      return res.status(404).json({
+        message: "Settlement not found",
+      });
+    }
+
+    // Only the receiver can confirm
+    if (settlement.to.toString() !== userId.toString()) {
+      return res.status(403).json({
+        message: "Only the receiver can confirm this payment",
+      });
+    }
+
+    // Only INITIATED payments can be confirmed
+    if (settlement.status !== "INITIATED") {
+      return res.status(400).json({
+        message: "This payment cannot be confirmed",
+      });
+    }
+
+    settlement.status = "COMPLETED";
+    settlement.settledAt = new Date();
+
+    await settlement.save();
+
+    await notifyUser({
+      userId: settlement.from,
+      actor: userId,
+      groupId: settlement.group,
+      title: "Payment confirmed",
+      message: `Your payment of ₹${settlement.amount.toFixed(2)} was confirmed.`,
+      type: "SETTLEMENT",
+      link: `/groups/${settlement.group}`,
+      relatedId: settlement._id,
+    });
+
+    return res.status(200).json({
+      message: "Payment confirmed successfully",
+      settlement,
+    });
+  } catch (err) {
+    console.error("CONFIRM SETTLEMENT ERROR:", err);
+
+    return res.status(500).json({
+      message: "Failed to confirm settlement",
+    });
+  }
+};
+
+export const getSettlementRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const settlements = await Settlement.find({
+      to: userId,
+      status: { $in: ["INITIATED", "COMPLETED"] },
+    })
+      .populate("from", "name email mobile")
+      .populate("to", "name email mobile")
+      .populate("group", "name")
+      .sort({ createdAt: -1 });
+
+    const pending = settlements.filter(
+      (settlement) => settlement.status === "INITIATED",
+    );
+
+    const confirmed = settlements.filter(
+      (settlement) => settlement.status === "COMPLETED",
+    );
+
+    return res.status(200).json({
+      pending,
+      confirmed,
+    });
+  } catch (err) {
+    console.error("GET SETTLEMENT REQUESTS ERROR:", err);
+
+    return res.status(500).json({
+      message: "Failed to fetch settlement requests",
     });
   }
 };

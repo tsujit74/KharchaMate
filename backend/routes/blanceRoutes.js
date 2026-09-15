@@ -1,9 +1,11 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import {
+  confirmSettlement,
   getGroupSettlement,
   getMySettlementHistory,
   getPendingSettlements,
+  getSettlementRequests,
   getUserNetBalance,
   markPaymentDone,
 } from "../controllers/settlementController.js";
@@ -23,6 +25,18 @@ router.post(
   authMiddleware,
   groupContext,
   markPaymentDone
+);
+
+router.patch(
+  "/settlements/:settlementId/confirm",
+  authMiddleware,
+  confirmSettlement
+);
+
+router.get(
+  "/settlement-requests",
+  authMiddleware,
+  getSettlementRequests
 );
 
 router.get("/my-history", authMiddleware, getMySettlementHistory);
