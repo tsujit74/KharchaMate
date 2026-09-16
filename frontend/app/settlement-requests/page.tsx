@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Clock3,
-  IndianRupee,
-  Wallet,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, IndianRupee } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -170,8 +164,6 @@ export default function SettlementRequestsPage() {
     }
   };
 
-
-
   if (authLoading || loading) {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
@@ -202,7 +194,7 @@ export default function SettlementRequestsPage() {
             </h1>
 
             <p className="text-sm text-slate-400 mt-1">
-              Review payments you've received and confirm pending payments.
+              Review payments you&apos;ve received and confirm pending payments.
             </p>
           </div>
 
@@ -328,7 +320,7 @@ export default function SettlementRequestsPage() {
                 </h2>
 
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Payments you've already confirmed
+                  Payments you&apos;ve already confirmed
                 </p>
               </div>
 
