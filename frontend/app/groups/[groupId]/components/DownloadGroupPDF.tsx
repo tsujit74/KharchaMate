@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import toast from "react-hot-toast";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 
 import { downloadGroupSettlementPDF } from "@/app/services/group.service";
 
@@ -14,40 +15,71 @@ export default function DownloadGroupPDF({
   groupId,
   groupName,
 }: DownloadGroupPDFProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const handleDownload = async () => {
+    if (isDownloading) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to download this group settlement report?",
+    );
+
+    if (!confirmed) return;
+
+    setIsDownloading(true);
+
     try {
       const blob = await downloadGroupSettlementPDF(groupId);
+
+      if (!blob || blob.size === 0) {
+        throw new Error("EMPTY_FILE");
+      }
+
+      const safeGroupName =
+        groupName
+          .trim()
+          .replace(/[^a-z0-9]+/gi, "-")
+          .replace(/^-|-$/g, "") || "Group";
 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = `KharchaMate-${groupName
-        .replace(/[^a-z0-9]+/gi, "-")
-        .replace(/^-|-$/g, "")}.pdf`;
+      link.download = `KharchaMate-${safeGroupName}.pdf`;
+      link.style.display = "none";
 
       document.body.appendChild(link);
       link.click();
-
       link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error: any) {
-      if (error?.message === "UNAUTHORIZED") {
-        toast.error("Please login again.");
-        return;
-      }
 
-      if (error?.message === "FORBIDDEN") {
-        toast.error("You don't have access to this group.");
-        return;
-      }
+      window.setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "";
 
-      if (error?.message === "GROUP_NOT_FOUND") {
-        toast.error("Group not found.");
-        return;
-      }
+      switch (message) {
+        case "UNAUTHORIZED":
+          toast.error("Please login again.");
+          break;
 
-      toast.error("Failed to download PDF.");
+        case "FORBIDDEN":
+          toast.error("You don't have access to this group.");
+          break;
+
+        case "GROUP_NOT_FOUND":
+          toast.error("Group not found.");
+          break;
+
+        case "EMPTY_FILE":
+          toast.error("The report could not be generated.");
+          break;
+
+        default:
+          toast.error("Failed to download PDF. Please try again.");
+      }
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -55,10 +87,26 @@ export default function DownloadGroupPDF({
     <button
       type="button"
       onClick={handleDownload}
-      className="inline-flex items-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+      disabled={isDownloading}
+      aria-busy={isDownloading}
+      aria-label={
+        isDownloading
+          ? "Generating settlement report"
+          : "Download settlement report"
+      }
+      className="inline-flex items-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      <Download size={16} />
-      Download Report
+      {isDownloading ? (
+        <>
+          <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          Generating...
+        </>
+      ) : (
+        <>
+          <Download size={16} aria-hidden="true" />
+          Download Report
+        </>
+      )}
     </button>
   );
 }
