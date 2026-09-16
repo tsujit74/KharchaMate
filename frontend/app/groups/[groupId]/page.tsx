@@ -17,6 +17,7 @@ import GroupExpenseSection from "./components/GroupExpenseSection";
 import { useGroupDetails } from "./hooks/useGroupDetails";
 import { useGroupExpenses } from "./hooks/useGroupExpenses";
 import { useState } from "react";
+import DownloadGroupPDF from "./components/DownloadGroupPDF";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -25,12 +26,12 @@ export default function GroupDetailsPage() {
   const { isAuthenticated, loading, user } = useAuth();
 
   const {
-  group,
-  settlement,
-  loading: detailsLoading,
-  refresh: refreshDetails,
-  error,
-} = useGroupDetails(groupId);
+    group,
+    settlement,
+    loading: detailsLoading,
+    refresh: refreshDetails,
+    error,
+  } = useGroupDetails(groupId);
 
   const {
     expenses,
@@ -100,6 +101,10 @@ export default function GroupDetailsPage() {
           yourShare={settlement.yourShare}
           members={settlement.balances.length}
         />
+
+        <div className="mt-4 flex justify-end mb-2">
+          <DownloadGroupPDF groupId={groupId} groupName={settlement.group} />
+        </div>
 
         <SettlementSection
           settlement={settlement}

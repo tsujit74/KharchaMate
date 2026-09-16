@@ -19,6 +19,7 @@ import {
   getRecentUsers,
   updateGroupBudget,
 } from "../controllers/groupController.js";
+import { downloadGroupSettlementPDF } from "../controllers/groupReportController.js";
 
 const router = express.Router();
 
@@ -75,6 +76,13 @@ router.patch(
   checkGroupActive,
   isAdmin,
   updateGroupBudget,
+);
+
+router.get(
+  "/:groupId/settlement-report/pdf",
+  authMiddleware,
+  groupContext,
+  downloadGroupSettlementPDF,
 );
 
 router.get("/:groupId", authMiddleware, groupContext, getGroupById);
