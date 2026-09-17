@@ -18,6 +18,7 @@ import {
   searchUsers,
   getRecentUsers,
   updateGroupBudget,
+  deleteGroup,
 } from "../controllers/groupController.js";
 import { downloadGroupSettlementPDF } from "../controllers/groupReportController.js";
 
@@ -76,6 +77,13 @@ router.patch(
   checkGroupActive,
   isAdmin,
   updateGroupBudget,
+);
+
+router.delete(
+  "/:groupId",
+  authMiddleware,
+  groupContext,
+  deleteGroup,
 );
 
 router.get(

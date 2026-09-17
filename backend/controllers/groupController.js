@@ -365,7 +365,6 @@ export const updateGroupName = async (req, res) => {
   }
 };
 
-
 export const updateGroupBudget = async (req, res) => {
   try {
     const { budget } = req.body;
@@ -394,8 +393,7 @@ export const updateGroupBudget = async (req, res) => {
     await group.save();
 
     // Calculate remaining budget
-    const remainingBudget =
-      numericBudget - (group.totalExpenses ?? 0);
+    const remainingBudget = numericBudget - (group.totalExpenses ?? 0);
 
     // Notify other members
     const otherMembers = group.members.filter(
@@ -434,7 +432,6 @@ export const updateGroupBudget = async (req, res) => {
     });
   }
 };
-
 
 //Search Users
 export const searchUsers = async (req, res) => {
@@ -518,5 +515,43 @@ export const getRecentUsers = async (req, res) => {
   } catch (error) {
     console.error("getRecentUsers error:", error);
     return res.status(500).json({ message: "Failed to fetch recent users" });
+  }
+};
+
+export const deleteGroup = async (req, res) => {
+  try {
+    const group = req.group;
+
+    const isOwner = group.createdBy.toString() === req.user.id.toString();
+
+    if (!isOwner) {
+      return res.status(403).json({
+        message: "Only the group owner can delete this group",
+      });
+    }
+
+    const session = await mongoose.startSession();
+
+    try {
+      await session.withTransaction(async () => {
+        await Expense.deleteMany({ group: group._id }, { session });
+
+        await Settlement.deleteMany({ group: group._id }, { session });
+
+        await Group.deleteOne({ _id: group._id }, { session });
+      });
+    } finally {
+      await session.endSession();
+    }
+
+    return res.status(200).json({
+      message: "Group deleted successfully",
+    });
+  } catch (error) {
+    console.error("deleteGroup error:", error);
+
+    return res.status(500).json({
+      message: "Failed to delete group",
+    });
   }
 };
