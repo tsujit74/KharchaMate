@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Expense from "../models/Expense.js";
 import { notifyUser } from "../service/notify.js";
 import { notifyAdmin } from "../service/adminNotify.js";
+import Settlement from "../models/Settlement.js";
 
 export const createGroup = async (req, res) => {
   try {
@@ -530,19 +531,17 @@ export const deleteGroup = async (req, res) => {
       });
     }
 
-    const session = await mongoose.startSession();
+    await Expense.deleteMany({
+      group: group._id,
+    });
 
-    try {
-      await session.withTransaction(async () => {
-        await Expense.deleteMany({ group: group._id }, { session });
+    await Settlement.deleteMany({
+      group: group._id,
+    });
 
-        await Settlement.deleteMany({ group: group._id }, { session });
-
-        await Group.deleteOne({ _id: group._id }, { session });
-      });
-    } finally {
-      await session.endSession();
-    }
+    await Group.deleteOne({
+      _id: group._id,
+    });
 
     return res.status(200).json({
       message: "Group deleted successfully",
