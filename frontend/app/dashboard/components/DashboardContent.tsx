@@ -27,6 +27,7 @@ type Props = {
   setEditGroupName: (name: string) => void;
 
   onSetBudget: (groupId: string) => void;
+  onDelete: (groupId: string) => void;
 };
 
 export default function DashboardContent({
@@ -40,6 +41,7 @@ export default function DashboardContent({
   setEditGroupId,
   setEditGroupName,
   onSetBudget,
+  onDelete,
 }: Props) {
   const activeGroups = groups.filter(
     (g) => g.isActive && !g.isBlocked
@@ -76,6 +78,7 @@ export default function DashboardContent({
         userId={userId}
         onEdit={handleEdit}
         onSetBudget={onSetBudget}
+        onDelete={onDelete}
         activeGroups={activeGroups}
         archivedGroups={archivedGroups}
         blockedGroups={blockedGroups}

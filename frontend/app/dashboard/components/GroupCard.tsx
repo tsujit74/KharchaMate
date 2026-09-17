@@ -21,6 +21,7 @@ type Props = {
   onEdit: () => void;
   onSetBudget: () => void;
   onAddMember: () => void;
+  onDelete:()=>void;
 };
 
 export default function GroupCard({
@@ -33,6 +34,7 @@ export default function GroupCard({
   onEdit,
   onSetBudget,
   onAddMember,
+  onDelete,
 }: Props) {
   const {
     budget,
@@ -215,6 +217,36 @@ export default function GroupCard({
 
                       <span>{hasBudget ? "Update Budget" : "Set Budget"}</span>
                     </button>
+
+ {isCreator && (
+          <>
+            <div className="my-1.5 border-t border-slate-100" />
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="
+                flex w-full items-center gap-2.5
+                rounded-lg px-3 py-2.5
+                text-left text-xs font-medium
+                text-red-600
+                transition-colors
+                hover:bg-red-50 hover:text-red-700
+                focus:outline-none focus:ring-2 focus:ring-red-100
+              "
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-500">
+                <Lock className="h-3.5 w-3.5" />
+              </span>
+
+              <span>Delete Group</span>
+            </button>
+          </>
+        )}
+
                   </>
                 ) : (
                   <div className="px-3 py-3">

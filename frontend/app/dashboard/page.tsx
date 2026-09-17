@@ -67,6 +67,7 @@ export default function DashboardPage() {
           onSetBudget={(groupId) => {
             setBudgetGroupId(groupId);
           }}
+          onDelete={dashboard.handleDeleteGroup}
         />
       </div>
 

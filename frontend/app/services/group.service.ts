@@ -271,3 +271,29 @@ export const downloadGroupSettlementPDF = async (groupId: string) => {
     throw new Error("FAILED_DOWNLOAD_PDF");
   }
 };
+
+export const deleteGroup = async (groupId: string) => {
+  if (!groupId) throw new Error("INVALID_GROUP");
+
+  try {
+    const res = await api.delete(`/groups/${groupId}`);
+
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (err.response.status === 403) {
+      throw new Error("FORBIDDEN");
+    }
+
+    if (err.response.status === 404) {
+      throw new Error("GROUP_NOT_FOUND");
+    }
+
+    throw new Error("FAILED_DELETE_GROUP");
+  }
+};

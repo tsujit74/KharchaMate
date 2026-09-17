@@ -12,6 +12,7 @@ type Props = {
   archivedGroups: number;
   blockedGroups: number;
   onSetBudget: (groupId: string) => void;
+  onDelete: (groupId: string) => void;
 };
 
 export default function GroupsSection({
@@ -22,6 +23,7 @@ export default function GroupsSection({
   archivedGroups,
   blockedGroups,
   onSetBudget,
+  onDelete,
 }: Props) {
   const router = useRouter();
 
@@ -67,6 +69,7 @@ export default function GroupsSection({
               onEdit={() => onEdit(group._id, group.name)}
               onSetBudget={() => onSetBudget(group._id)}
               onAddMember={() => router.push(`/groups/${group._id}/add-member`)}
+              onDelete={() => onDelete(group._id)}
             />
           );
         })}
