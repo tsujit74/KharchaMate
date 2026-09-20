@@ -544,6 +544,21 @@ export const deleteGroup = async (req, res) => {
 
     await group.save();
 
+    await Promise.all(
+      otherMembers.map((memberId) =>
+        notifyUser({
+          userId: memberId,
+          actor: req.user.id,
+          groupId: group._id,
+          title: "Group Deleted",
+          message: `deleted the group "${group.name}"`,
+          type: "GROUP",
+          link: "/dashboard",
+          relatedId: group._id,
+        }).catch(() => {}),
+      ),
+    );
+
     return res.status(200).json({
       message: "Group deleted successfully",
     });
