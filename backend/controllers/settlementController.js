@@ -35,21 +35,22 @@ export const getGroupSettlement = async (req, res) => {
 
     let yourShare = 0;
 
-    expenses.forEach((expense) => {
+    for (const expense of expenses) {
       if (
         Array.isArray(expense.splitBetween) &&
         expense.splitBetween.length > 0
       ) {
         const mySplit = expense.splitBetween.find(
-          (s) => s.user.toString() === currentUserId,
+          (s) => s.user.toString() === currentUserId.toString(),
         );
+
         if (mySplit) {
-          yourShare += mySplit.amount;
+          yourShare += Number(mySplit.amount || 0);
         }
       } else {
-        yourShare += expense.amount / members.length;
+        yourShare += Number(expense.amount || 0) / members.length;
       }
-    });
+    }
 
     //  init balances
     const balanceMap = {};
