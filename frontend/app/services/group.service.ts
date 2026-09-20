@@ -273,24 +273,37 @@ export const downloadGroupSettlementPDF = async (groupId: string) => {
 };
 
 export const deleteGroup = async (groupId: string) => {
-  if (!groupId) throw new Error("INVALID_GROUP");
+  if (!groupId?.trim()) {
+    throw new Error("INVALID_GROUP");
+  }
 
   try {
     const res = await api.delete(`/groups/${groupId}`);
 
     return res.data;
   } catch (err: any) {
-    if (!err.response) throw new Error("NETWORK_ERROR");
+    if (!err.response) {
+      throw new Error("NETWORK_ERROR");
+    }
 
-    if (err.response.status === 401) {
+    const status = err.response.status;
+
+    if (status === 400) {
+      throw new Error(
+        err.response.data?.message ||
+          "This group cannot be deleted because there are outstanding settlements.",
+      );
+    }
+
+    if (status === 401) {
       throw new Error("UNAUTHORIZED");
     }
 
-    if (err.response.status === 403) {
+    if (status === 403) {
       throw new Error("FORBIDDEN");
     }
 
-    if (err.response.status === 404) {
+    if (status === 404) {
       throw new Error("GROUP_NOT_FOUND");
     }
 

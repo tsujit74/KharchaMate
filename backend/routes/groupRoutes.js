@@ -21,6 +21,7 @@ import {
   deleteGroup,
 } from "../controllers/groupController.js";
 import { downloadGroupSettlementPDF } from "../controllers/groupReportController.js";
+import { checkGroupSettled } from "../middleware/checkGroupSettled.js";
 
 const router = express.Router();
 
@@ -83,6 +84,7 @@ router.delete(
   "/:groupId",
   authMiddleware,
   groupContext,
+  checkGroupSettled,
   deleteGroup,
 );
 
