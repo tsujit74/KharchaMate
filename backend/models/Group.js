@@ -43,6 +43,17 @@ const groupSchema = new mongoose.Schema(
       default: false,
     },
 
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
     paymentLocks: {
       type: Map,
       of: Date,

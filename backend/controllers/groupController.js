@@ -142,6 +142,7 @@ export const getMyGroups = async (req, res) => {
       {
         $match: {
           members: userId,
+          isDeleted: { $ne: true },
         },
       },
       // member fields
@@ -484,6 +485,7 @@ export const getRecentUsers = async (req, res) => {
     const groups = await Group.find({
       members: currentUserId,
       isActive: true,
+      isDeleted: { $ne: true },
     })
       .select("members")
       .lean();
@@ -531,17 +533,16 @@ export const deleteGroup = async (req, res) => {
       });
     }
 
-    await Expense.deleteMany({
-      group: group._id,
-    });
+    if (group.isDeleted) {
+      return res.status(400).json({
+        message: "Group is already deleted",
+      });
+    }
 
-    await Settlement.deleteMany({
-      group: group._id,
-    });
+    group.isDeleted = true;
+    group.deletedAt = new Date();
 
-    await Group.deleteOne({
-      _id: group._id,
-    });
+    await group.save();
 
     return res.status(200).json({
       message: "Group deleted successfully",

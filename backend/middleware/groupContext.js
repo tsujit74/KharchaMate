@@ -24,8 +24,12 @@ export const groupContext = async (req, res, next) => {
       return res.status(404).json({ message: "Group not found" });
     }
 
+    if (group.isDeleted) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
     const isMember = group.members.some(
-      (id) => id.toString() === userId.toString()
+      (id) => id.toString() === userId.toString(),
     );
 
     if (!isMember) {
