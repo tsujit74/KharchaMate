@@ -539,6 +539,10 @@ export const deleteGroup = async (req, res) => {
       });
     }
 
+    const otherMembers = group.members.filter(
+      (memberId) => String(memberId) !== String(req.user.id),
+    );
+
     group.isDeleted = true;
     group.deletedAt = new Date();
 
@@ -550,12 +554,12 @@ export const deleteGroup = async (req, res) => {
           userId: memberId,
           actor: req.user.id,
           groupId: group._id,
-          title: "Group Deleted",
+          title: "Group deleted",
           message: `deleted the group "${group.name}"`,
           type: "GROUP",
           link: "/dashboard",
           relatedId: group._id,
-        }).catch(() => {}),
+        }),
       ),
     );
 
@@ -563,7 +567,7 @@ export const deleteGroup = async (req, res) => {
       message: "Group deleted successfully",
     });
   } catch (error) {
-    console.error("deleteGroup error:", error);
+    console.error("DELETE GROUP ERROR:", error);
 
     return res.status(500).json({
       message: "Failed to delete group",
