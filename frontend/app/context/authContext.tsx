@@ -6,7 +6,8 @@ import { getMe, loginUser, logoutUser } from "@/app/services/auth.service";
 import { getUnreadNotificationCount } from "@/app/services/notification.service";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { NotificationCard,Notification } from "../components/NotificationCard";
+import { NotificationCard, Notification } from "../components/NotificationCard";
+import { getSettlementRequests } from "@/app/services/settlement.service";
 
 type User = {
   id: string;
@@ -20,6 +21,10 @@ type AuthContextType = {
   user: User | null;
   unreadNotifications: number;
   setUnreadNotifications: React.Dispatch<React.SetStateAction<number>>;
+
+  pendingPaymentRequests: number;
+  setPendingPaymentRequests: React.Dispatch<React.SetStateAction<number>>;
+
   isAuthenticated: boolean;
   loading: boolean;
   login: (data: { email: string; password: string }) => Promise<void>;
@@ -31,6 +36,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [pendingPaymentRequests, setPendingPaymentRequests] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -58,6 +64,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .catch(() => {
             setUnreadNotifications(0);
           });
+
+        getSettlementRequests()
+          .then((data) => {
+            setPendingPaymentRequests(data.pending.length);
+          })
+          .catch(() => {
+            setPendingPaymentRequests(0);
+          });
       } catch {
         setUser(null);
         setUnreadNotifications(0);
@@ -69,50 +83,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-  if (!user) return;
+    if (!user) return;
 
-  socket.connect();
+    socket.connect();
 
-  socket.on("connect", () => {
-    console.log("Socket connected:", socket.id);
-  });
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
+    });
 
-  socket.on("connect_error", (error) => {
-    console.error("Socket error:", error.message);
-  });
+    socket.on("connect_error", (error) => {
+      console.error("Socket error:", error.message);
+    });
 
-  const handleNewNotification = (notification: Notification) => {
-  setUnreadNotifications((count) => count + 1);
+    const handleNewNotification = (notification: Notification) => {
+      setUnreadNotifications((count) => count + 1);
 
-  toast.custom(
-    (t) => (
-      <div
-        className={`transition-all ${
-          t.visible ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <NotificationCard
-          notification={notification}
-          onClick={() => toast.dismiss(t.id)}
-        />
-      </div>
-    ),
-    {
-      duration: 5000,
-      position: "top-right",
-    }
-  );
-};
+      toast.custom(
+        (t) => (
+          <div
+            className={`transition-all ${
+              t.visible ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <NotificationCard
+              notification={notification}
+              onClick={() => toast.dismiss(t.id)}
+            />
+          </div>
+        ),
+        {
+          duration: 5000,
+          position: "top-right",
+        },
+      );
+    };
 
-  socket.on("notification:new", handleNewNotification);
+    socket.on("notification:new", handleNewNotification);
 
-  return () => {
-    socket.off("connect");
-    socket.off("connect_error");
-    socket.off("notification:new", handleNewNotification);
-    socket.disconnect();
-  };
-}, [user]);
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("notification:new", handleNewNotification);
+      socket.disconnect();
+    };
+  }, [user]);
 
   const login = async (data: { email: string; password: string }) => {
     try {
@@ -150,6 +164,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setUser(null);
       setUnreadNotifications(0);
+      setPendingPaymentRequests(0);
       router.replace("/");
     }
   };
@@ -160,6 +175,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         unreadNotifications,
         setUnreadNotifications,
+        pendingPaymentRequests,
+        setPendingPaymentRequests,
         isAuthenticated: !!user,
         loading,
         login,

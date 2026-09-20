@@ -72,7 +72,7 @@ function avatarTone(name?: string) {
 export default function SettlementRequestsPage() {
   const router = useRouter();
 
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading,setPendingPaymentRequests } = useAuth();
 
   const [pendingRequests, setPendingRequests] = useState<SettlementRequest[]>(
     [],
@@ -143,6 +143,8 @@ export default function SettlementRequestsPage() {
       setPendingRequests((currentRequests) =>
         currentRequests.filter((request) => request._id !== settlementId),
       );
+
+      setPendingPaymentRequests((count) => Math.max(0, count - 1));
 
       setConfirmedPayments((current) => [
         {

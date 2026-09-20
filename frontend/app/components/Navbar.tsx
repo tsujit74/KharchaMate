@@ -18,8 +18,14 @@ import {
 } from "lucide-react";
 
 export default function Navbar() {
-  const { user, unreadNotifications, isAuthenticated, logout, loading } =
-    useAuth();
+  const {
+    user,
+    unreadNotifications,
+    pendingPaymentRequests,
+    isAuthenticated,
+    logout,
+    loading,
+  } = useAuth();
 
   const isAdmin = user?.role === "admin";
   const [openMenu, setOpenMenu] = useState(false);
@@ -77,7 +83,14 @@ export default function Navbar() {
             </NavLink>
 
             <NavLink href="/settlement-requests" icon={<Receipt size={16} />}>
-              Payment Requests
+              <span className="flex items-center gap-1.5">
+                Payment Requests
+                {pendingPaymentRequests > 0 && (
+                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                    {pendingPaymentRequests > 4 ? "4+" : pendingPaymentRequests}
+                  </span>
+                )}
+              </span>
             </NavLink>
 
             <NavLink
@@ -205,7 +218,17 @@ export default function Navbar() {
                     icon={<Receipt size={16} />}
                     onClick={() => setOpenMenu(false)}
                   >
-                    Payment Requests
+                    <span className="flex items-center justify-between w-full">
+                      <span>Payment Requests</span>
+
+                      {pendingPaymentRequests > 0 && (
+                        <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                          {pendingPaymentRequests > 4
+                            ? "4+"
+                            : pendingPaymentRequests}
+                        </span>
+                      )}
+                    </span>
                   </DropdownItem>
 
                   <DropdownItem
