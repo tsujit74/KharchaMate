@@ -18,12 +18,28 @@ import { useGroupDetails } from "./hooks/useGroupDetails";
 import { useGroupExpenses } from "./hooks/useGroupExpenses";
 import { useState } from "react";
 import DownloadGroupPDF from "./components/DownloadGroupPDF";
+import GroupExpenseFilter from "./components/GroupExpenseFilter";
+
+type Period =
+  | "THIS_WEEK"
+  | "THIS_MONTH"
+  | "LAST_MONTH"
+  | "LAST_3_MONTHS"
+  | "THIS_YEAR"
+  | "CUSTOM"
+  | "ALL_TIME";
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
   const router = useRouter();
 
   const { isAuthenticated, loading, user } = useAuth();
+
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [period, setPeriod] = useState<Period>("ALL_TIME");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
 
   const {
     group,
@@ -41,10 +57,7 @@ export default function GroupDetailsPage() {
     loadingMore,
     loadMore,
     refresh: refreshExpenses,
-  } = useGroupExpenses(groupId);
-
-  const [infoOpen, setInfoOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  } = useGroupExpenses(groupId, 10, period, customStart, customEnd);
 
   const isActive = group?.isActive !== false;
 
@@ -110,6 +123,15 @@ export default function GroupDetailsPage() {
           settlement={settlement}
           userId={user?.id}
           groupId={groupId}
+        />
+
+        <GroupExpenseFilter
+          period={period}
+          onPeriodChange={setPeriod}
+          customStart={customStart}
+          customEnd={customEnd}
+          onCustomStartChange={setCustomStart}
+          onCustomEndChange={setCustomEnd}
         />
 
         <GroupExpenseSection

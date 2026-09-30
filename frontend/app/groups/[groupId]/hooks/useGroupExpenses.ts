@@ -3,12 +3,27 @@
 import { useCallback, useEffect, useState } from "react";
 import { getGroupExpenses } from "@/app/services/group.service";
 
+type Period =
+  | "THIS_WEEK"
+  | "THIS_MONTH"
+  | "LAST_MONTH"
+  | "LAST_3_MONTHS"
+  | "THIS_YEAR"
+  | "CUSTOM"
+  | "ALL_TIME";
+
 type Props = {
   groupId: string;
   limit?: number;
 };
 
-export function useGroupExpenses(groupId: string, limit = 10) {
+export function useGroupExpenses(
+  groupId: string,
+  limit = 10,
+  period: Period = "ALL_TIME",
+  customStart = "",
+  customEnd = "",
+) {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -22,7 +37,14 @@ export function useGroupExpenses(groupId: string, limit = 10) {
       try {
         if (pageNum === 1) setLoading(true);
 
-        const data = await getGroupExpenses(groupId, pageNum, limit);
+        const data = await getGroupExpenses(
+          groupId,
+          pageNum,
+          limit,
+          period,
+          customStart,
+          customEnd,
+        );
 
         if (pageNum === 1) {
           setExpenses(data.expenses || []);
@@ -40,7 +62,7 @@ export function useGroupExpenses(groupId: string, limit = 10) {
         setLoadingMore(false);
       }
     },
-    [groupId, limit]
+    [groupId, limit, period, customStart, customEnd],
   );
 
   useEffect(() => {

@@ -16,7 +16,11 @@ export const getMyGroups = async () => {
   }
 };
 
-export const createGroup = async (name: string, budget: number | null, type: "NORMAL" | "ONGOING") => {
+export const createGroup = async (
+  name: string,
+  budget: number | null,
+  type: "NORMAL" | "ONGOING",
+) => {
   if (!name?.trim()) throw new Error("INVALID_NAME");
 
   try {
@@ -135,6 +139,9 @@ export const getGroupExpenses = async (
   groupId: string,
   page: number = 1,
   limit: number = 10,
+  period: string = "ALL_TIME",
+  startDate: string = "",
+  endDate: string = "",
 ) => {
   if (!groupId) throw new Error("INVALID_GROUP");
 
@@ -142,22 +149,39 @@ export const getGroupExpenses = async (
   if (limit < 1) limit = 10;
 
   try {
-    const res = await api.get(
-      `/expenses/${groupId}?page=${page}&limit=${limit}`,
-    );
+    const res = await api.get(`/expenses/${groupId}`, {
+      params: {
+        page,
+        limit,
+        period,
+        ...(period === "CUSTOM" && {
+          startDate,
+          endDate,
+        }),
+      },
+    });
 
     return {
       expenses: Array.isArray(res.data.expenses) ? res.data.expenses : [],
       page: res.data.page || 1,
       totalPages: res.data.totalPages || 1,
       total: res.data.total || 0,
+      period: res.data.period || "ALL_TIME",
     };
   } catch (err: any) {
     if (!err.response) throw new Error("NETWORK_ERROR");
 
-    if (err.response.status === 401) throw new Error("UNAUTHORIZED");
+    if (err.response.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
 
-    if (err.response.status === 403) throw new Error("FORBIDDEN");
+    if (err.response.status === 403) {
+      throw new Error("FORBIDDEN");
+    }
+
+    if (err.response.status === 400) {
+      throw new Error(err.response.data?.message || "INVALID_PERIOD");
+    }
 
     throw new Error("FAILED_EXPENSES");
   }

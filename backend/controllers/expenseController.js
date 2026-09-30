@@ -2,6 +2,7 @@ import Expense from "../models/Expense.js";
 import Group from "../models/Group.js";
 import mongoose from "mongoose";
 import { notifyUser } from "../service/notify.js";
+import { getDateRanges } from "../service/dateRange.js";
 
 const round = (n) => Math.round(n * 100) / 100;
 const FIVE_HOURS = 5 * 60 * 60 * 1000;
@@ -96,11 +97,45 @@ export const addExpense = async (req, res) => {
 export const getGroupExpenses = async (req, res) => {
   try {
     const { groupId } = req.params;
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const expenses = await Expense.find({ group: groupId })
+    const period = req.query.period || "ALL_TIME";
+
+    const filter = {
+      group: groupId,
+    };
+
+    try {
+      const { startDate, endDate } = req.query;
+
+      const range = getDateRanges(period, startDate, endDate);
+
+      if (range) {
+        filter.createdAt = {
+          $gte: range.start,
+          $lt: range.end,
+        };
+      }
+    } catch (error) {
+      if (error.message === "INVALID_PERIOD") {
+        return res.status(400).json({
+          message: "Invalid period",
+        });
+      }
+
+      if (error.message === "INVALID_CUSTOM_RANGE") {
+        return res.status(400).json({
+          message: "Invalid custom date range",
+        });
+      }
+
+      throw error;
+    }
+
+    const expenses = await Expense.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -108,13 +143,14 @@ export const getGroupExpenses = async (req, res) => {
       .populate("splitBetween.user", "name email")
       .lean();
 
-    const total = await Expense.countDocuments({ group: groupId });
+    const total = await Expense.countDocuments(filter);
 
     res.json({
       expenses,
       total,
       page,
       totalPages: Math.ceil(total / limit),
+      period,
     });
   } catch (error) {
     console.error("FETCH GROUP EXPENSES ERROR:", error);
