@@ -7,6 +7,13 @@ const groupSchema = new mongoose.Schema(
       required: true,
     },
 
+    type: {
+      type: String,
+      enum: ["NORMAL", "ONGOING"],
+      default: "NORMAL",
+      required: true,
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

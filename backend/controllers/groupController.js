@@ -8,11 +8,18 @@ import Settlement from "../models/Settlement.js";
 
 export const createGroup = async (req, res) => {
   try {
-    const { name, budget } = req.body;
+    const { name, budget, type } = req.body;
 
     if (!name?.trim()) {
       return res.status(400).json({ message: "Group name is required" });
     }
+
+    if (type !== undefined && !["NORMAL", "ONGOING"].includes(type)) {
+      return res.status(400).json({
+        message: "Invalid group type",
+      });
+    }
+
     if (
       budget !== undefined &&
       budget !== null &&
@@ -25,6 +32,7 @@ export const createGroup = async (req, res) => {
 
     const group = await Group.create({
       name,
+      type: type ?? "NORMAL",
       createdBy: req.user.id,
       admins: [req.user.id],
       budget: budget ?? null,

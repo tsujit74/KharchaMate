@@ -14,6 +14,7 @@ const CreateGroupPage = () => {
 
   const [name, setName] = useState("");
   const [budget, setBudget] = useState<number | null>(null);
+  const [type, setType] = useState<"NORMAL" | "ONGOING">("NORMAL");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,18 +36,15 @@ const CreateGroupPage = () => {
       return;
     }
 
-   if (
-  budget !== null &&
-  (typeof budget !== "number" || budget < 0)
-) {
-  setError("Budget must be a valid non-negative number");
-  toast.error("Budget must be a valid non-negative number");
-  return;
-}
+    if (budget !== null && (typeof budget !== "number" || budget < 0)) {
+      setError("Budget must be a valid non-negative number");
+      toast.error("Budget must be a valid non-negative number");
+      return;
+    }
     try {
       setSubmitting(true);
 
-      await createGroup(name.trim(), budget);
+      await createGroup(name.trim(), budget, type);
 
       toast.success("Group created successfully");
 
@@ -114,6 +112,73 @@ const CreateGroupPage = () => {
                   className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-black transition"
                   placeholder="Goa Trip, Flat Expenses, Office Lunch..."
                 />
+              </div>
+            </div>
+
+            {/* Group Type */}
+            <div className="space-y-1.5">
+              <label className="ml-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Group Type
+              </label>
+
+              <div className="grid grid-cols-2 gap-2">
+                {/* Normal */}
+                <button
+                  type="button"
+                  onClick={() => setType("NORMAL")}
+                  className={` border px-3 py-1 text-left transition-all duration-200 ${
+                    type === "NORMAL"
+                      ? "border-black bg-black text-white shadow-sm"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold">Normal</span>
+
+                    {type === "NORMAL" && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-bold text-black">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+
+                  <p
+                    className={`mt-0.5 text-[11px] leading-4 ${
+                      type === "NORMAL" ? "text-gray-300" : "text-gray-400"
+                    }`}
+                  >
+                    Short-term expenses
+                  </p>
+                </button>
+
+                {/* Ongoing */}
+                <button
+                  type="button"
+                  onClick={() => setType("ONGOING")}
+                  className={` border px-3 py-1 text-left transition-all duration-200 ${
+                    type === "ONGOING"
+                      ? "border-black bg-black text-white shadow-sm"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold">Ongoing</span>
+
+                    {type === "ONGOING" && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-bold text-black">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+
+                  <p
+                    className={`mt-0.5 text-[11px] leading-4 ${
+                      type === "ONGOING" ? "text-gray-300" : "text-gray-400"
+                    }`}
+                  >
+                    Long-term shared expenses
+                  </p>
+                </button>
               </div>
             </div>
 
