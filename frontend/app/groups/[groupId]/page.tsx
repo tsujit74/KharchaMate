@@ -1,24 +1,17 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 
 import { useAuth } from "@/app/context/authContext";
 
 import AppSkeleton from "@/app/components/ui/AppSkeleton";
 import GroupInfoDrawer from "./components/GroupInfoDrawer";
-
-import GroupHeader from "./components/GroupHeader";
-import SettlementSection from "./components/GroupSettlementSection";
-import GroupMembersSidebar from "./components/GroupMembersSidebar";
 import AddExpensesModal from "./components/expenses/AddExpensesModal";
-import GroupKPIs from "./components/GroupKPI";
-import GroupExpenseSection from "./components/GroupExpenseSection";
 import { useGroupDetails } from "./hooks/useGroupDetails";
 import { useGroupExpenses } from "./hooks/useGroupExpenses";
 import { useState } from "react";
-import DownloadGroupPDF from "./components/DownloadGroupPDF";
-import GroupExpenseFilter from "./components/GroupExpenseFilter";
+import GroupWorkspace from "./components/workspace/GroupWorkspace";
 
 type Period =
   | "THIS_WEEK"
@@ -31,7 +24,6 @@ type Period =
 
 export default function GroupDetailsPage() {
   const { groupId } = useParams<{ groupId: string }>();
-  const router = useRouter();
 
   const { isAuthenticated, loading, user } = useAuth();
 
@@ -88,81 +80,67 @@ export default function GroupDetailsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#FCFCFD] flex">
-      {/* SIDEBAR */}
-      <aside className="w-72 hidden md:block border-r bg-white p-4 sticky top-0 h-screen">
-        <GroupMembersSidebar
-          balances={settlement.balances}
-          currentUserId={user?.id}
-          groupId={groupId}
-          isActive={group?.isActive}
-          hasExpenses={expenses.length > 0}
-        />
-      </aside>
+    <GroupWorkspace
+      membersData={{
+        balances: settlement.balances,
+        currentUserId: user?.id,
+        groupId,
+        isActive,
+        hasExpenses: expenses.length > 0,
+      }}
+      overviewData={{
+        settlement,
+        userId: user?.id,
+        groupId,
+        isActive,
+        onInfoClick: () => setInfoOpen(true),
+      }}
+      expensesData={{
+        expenses,
+        totalExpenses,
+        isActive,
+        page,
+        totalPages,
+        loadingMore,
+        userId: user?.id,
+        onAdd: () => setIsModalOpen(true),
+        onLoadMore: loadMore,
+        onRefresh: refreshAll,
+        period,
+        onPeriodChange: setPeriod,
+        customStart,
+        customEnd,
+        onCustomStartChange: setCustomStart,
+        onCustomEndChange: setCustomEnd,
+      }}
+      settlementData={{
+        settlement,
+        userId: user?.id,
+        groupId,
+      }}
+      overlays={
+        <>
+          <GroupInfoDrawer
+            open={infoOpen}
+            onClose={() => setInfoOpen(false)}
+            group={group}
+            currentUserId={user?.id}
+            onRefresh={refreshAll}
+          />
 
-      {/* MAIN */}
-      <section className="flex-1 px-4 md:px-10 py-6">
-        <GroupHeader
-          title={settlement.group}
-          subtitle="Track expenses & settlements"
-          isActive={isActive}
-          onInfoClick={() => setInfoOpen(true)}
-        />
-
-        <GroupKPIs
-          totalSpent={settlement.totalSpent}
-          yourShare={settlement.yourShare}
-          members={settlement.balances.length}
-        />
-
-        <div className="mt-4 flex justify-end mb-2">
-          <DownloadGroupPDF groupId={groupId} groupName={settlement.group} />
-        </div>
-
-        <SettlementSection
-          settlement={settlement}
-          userId={user?.id}
-          groupId={groupId}
-        />
-
-        <GroupExpenseFilter
-          period={period}
-          onPeriodChange={setPeriod}
-          customStart={customStart}
-          customEnd={customEnd}
-          onCustomStartChange={setCustomStart}
-          onCustomEndChange={setCustomEnd}
-        />
-
-        <GroupExpenseSection
-          expenses={expenses}
-          totalExpenses={totalExpenses}
-          isActive={isActive}
-          page={page}
-          totalPages={totalPages}
-          loadingMore={loadingMore}
-          userId={user?.id}
-          onAdd={() => setIsModalOpen(true)}
-          onLoadMore={loadMore}
-          onRefresh={refreshAll}
-        />
-      </section>
-
-      {/* DRAWERS */}
-      <GroupInfoDrawer
-        open={infoOpen}
-        onClose={() => setInfoOpen(false)}
-        group={group}
-        currentUserId={user?.id}
-        onRefresh={refreshAll}
-      />
-
-      <AddExpensesModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        groupId={groupId}
-        onSuccess={refreshAll}
-      />
-    </main>
+          <AddExpensesModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            groupId={groupId}
+            onSuccess={refreshAll}
+          />
+        </>
+      }
+      moreData={{
+        groupId,
+        groupName: settlement.group,
+        onInfoClick: () => setInfoOpen(true),
+      }}
+    />
   );
 }
