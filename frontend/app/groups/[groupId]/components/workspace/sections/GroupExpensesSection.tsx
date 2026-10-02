@@ -51,38 +51,42 @@ export default function GroupExpensesSection({
   onCustomEndChange,
 }: Props) {
   return (
-    <section className="px-4 py-6 md:px-8 lg:px-10">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Expenses</h1>
+    <section className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl">
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+          Expenses
+        </h1>
 
         <p className="mt-1 text-sm text-slate-500">
           View and manage group expenses.
         </p>
-      </div>
 
-      <div className="mb-6">
-        <GroupExpenseFilter
-          period={period}
-          onPeriodChange={onPeriodChange}
-          customStart={customStart}
-          customEnd={customEnd}
-          onCustomStartChange={onCustomStartChange}
-          onCustomEndChange={onCustomEndChange}
-        />
-      </div>
+        <div className="mt-6">
+          <GroupExpenseFilter
+            period={period}
+            onPeriodChange={onPeriodChange}
+            customStart={customStart}
+            customEnd={customEnd}
+            onCustomStartChange={onCustomStartChange}
+            onCustomEndChange={onCustomEndChange}
+          />
+        </div>
 
-      <GroupExpenseSection
-        expenses={expenses}
-        totalExpenses={totalExpenses}
-        isActive={isActive}
-        page={page}
-        totalPages={totalPages}
-        loadingMore={loadingMore}
-        userId={userId}
-        onAdd={onAdd}
-        onLoadMore={onLoadMore}
-        onRefresh={onRefresh}
-      />
+        <div className="mt-6">
+          <GroupExpenseSection
+            expenses={expenses}
+            totalExpenses={totalExpenses}
+            isActive={isActive}
+            page={page}
+            totalPages={totalPages}
+            loadingMore={loadingMore}
+            userId={userId}
+            onAdd={onAdd}
+            onLoadMore={onLoadMore}
+            onRefresh={onRefresh}
+          />
+        </div>
+      </div>
     </section>
   );
 }

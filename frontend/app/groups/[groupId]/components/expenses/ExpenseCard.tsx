@@ -1,11 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Trash2, Edit } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Edit,
+  Receipt,
+} from "lucide-react";
 import { formatDateTime } from "@/app/utils/formatDateTime";
 import { deleteExpense } from "@/app/services/expense.service";
 import EditExpenseModal from "../EditExpenseModal";
 import toast from "react-hot-toast";
+
+function formatAmount(amount: number | string) {
+  return `₹${Number(amount).toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+  })}`;
+}
 
 export default function ExpenseCard({
   expense,
@@ -26,29 +38,28 @@ export default function ExpenseCard({
   const isOwner = expense.paidBy?._id === currentUserId;
 
   const handleDelete = async (e: React.MouseEvent) => {
-  e.stopPropagation();
+    e.stopPropagation();
 
-  const confirmed = window.confirm(
-    "Are you sure you want to delete this expense?"
-  );
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this expense?"
+    );
 
-  if (!confirmed) return;
+    if (!confirmed) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    await deleteExpense(expense._id);
+      await deleteExpense(expense._id);
 
-    toast.success("Expense deleted successfully");
+      toast.success("Expense deleted successfully");
 
-    onDeleted?.();
-  } catch (err: any) {
-    toast.error(err?.message || "Failed to delete expense");
-  } finally {
-    setLoading(false);
-  }
-};
-
+      onDeleted?.();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete expense");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -57,72 +68,99 @@ export default function ExpenseCard({
 
   return (
     <>
-      <div className="bg-white border rounded-lg mb-3">
+      <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
         {/* HEADER */}
         <div
-          className="p-4 flex justify-between items-center cursor-pointer"
+          className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-slate-50 sm:px-5 sm:py-4"
           onClick={() => setOpen(!open)}
         >
-          <div>
-            <p className="font-medium">{expense.description}</p>
-            <p className="text-xs text-gray-500">
-              Paid by {isOwner ? "You" : expense.paidBy?.name || "Unknown"}
-            </p>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+              <Receipt className="h-4 w-4" />
+            </div>
+
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-slate-900">
+                {expense.description}
+              </p>
+
+              <p className="mt-0.5 truncate text-xs text-slate-500">
+                Paid by {isOwner ? "You" : expense.paidBy?.name || "Unknown"}
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            {/* AMOUNT */}
+            <div className="text-right">
+              <p className="text-sm font-semibold tabular-nums text-slate-900 sm:text-base">
+                {formatAmount(expense.amount)}
+              </p>
+
+              <p className="mt-0.5 text-xs text-slate-400">{dateLabel}</p>
+            </div>
+
             {/* ACTIONS */}
             {isOwner && (
-              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="flex items-center"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
                   onClick={handleEdit}
                   title="Edit expense"
-                  className="p-1 text-gray-500 hover:text-black"
+                  aria-label="Edit expense"
+                  className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="h-4 w-4" />
                 </button>
 
                 <button
                   onClick={handleDelete}
                   disabled={loading}
                   title="Delete expense"
-                  className="p-1 text-red-500 hover:text-red-700 disabled:opacity-50"
+                  aria-label="Delete expense"
+                  className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 disabled:opacity-50"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             )}
 
-            {/* AMOUNT */}
-            <div className="text-right">
-              <p className="font-semibold">₹{expense.amount}</p>
-              <p className="text-xs text-gray-500">{dateLabel}</p>
-            </div>
-
             {open ? (
-              <ChevronUp className="w-4 h-4 text-gray-400" />
+              <ChevronUp className="h-4 w-4 text-slate-400" />
             ) : (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
+              <ChevronDown className="h-4 w-4 text-slate-400" />
             )}
           </div>
         </div>
 
         {/* DROPDOWN */}
         {open && (
-          <div className="border-t px-4 py-3 bg-gray-50">
-            <p className="text-xs font-semibold text-gray-500 mb-2">
-              Split Details
+          <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:px-5">
+            <p className="mb-2 text-xs font-medium text-slate-500">
+              Split details
             </p>
 
             {expense.splitBetween.map((s: any) => {
               const isYou = s.user._id === currentUserId;
 
               return (
-                <div key={s._id} className="flex justify-between text-sm mb-1">
-                  <span className={isYou ? "font-semibold" : ""}>
+                <div
+                  key={s._id}
+                  className="flex items-center justify-between py-1.5 text-sm"
+                >
+                  <span
+                    className={
+                      isYou ? "font-semibold text-slate-900" : "text-slate-600"
+                    }
+                  >
                     {s.user.name} {isYou && "(You)"}
                   </span>
-                  <span>₹{s.amount}</span>
+
+                  <span className="tabular-nums text-slate-900">
+                    {formatAmount(s.amount)}
+                  </span>
                 </div>
               );
             })}

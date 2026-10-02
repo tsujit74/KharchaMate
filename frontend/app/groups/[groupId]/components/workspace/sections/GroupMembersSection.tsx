@@ -18,26 +18,27 @@ export default function GroupMembersSection({
   hasExpenses = false,
 }: Props) {
   return (
-    <section className="px-4 py-6 md:px-8 lg:px-10">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">
-          Members
-        </h1>
+    <section className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="border-b border-slate-200 pb-5">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+            Members
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            View group members, balances, and manage membership.
+          </p>
+        </div>
 
-        <p className="mt-1 text-sm text-slate-500">
-          View group members, balances, and manage membership.
-        </p>
-      </div>
-
-      <div className="w-full max-w-4xl rounded-xl border bg-white p-4 md:p-6">
-        <GroupMembersSidebar
-          balances={balances}
-          currentUserId={currentUserId}
-          groupId={groupId}
-          isActive={isActive}
-          hasExpenses={hasExpenses}
-        />
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <GroupMembersSidebar
+            balances={balances}
+            currentUserId={currentUserId}
+            groupId={groupId}
+            isActive={isActive}
+            hasExpenses={hasExpenses}
+          />
+        </div>
       </div>
     </section>
   );
-}   
+}

@@ -8,10 +8,17 @@ import {
   UserPlus,
   Crown,
   Loader2,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import { removeMember, toggleGroupStatus } from "@/app/services/group.service";
 import toast from "react-hot-toast";
+
+const roleBadgeStyle: Record<string, string> = {
+  CREATOR: "bg-purple-50 text-purple-700 ring-purple-200",
+  ADMIN: "bg-blue-50 text-blue-700 ring-blue-200",
+  MEMBER: "bg-slate-100 text-slate-600 ring-slate-200",
+};
 
 export default function GroupInfoDrawer({
   open,
@@ -23,7 +30,6 @@ export default function GroupInfoDrawer({
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
 
-  /* ✅ ALWAYS first */
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -31,7 +37,6 @@ export default function GroupInfoDrawer({
     };
   }, [open]);
 
-  /* ✅ SAFE values (no crash if group null) */
   const admins = group?.admins ?? [];
   const members = group?.members ?? [];
 
@@ -39,7 +44,6 @@ export default function GroupInfoDrawer({
   const isActive = group?.isActive !== false;
   const hasExpenses = (group?.expenseCount ?? 0) > 0;
 
-  /* ✅ IMPORTANT: useMemo ALWAYS runs (no condition) */
   const enrichedMembers = useMemo(() => {
     if (!group) return [];
 
@@ -54,16 +58,14 @@ export default function GroupInfoDrawer({
     });
   }, [group, members, admins]);
 
-  /* ✅ NOW you can return */
   if (!group) return null;
 
-  /* Toggle group */
   const handleToggleStatus = async () => {
     if (!isAdmin || statusLoading) return;
 
     if (isActive) {
       const ok = window.confirm(
-        "Closing this group will disable all actions.\nContinue?"
+        "Closing this group will disable all actions.\nContinue?",
       );
       if (!ok) return;
     }
@@ -73,9 +75,7 @@ export default function GroupInfoDrawer({
       await toggleGroupStatus(group._id);
       await onRefresh();
 
-      toast.success(
-        isActive ? "Group closed" : "Group reactivated"
-      );
+      toast.success(isActive ? "Group closed" : "Group reactivated");
     } catch (err: any) {
       toast.error(err?.message || "Failed to update status");
     } finally {
@@ -83,11 +83,9 @@ export default function GroupInfoDrawer({
     }
   };
 
-  /* Remove member */
   const handleRemove = async (userId: string) => {
     if (!isActive) return toast.error("Group is closed");
-    if (hasExpenses)
-      return toast.error("Cannot remove members after expenses");
+    if (hasExpenses) return toast.error("Cannot remove members after expenses");
 
     if (!window.confirm("Remove this member?")) return;
 
@@ -105,152 +103,178 @@ export default function GroupInfoDrawer({
 
   return (
     <>
-      {/* Overlay */}
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 backdrop-blur-sm bg-black/40 transition-opacity duration-300
-        ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
       />
 
-      {/* Drawer */}
-      <div
-        className={`fixed top-0 right-0 h-full z-50 w-full sm:w-[420px]
-        bg-white shadow-2xl transform transition-transform duration-300 ease-in-out
-        ${open ? "translate-x-0" : "translate-x-full"}`}
+      <aside
+        className={`fixed right-0 top-0 z-50 flex h-full w-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out sm:w-[420px] ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
       >
-        {/* HEADER */}
-        <div className="sticky top-0 bg-white z-10 border-b p-5 flex justify-between items-center">
-          <div>
-            <h2 className="font-semibold text-lg">Group Info</h2>
-            <p className="text-xs text-gray-500">
-              Manage members & settings
-            </p>
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-slate-900">
+              Group info
+            </h2>
+            <p className="text-xs text-slate-500">Manage members & settings</p>
           </div>
 
           <div className="flex items-center gap-2">
             {isAdmin && isActive && (
               <Link
                 href={`/groups/${group._id}/add-member`}
-                className="p-2 rounded-lg border hover:bg-gray-100 transition"
+                aria-label="Add member"
+                title="Add member"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
               >
-                <UserPlus className="w-4 h-4" />
+                <UserPlus className="h-4 w-4" />
               </Link>
             )}
 
-            <button onClick={onClose}>
-              <X className="w-5 h-5 text-gray-500" />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            >
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* BODY */}
-        <div className="p-5 space-y-6 overflow-y-auto h-[calc(100%-80px)]">
-          {/* GROUP HEADER */}
-          <div>
-            <h3 className="text-xl font-semibold">{group.name}</h3>
-
-            <span
-              className={`inline-block mt-2 px-3 py-1 text-xs rounded-full font-medium
-              ${
-                isActive
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {isActive ? "Active" : "Closed"}
+        <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-base font-semibold uppercase text-white">
+              {group.name?.charAt(0)}
             </span>
-          </div>
 
-          {/* STATUS CARD */}
-          <div className="rounded-xl border p-4 bg-gray-50">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm font-semibold">Group Status</p>
-                <p className="text-xs text-gray-500">
-                  {isActive
-                    ? "Members can add expenses"
-                    : "View only mode"}
-                </p>
-              </div>
+            <div className="min-w-0">
+              <h3
+                title={group.name}
+                className="truncate text-lg font-semibold tracking-tight text-slate-900"
+              >
+                {group.name}
+              </h3>
 
-              {isAdmin && (
-                <button
-                  onClick={handleToggleStatus}
-                  disabled={statusLoading}
-                  className={`relative w-14 h-7 rounded-full transition
-                  ${isActive ? "bg-emerald-500" : "bg-gray-400"}`}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 h-6 w-6 bg-white rounded-full shadow transition
-                    ${isActive ? "translate-x-7" : ""}`}
-                  />
-                </button>
-              )}
+              <span
+                className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  isActive
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-red-50 text-red-700"
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    isActive ? "bg-emerald-500" : "bg-red-500"
+                  }`}
+                />
+                {isActive ? "Active" : "Closed"}
+              </span>
             </div>
           </div>
 
-          {/* MEMBERS */}
-          <div>
-            <p className="font-semibold mb-3">
-              Members ({members.length})
-            </p>
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                Group status
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {isActive ? "Members can add expenses" : "View only mode"}
+              </p>
+            </div>
 
-            <div className="space-y-3">
+            {isAdmin && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isActive}
+                aria-label="Toggle group status"
+                onClick={handleToggleStatus}
+                disabled={statusLoading}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isActive ? "bg-emerald-500" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    isActive ? "translate-x-5" : ""
+                  }`}
+                />
+              </button>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <p className="text-sm font-semibold text-slate-900">Members</p>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-600">
+                {members.length}
+              </span>
+            </div>
+
+            <div className="space-y-2.5">
               {enrichedMembers.map((m: any) => {
                 const isYou = m._id === currentUserId;
-
-                const roleStyle =
-                  m.role === "CREATOR"
-                    ? "bg-purple-50 border-purple-200"
-                    : m.role === "ADMIN"
-                    ? "bg-blue-50 border-blue-200"
-                    : "bg-gray-50";
 
                 return (
                   <div
                     key={m._id}
-                    className={`flex justify-between items-center p-3 rounded-xl border transition hover:shadow-sm ${roleStyle}`}
+                    className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 transition-shadow hover:shadow-sm"
                   >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {m.name} {isYou && "(You)"}
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold uppercase text-slate-600">
+                      {m.name?.charAt(0)}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-900">
+                        {m.name}
+                        {isYou && (
+                          <span className="ml-1 font-normal text-slate-500">
+                            (You)
+                          </span>
+                        )}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="truncate text-xs text-slate-500">
                         {m.email}
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {m.mobile}
-                      </p>
+                      {m.mobile && (
+                        <p className="truncate text-xs text-slate-500">
+                          {m.mobile}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {/* ROLE BADGE */}
-                      <span className="text-[10px] px-2 py-1 rounded-full font-semibold bg-black text-white">
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset ${
+                          roleBadgeStyle[m.role]
+                        }`}
+                      >
+                        {m.role === "CREATOR" && <Crown className="h-3 w-3" />}
+                        {m.role === "ADMIN" && <Shield className="h-3 w-3" />}
                         {m.role}
                       </span>
 
-                      {/* ICON */}
-                      {m.role === "CREATOR" && (
-                        <Crown className="w-4 h-4 text-purple-500" />
-                      )}
-                      {m.role === "ADMIN" && (
-                        <Shield className="w-4 h-4 text-blue-500" />
-                      )}
-
-                      {/* REMOVE */}
                       {isAdmin &&
                         isActive &&
                         m.role !== "CREATOR" &&
                         !isYou && (
                           <button
+                            type="button"
                             disabled={loadingUserId === m._id}
                             onClick={() => handleRemove(m._id)}
-                            className="text-red-500 hover:scale-110 transition"
+                            aria-label={`Remove ${m.name}`}
+                            title="Remove member"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed"
                           >
                             {loadingUserId === m._id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <UserMinus className="w-4 h-4" />
+                              <UserMinus className="h-4 w-4" />
                             )}
                           </button>
                         )}
@@ -260,13 +284,13 @@ export default function GroupInfoDrawer({
               })}
             </div>
           </div>
-
-          {/* FOOTER */}
-          <div className="text-xs text-gray-500 border-t pt-4">
-            🔐 Only admins can manage members and group settings.
-          </div>
         </div>
-      </div>
+
+        <div className="flex items-start gap-2 border-t border-slate-200 bg-slate-50/60 px-5 py-3 text-xs text-slate-500">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <p>Only admins can manage members and group settings.</p>
+        </div>
+      </aside>
     </>
   );
 }

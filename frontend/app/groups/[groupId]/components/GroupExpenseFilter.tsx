@@ -20,6 +20,19 @@ type Props = {
   onCustomEndChange: (value: string) => void;
 };
 
+const periods: { value: Period; label: string }[] = [
+  { value: "ALL_TIME", label: "All Time" },
+  { value: "THIS_WEEK", label: "This Week" },
+  { value: "THIS_MONTH", label: "This Month" },
+  { value: "LAST_MONTH", label: "Last Month" },
+  { value: "LAST_3_MONTHS", label: "Last 3 Months" },
+  { value: "THIS_YEAR", label: "This Year" },
+  { value: "CUSTOM", label: "Custom Range" },
+];
+
+const dateInputClass =
+  "rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300";
+
 export default function GroupExpenseFilter({
   period,
   onPeriodChange,
@@ -30,6 +43,8 @@ export default function GroupExpenseFilter({
 }: Props) {
   const [customError, setCustomError] = useState("");
   const [showCustom, setShowCustom] = useState(period === "CUSTOM");
+
+  const selectedPeriod = showCustom ? "CUSTOM" : period;
 
   const handlePeriodChange = (value: Period) => {
     setCustomError("");
@@ -61,67 +76,83 @@ export default function GroupExpenseFilter({
   };
 
   return (
-    <div className="mb-4 rounded-xl border bg-white p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold">Expenses</h2>
-
-        <select
-          value={showCustom ? "CUSTOM" : period}
-          onChange={(e) => handlePeriodChange(e.target.value as Period)}
-          className="rounded-lg border bg-white px-3 py-2 text-sm outline-none"
-        >
-          <option value="ALL_TIME">All Time</option>
-          <option value="THIS_WEEK">This Week</option>
-          <option value="THIS_MONTH">This Month</option>
-          <option value="LAST_MONTH">Last Month</option>
-          <option value="LAST_3_MONTHS">Last 3 Months</option>
-          <option value="THIS_YEAR">This Year</option>
-          <option value="CUSTOM">Custom Range</option>
-        </select>
+    <div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {periods.map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            aria-pressed={selectedPeriod === item.value}
+            onClick={() => handlePeriodChange(item.value)}
+            className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
+              selectedPeriod === item.value
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
 
       {showCustom && (
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div>
-            <label className="mb-1 block text-sm font-medium">Start date</label>
+        <div className="mt-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div>
+              <label
+                htmlFor="expense-start-date"
+                className="mb-1 block text-xs font-medium text-slate-500"
+              >
+                Start date
+              </label>
 
-            <input
-              type="date"
-              value={customStart}
-              onChange={(e) => {
-                setCustomError("");
-                onCustomStartChange(e.target.value);
-              }}
-              className="rounded-lg border px-3 py-2 text-sm"
-            />
+              <input
+                id="expense-start-date"
+                type="date"
+                value={customStart}
+                onChange={(e) => {
+                  setCustomError("");
+                  onCustomStartChange(e.target.value);
+                }}
+                className={dateInputClass}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="expense-end-date"
+                className="mb-1 block text-xs font-medium text-slate-500"
+              >
+                End date
+              </label>
+
+              <input
+                id="expense-end-date"
+                type="date"
+                value={customEnd}
+                onChange={(e) => {
+                  setCustomError("");
+                  onCustomEndChange(e.target.value);
+                }}
+                className={dateInputClass}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleApplyCustom}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+            >
+              Apply
+            </button>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">End date</label>
-
-            <input
-              type="date"
-              value={customEnd}
-              onChange={(e) => {
-                setCustomError("");
-                onCustomEndChange(e.target.value);
-              }}
-              className="rounded-lg border px-3 py-2 text-sm"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleApplyCustom}
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
-          >
-            Apply
-          </button>
+          {customError && (
+            <p role="alert" className="mt-3 text-sm text-rose-600">
+              {customError}
+            </p>
+          )}
         </div>
-      )}
-
-      {customError && (
-        <p className="mt-2 text-sm text-red-500">{customError}</p>
       )}
     </div>
   );

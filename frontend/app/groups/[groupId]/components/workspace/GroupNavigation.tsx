@@ -7,9 +7,10 @@ import {
   Receipt,
   Users,
   WalletCards,
+  type LucideIcon,
 } from "lucide-react";
 
-type Section =
+export type Section =
   | "overview"
   | "expenses"
   | "settlement"
@@ -17,99 +18,120 @@ type Section =
   | "members"
   | "more";
 
+type NavigationItem = {
+  id: Section;
+  label: string;
+  icon: LucideIcon;
+  showOnMobile: boolean;
+};
+
+export const navigationItems: NavigationItem[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    icon: LayoutDashboard,
+    showOnMobile: true,
+  },
+  { id: "expenses", label: "Expenses", icon: Receipt, showOnMobile: true },
+  {
+    id: "settlement",
+    label: "Settlement",
+    icon: WalletCards,
+    showOnMobile: true,
+  },
+  { id: "insights", label: "Insights", icon: BarChart3, showOnMobile: true },
+  { id: "members", label: "Members", icon: Users, showOnMobile: false },
+];
+
+export const moreItem: NavigationItem = {
+  id: "more",
+  label: "More",
+  icon: MoreHorizontal,
+  showOnMobile: true,
+};
+
 type Props = {
   activeSection: Section;
   onSectionChange: (section: Section) => void;
 };
 
-const navigationItems = [
-  {
-    id: "overview" as Section,
-    label: "Overview",
-    icon: LayoutDashboard,
-  },
-  {
-    id: "expenses" as Section,
-    label: "Expenses",
-    icon: Receipt,
-  },
-  {
-    id: "settlement" as Section,
-    label: "Settlement",
-    icon: WalletCards,
-  },
-  {
-    id: "insights" as Section,
-    label: "Insights",
-    icon: BarChart3,
-  },
-  {
-    id: "members" as Section,
-    label: "Members",
-    icon: Users,
-  },
-];
+type GroupNavigationProps = Props & {
+  groupName?: string;
+};
+
+type ButtonProps = Props & {
+  item: NavigationItem;
+};
+
+function SidebarButton({ item, activeSection, onSectionChange }: ButtonProps) {
+  const active = activeSection === item.id;
+  const Icon = item.icon;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSectionChange(item.id)}
+      aria-current={active ? "page" : undefined}
+      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
+        active
+          ? "bg-slate-900 text-white shadow-sm"
+          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+      }`}
+    >
+      <Icon
+        className={`h-4 w-4 shrink-0 ${
+          active ? "text-white" : "text-slate-400 group-hover:text-slate-700"
+        }`}
+      />
+      <span>{item.label}</span>
+    </button>
+  );
+}
 
 export default function GroupNavigation({
+  groupName = "Group",
   activeSection,
   onSectionChange,
-}: Props) {
+}: GroupNavigationProps) {
   return (
-    <aside className="hidden min-h-screen w-64 shrink-0 border-r bg-white md:flex">
-      <div className="flex w-full flex-col p-4">
-        <div className="mb-6 px-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Group Workspace
-          </p>
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 self-start border-r border-slate-200 bg-white md:block">
+      <div className="flex h-full flex-col overflow-y-auto px-3 py-5">
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-sm font-semibold uppercase text-white">
+            {groupName.charAt(0)}
+          </span>
 
-          <h2 className="mt-1 text-lg font-semibold text-slate-900">
-            Manage Group
-          </h2>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Group workspace
+            </p>
+            <h2
+              title={groupName}
+              className="truncate text-sm font-semibold text-slate-900"
+            >
+              {groupName}
+            </h2>
+          </div>
         </div>
 
         <nav className="space-y-1">
-          {navigationItems.map((item) => {
-            const active = activeSection === item.id;
-            const Icon = item.icon;
-
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSectionChange(item.id)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                  active
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                }`}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+          {navigationItems.map((item) => (
+            <SidebarButton
+              key={item.id}
+              item={item}
+              activeSection={activeSection}
+              onSectionChange={onSectionChange}
+            />
+          ))}
         </nav>
 
-        <div className="my-5 border-t" />
+        <div className="my-4 border-t border-slate-200" />
 
-        <button
-          type="button"
-          onClick={() => onSectionChange("more")}
-          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-            activeSection === "more"
-              ? "bg-slate-900 text-white"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <MoreHorizontal className="h-4 w-4 shrink-0" />
-          <span>More</span>
-        </button>
-
-        <div className="mt-auto border-t pt-4">
-          <p className="px-2 text-xs leading-5 text-slate-400">
-            Additional group tools will appear here.
-          </p>
-        </div>
+        <SidebarButton
+          item={moreItem}
+          activeSection={activeSection}
+          onSectionChange={onSectionChange}
+        />
       </div>
     </aside>
   );

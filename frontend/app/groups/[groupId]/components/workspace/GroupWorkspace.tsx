@@ -1,22 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import GroupNavigation from "./GroupNavigation";
+import GroupNavigation, { type Section } from "./GroupNavigation";
+import MobileGroupNavigation from "./MobileGroupNavigation";
 import GroupMembersSection from "./sections/GroupMembersSection";
 import GroupOverviewSection from "./sections/GroupOverviewSection";
 import GroupExpensesSection from "./sections/GroupExpensesSection";
 import GroupSettlementWorkspaceSection from "./sections/GroupSettlementWorkspaceSection";
 import GroupInsightsSection from "./sections/GroupInsightsSection";
 import GroupMoreSection from "./sections/GroupMoreSection";
-import MobileGroupNavigation from "./MobileGroupNavigation";
-
-type Section =
-  | "overview"
-  | "expenses"
-  | "settlement"
-  | "insights"
-  | "members"
-  | "more";
 
 type Period =
   | "THIS_WEEK"
@@ -90,30 +82,48 @@ export default function GroupWorkspace({
 }: Props) {
   const [activeSection, setActiveSection] = useState<Section>("overview");
 
-  return (
-    <div className="flex min-h-screen bg-[#FCFCFD] pb-16 md:pb-0">
-      <GroupNavigation
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-      />
-
-      <section className="min-w-0 flex-1">
-        {activeSection === "members" && membersData ? (
-          <GroupMembersSection {...membersData} />
-        ) : activeSection === "overview" && overviewData ? (
+  function renderSection() {
+    switch (activeSection) {
+      case "overview":
+        return overviewData ? (
           <GroupOverviewSection {...overviewData} />
-        ) : activeSection === "expenses" && expensesData ? (
-          <GroupExpensesSection {...expensesData} />
-        ) : activeSection === "settlement" && settlementData ? (
-          <GroupSettlementWorkspaceSection {...settlementData} />
-        ) : activeSection === "insights" ? (
-          <GroupInsightsSection />
-        ) : activeSection === "more" && moreData ? (
-          <GroupMoreSection {...moreData} />
         ) : (
           children
-        )}
-      </section>
+        );
+      case "expenses":
+        return expensesData ? (
+          <GroupExpensesSection {...expensesData} />
+        ) : (
+          children
+        );
+      case "settlement":
+        return settlementData ? (
+          <GroupSettlementWorkspaceSection {...settlementData} />
+        ) : (
+          children
+        );
+      case "insights":
+        return <GroupInsightsSection />;
+      case "members":
+        return membersData ? (
+          <GroupMembersSection {...membersData} />
+        ) : (
+          children
+        );
+      case "more":
+        return moreData ? <GroupMoreSection {...moreData} /> : children;
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen bg-slate-50/50 pb-20 md:pb-0">
+      <GroupNavigation
+  groupName={moreData?.groupName}
+  activeSection={activeSection}
+  onSectionChange={setActiveSection}
+/>
+
+      <main className="min-w-0 flex-1">{renderSection()}</main>
 
       <MobileGroupNavigation
         activeSection={activeSection}

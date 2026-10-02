@@ -1,90 +1,55 @@
 "use client";
 
-import {
-  BarChart3,
-  LayoutDashboard,
-  MoreHorizontal,
-  Receipt,
-  WalletCards,
-} from "lucide-react";
-
-type Section =
-  | "overview"
-  | "expenses"
-  | "settlement"
-  | "insights"
-  | "members"
-  | "more";
+import { moreItem, navigationItems, type Section } from "./GroupNavigation";
 
 type Props = {
   activeSection: Section;
   onSectionChange: (section: Section) => void;
 };
 
-const navigationItems = [
-  {
-    id: "overview" as Section,
-    label: "Overview",
-    icon: LayoutDashboard,
-  },
-  {
-    id: "expenses" as Section,
-    label: "Expenses",
-    icon: Receipt,
-  },
-  {
-    id: "settlement" as Section,
-    label: "Settlement",
-    icon: WalletCards,
-  },
-  {
-    id: "insights" as Section,
-    label: "Insights",
-    icon: BarChart3,
-  },
+const mobileItems = [
+  ...navigationItems.filter((item) => item.showOnMobile),
+  moreItem,
 ];
 
 export default function MobileGroupNavigation({
   activeSection,
   onSectionChange,
 }: Props) {
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-[9999] flex border-t bg-white md:hidden">
-      <nav className="grid w-full grid-cols-5">
-        {navigationItems.map((item) => {
-          const active = activeSection === item.id;
-          const Icon = item.icon;
+  const isTabActive = (id: Section) =>
+    id === "more"
+      ? !navigationItems.some(
+          (item) => item.showOnMobile && item.id === activeSection,
+        )
+      : id === activeSection;
 
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onSectionChange(item.id)}
-              className={`flex flex-col items-center justify-center gap-1 px-2 py-3 text-xs font-medium transition ${
-                active
-                  ? "text-slate-900"
-                  : "text-slate-500 hover:text-slate-900"
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      {mobileItems.map((item) => {
+        const active = isTabActive(item.id);
+        const Icon = item.icon;
+
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSectionChange(item.id)}
+            aria-current={active ? "page" : undefined}
+            className={`flex min-w-0 flex-1 flex-col items-center gap-1 px-1 py-2 text-[11px] font-medium transition-colors ${
+              active ? "text-slate-900" : "text-slate-500"
+            }`}
+          >
+            <span
+              className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${
+                active ? "bg-slate-900 text-white" : ""
               }`}
             >
-              <Icon className="h-5 w-5" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-
-        <button
-          type="button"
-          onClick={() => onSectionChange("more")}
-          className={`flex flex-col items-center justify-center gap-1 px-2 py-3 text-xs font-medium transition ${
-            activeSection === "more" || activeSection === "members"
-              ? "text-slate-900"
-              : "text-slate-500 hover:text-slate-900"
-          }`}
-        >
-          <MoreHorizontal className="h-5 w-5" />
-          <span>More</span>
-        </button>
-      </nav>
-    </div>
+              <Icon className="h-[18px] w-[18px]" />
+            </span>
+            <span className="truncate">{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
   );
 }

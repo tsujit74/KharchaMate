@@ -3,7 +3,7 @@
 import ExpenseCard from "./ExpenseCard";
 
 type Props = {
-  expenses?: any[];  
+  expenses?: any[];
   userId?: string;
 
   totalExpenses: number;
@@ -16,7 +16,7 @@ type Props = {
 };
 
 export default function ExpenseList({
-  expenses = [], 
+  expenses = [],
   userId,
   totalExpenses,
   page,
@@ -31,9 +31,15 @@ export default function ExpenseList({
     <div className="space-y-3">
       {/* Empty state */}
       {safeExpenses.length === 0 ? (
-        <p className="text-gray-500 text-sm">
-          No expenses yet.
-        </p>
+        <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-10 text-center">
+          <p className="text-sm font-medium text-slate-900">
+            No expenses found
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Try a different period, or add a new expense.
+          </p>
+        </div>
       ) : (
         <>
           {/* List */}
@@ -42,7 +48,7 @@ export default function ExpenseList({
             .sort(
               (a, b) =>
                 new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime()
+                new Date(a.createdAt).getTime(),
             )
             .map((expense) => (
               <ExpenseCard
@@ -60,9 +66,9 @@ export default function ExpenseList({
               <button
                 onClick={onLoadMore}
                 disabled={loadingMore}
-                className="px-4 py-2 bg-black text-white rounded-lg text-sm disabled:opacity-60"
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:opacity-60"
               >
-                {loadingMore ? "Loading..." : "Load More"}
+                {loadingMore ? "Loading..." : "Load more"}
               </button>
             </div>
           )}

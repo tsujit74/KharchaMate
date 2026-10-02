@@ -1,10 +1,29 @@
-export default function Stat({ icon: Icon, label, value }: any) {
+import { LucideIcon } from "lucide-react";
+
+type Props = {
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+  description: string;
+};
+
+export default function Stat({ icon: Icon, label, value, description }: Props) {
   return (
-    <div className="bg-white border rounded-xl p-5 flex gap-4 items-center">
-      <Icon className="w-7 h-7 text-gray-400" />
-      <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-xl font-bold">{value}</p>
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-500">{label}</p>
+
+          <p className="mt-2 truncate text-2xl font-semibold tabular-nums tracking-tight text-slate-900">
+            {value}
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">{description}</p>
+        </div>
+
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">
+          <Icon className="h-5 w-5 text-slate-600" />
+        </div>
       </div>
     </div>
   );

@@ -21,30 +21,32 @@ export default function GroupOverviewSection({
   onInfoClick,
 }: Props) {
   return (
-    <section className="px-4 py-6 md:px-8 lg:px-10">
-      <GroupHeader
-        title={settlement.group}
-        subtitle="Track expenses & settlements"
-        isActive={isActive}
-        onInfoClick={onInfoClick}
-      />
+    <section className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl">
+        <GroupHeader
+          title={settlement.group}
+          subtitle="Track expenses & settlements"
+          isActive={isActive}
+          onInfoClick={onInfoClick}
+        >
+          <DownloadGroupPDF groupId={groupId} groupName={settlement.group} />
+        </GroupHeader>
 
-      <GroupKPI
-        totalSpent={settlement.totalSpent}
-        yourShare={settlement.yourShare}
-        members={settlement.balances.length}
-      />
+        <div className="mt-6">
+          <GroupKPI
+            totalSpent={settlement.totalSpent}
+            yourShare={settlement.yourShare}
+            members={settlement.balances.length}
+          />
+        </div>
 
-      <div className="mt-6 flex justify-end">
-        <DownloadGroupPDF groupId={groupId} groupName={settlement.group} />
-      </div>
-
-      <div className="mt-6">
-        <GroupSettlementSection
-          settlement={settlement}
-          userId={userId}
-          groupId={groupId}
-        />
+        <div className="mt-6">
+          <GroupSettlementSection
+            settlement={settlement}
+            userId={userId}
+            groupId={groupId}
+          />
+        </div>
       </div>
     </section>
   );
