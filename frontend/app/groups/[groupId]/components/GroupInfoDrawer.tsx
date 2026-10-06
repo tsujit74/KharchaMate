@@ -11,7 +11,11 @@ import {
   Info,
 } from "lucide-react";
 import Link from "next/link";
-import { removeMember, toggleGroupStatus } from "@/app/services/group.service";
+import {
+  removeMember,
+  toggleGroupStatus,
+  updateGroupType,
+} from "@/app/services/group.service";
 import toast from "react-hot-toast";
 
 const roleBadgeStyle: Record<string, string> = {
@@ -19,6 +23,11 @@ const roleBadgeStyle: Record<string, string> = {
   ADMIN: "bg-blue-50 text-blue-700 ring-blue-200",
   MEMBER: "bg-slate-100 text-slate-600 ring-slate-200",
 };
+
+const TYPE_OPTIONS = [
+  { value: "NORMAL", label: "Normal" },
+  { value: "ONGOING", label: "Ongoing" },
+] as const;
 
 export default function GroupInfoDrawer({
   open,
@@ -29,13 +38,23 @@ export default function GroupInfoDrawer({
 }: any) {
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [typeLoading, setTypeLoading] = useState(false);
+
+  const [selectedType, setSelectedType] = useState<"NORMAL" | "ONGOING" | "">(
+    group?.typeConfigured === true ? (group?.type ?? "") : "",
+  );
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
+
     return () => {
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  useEffect(() => {
+    setSelectedType(group?.typeConfigured === true ? (group?.type ?? "") : "");
+  }, [group?.type, group?.typeConfigured]);
 
   const admins = group?.admins ?? [];
   const members = group?.members ?? [];
@@ -60,6 +79,44 @@ export default function GroupInfoDrawer({
 
   if (!group) return null;
 
+  const typeConfigured = group?.typeConfigured === true;
+
+  const canEditType = isAdmin && (!hasExpenses || !typeConfigured);
+
+  const typeChanged =
+    !!selectedType && (!typeConfigured || selectedType !== group.type);
+
+  const typeHint = hasExpenses
+    ? typeConfigured
+      ? "Locked after expenses are added"
+      : "Type not set. Choose once to configure group"
+    : !isAdmin
+      ? "Only admins can change this"
+      : typeConfigured
+        ? "Can be changed until the first expense"
+        : "Not set yet. Choose a type";
+
+  const handleUpdateType = async () => {
+    if (!isAdmin || !selectedType || typeLoading) return;
+
+    if (hasExpenses && typeConfigured) return;
+
+    if (typeConfigured && selectedType === group.type) return;
+
+    try {
+      setTypeLoading(true);
+
+      await updateGroupType(group._id, selectedType);
+      await onRefresh();
+
+      toast.success("Group type updated");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update group type");
+    } finally {
+      setTypeLoading(false);
+    }
+  };
+
   const handleToggleStatus = async () => {
     if (!isAdmin || statusLoading) return;
 
@@ -67,11 +124,13 @@ export default function GroupInfoDrawer({
       const ok = window.confirm(
         "Closing this group will disable all actions.\nContinue?",
       );
+
       if (!ok) return;
     }
 
     try {
       setStatusLoading(true);
+
       await toggleGroupStatus(group._id);
       await onRefresh();
 
@@ -85,14 +144,18 @@ export default function GroupInfoDrawer({
 
   const handleRemove = async (userId: string) => {
     if (!isActive) return toast.error("Group is closed");
-    if (hasExpenses) return toast.error("Cannot remove members after expenses");
+    if (hasExpenses) {
+      return toast.error("Cannot remove members after expenses");
+    }
 
     if (!window.confirm("Remove this member?")) return;
 
     try {
       setLoadingUserId(userId);
+
       await removeMember(group._id, userId);
       await onRefresh();
+
       toast.success("Member removed");
     } catch (err: any) {
       toast.error(err?.message || "Failed");
@@ -120,6 +183,7 @@ export default function GroupInfoDrawer({
             <h2 className="text-base font-semibold text-slate-900">
               Group info
             </h2>
+
             <p className="text-xs text-slate-500">Manage members & settings</p>
           </div>
 
@@ -160,20 +224,39 @@ export default function GroupInfoDrawer({
                 {group.name}
               </h3>
 
-              <span
-                className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  isActive
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-red-50 text-red-700"
-                }`}
-              >
+              <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    isActive ? "bg-emerald-500" : "bg-red-500"
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    isActive
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-50 text-red-700"
                   }`}
-                />
-                {isActive ? "Active" : "Closed"}
-              </span>
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      isActive ? "bg-emerald-500" : "bg-red-500"
+                    }`}
+                  />
+
+                  {isActive ? "Active" : "Closed"}
+                </span>
+
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    !typeConfigured
+                      ? "bg-amber-50 text-amber-700"
+                      : group.type === "ONGOING"
+                        ? "bg-blue-50 text-blue-700"
+                        : "bg-slate-100 text-slate-700"
+                  }`}
+                >
+                  {!typeConfigured
+                    ? "Not set"
+                    : group.type === "ONGOING"
+                      ? "Ongoing"
+                      : "Normal"}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -182,6 +265,7 @@ export default function GroupInfoDrawer({
               <p className="text-sm font-semibold text-slate-900">
                 Group status
               </p>
+
               <p className="mt-0.5 text-xs text-slate-500">
                 {isActive ? "Members can add expenses" : "View only mode"}
               </p>
@@ -208,9 +292,78 @@ export default function GroupInfoDrawer({
             )}
           </div>
 
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900">
+                  Group type
+                </p>
+                <p className="text-xs leading-snug text-slate-500">
+                  {typeHint}
+                </p>
+              </div>
+
+              <div
+                role="group"
+                aria-label="Group type"
+                className="inline-flex shrink-0 rounded-lg bg-slate-100 p-0.5"
+              >
+                {TYPE_OPTIONS.map((opt) => {
+                  const selected = selectedType === opt.value;
+
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      aria-pressed={selected}
+                      disabled={!canEditType || typeLoading}
+                      onClick={() => setSelectedType(opt.value)}
+                      className={`rounded-md px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60 ${
+                        selected
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {canEditType && typeChanged && (
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedType(typeConfigured ? (group.type ?? "") : "")
+                  }
+                  disabled={typeLoading}
+                  className="h-8 rounded-lg px-3 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleUpdateType}
+                  disabled={typeLoading}
+                  className="inline-flex h-8 min-w-[64px] items-center justify-center rounded-lg bg-slate-900 px-3 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {typeLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    "Save"
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
           <div>
             <div className="mb-3 flex items-center gap-2">
               <p className="text-sm font-semibold text-slate-900">Members</p>
+
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-600">
                 {members.length}
               </span>
@@ -232,15 +385,18 @@ export default function GroupInfoDrawer({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-slate-900">
                         {m.name}
+
                         {isYou && (
                           <span className="ml-1 font-normal text-slate-500">
                             (You)
                           </span>
                         )}
                       </p>
+
                       <p className="truncate text-xs text-slate-500">
                         {m.email}
                       </p>
+
                       {m.mobile && (
                         <p className="truncate text-xs text-slate-500">
                           {m.mobile}
@@ -255,7 +411,9 @@ export default function GroupInfoDrawer({
                         }`}
                       >
                         {m.role === "CREATOR" && <Crown className="h-3 w-3" />}
+
                         {m.role === "ADMIN" && <Shield className="h-3 w-3" />}
+
                         {m.role}
                       </span>
 
@@ -288,6 +446,7 @@ export default function GroupInfoDrawer({
 
         <div className="flex items-start gap-2 border-t border-slate-200 bg-slate-50/60 px-5 py-3 text-xs text-slate-500">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+
           <p>Only admins can manage members and group settings.</p>
         </div>
       </aside>

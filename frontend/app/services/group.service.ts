@@ -354,3 +354,52 @@ export const deleteGroup = async (groupId: string) => {
     throw new Error("FAILED_DELETE_GROUP");
   }
 };
+
+
+export const updateGroupType = async (
+  groupId: string,
+  type: "NORMAL" | "ONGOING",
+) => {
+  if (!groupId?.trim()) {
+    throw new Error("INVALID_GROUP");
+  }
+
+  if (!["NORMAL", "ONGOING"].includes(type)) {
+    throw new Error("INVALID_GROUP_TYPE");
+  }
+
+  try {
+    const res = await api.patch(`/groups/${groupId}/update-type`, {
+      type,
+    });
+
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) {
+      throw new Error("NETWORK_ERROR");
+    }
+
+    const status = err.response.status;
+
+    if (status === 400) {
+      throw new Error(
+        err.response.data?.message ||
+          "Group type cannot be changed after expenses are added.",
+      );
+    }
+
+    if (status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (status === 403) {
+      throw new Error("FORBIDDEN");
+    }
+
+    if (status === 404) {
+      throw new Error("GROUP_NOT_FOUND");
+    }
+
+    throw new Error("FAILED_UPDATE_GROUP_TYPE");
+  }
+};

@@ -251,9 +251,15 @@ export const getGroupById = async (req, res) => {
       group: req.group._id,
     });
 
+    const typeExists = await Group.exists({
+      _id: req.group._id,
+      type: { $exists: true },
+    });
+
     res.status(200).json({
       ...group.toObject(),
       expenseCount,
+      typeConfigured: !!typeExists,
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch group" });
@@ -579,6 +585,75 @@ export const deleteGroup = async (req, res) => {
 
     return res.status(500).json({
       message: "Failed to delete group",
+    });
+  }
+};
+
+export const updateGroupType = async (req, res) => {
+  try {
+    const { type } = req.body;
+    const group = req.group;
+
+    if (!["NORMAL", "ONGOING"].includes(type)) {
+      return res.status(400).json({
+        message: "Invalid group type",
+      });
+    }
+
+    const typeExists = await Group.exists({
+      _id: group._id,
+      type: { $exists: true },
+    });
+
+    const expenseExists = await Expense.exists({
+      group: group._id,
+    });
+
+    // Type is already configured AND expenses exist → permanently locked
+    if (typeExists && expenseExists) {
+      return res.status(400).json({
+        message: "Group type cannot be changed after expenses are added",
+      });
+    }
+
+    const oldType = typeExists ? group.type : null;
+
+    group.type = type;
+
+    await group.save();
+
+    const otherMembers = group.members.filter(
+      (memberId) => String(memberId) !== String(req.user.id),
+    );
+
+    await Promise.all(
+      otherMembers.map((memberId) =>
+        notifyUser({
+          userId: memberId,
+          actor: req.user.id,
+          groupId: group._id,
+          title: "Group Type Updated",
+          message: `changed the group type to ${
+            type === "ONGOING" ? "Ongoing" : "Normal"
+          } for "${group.name}"`,
+          type: "INFORMATION",
+          link: `/groups/${group._id}`,
+          relatedId: group._id,
+        }),
+      ),
+    );
+
+    return res.status(200).json({
+      message: "Group type updated successfully",
+      group,
+      oldType,
+      type: group.type,
+    });
+  } catch (error) {
+    console.error("Update group type error:", error);
+
+    return res.status(500).json({
+      message: "Failed to update group type",
     });
   }
 };

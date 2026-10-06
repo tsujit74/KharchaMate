@@ -19,6 +19,7 @@ import {
   getRecentUsers,
   updateGroupBudget,
   deleteGroup,
+  updateGroupType,
 } from "../controllers/groupController.js";
 import { downloadGroupSettlementPDF } from "../controllers/groupReportController.js";
 import { checkGroupSettled } from "../middleware/checkGroupSettled.js";
@@ -79,6 +80,16 @@ router.patch(
   checkGroupActive,
   isAdmin,
   updateGroupBudget,
+);
+
+router.patch(
+  "/:groupId/update-type",
+  authMiddleware,
+  groupContext,
+  checkGroupBlocked,
+  checkGroupActive,
+  isAdmin,
+  updateGroupType,
 );
 
 router.get(
