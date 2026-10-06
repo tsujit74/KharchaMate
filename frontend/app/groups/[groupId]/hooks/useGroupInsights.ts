@@ -4,31 +4,32 @@ import { useEffect, useState } from "react";
 import { getGroupInsights } from "@/app/services/group.service";
 import type { GroupInsights } from "../types/insights.types";
 
+type State = {
+  groupId: string;
+  data: GroupInsights | null;
+  error: string;
+};
+
 export function useGroupInsights(groupId: string) {
-  const [data, setData] = useState<GroupInsights | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [state, setState] = useState<State | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    setLoading(true);
-    setError("");
-
     getGroupInsights(groupId)
       .then((res) => {
-        if (!cancelled) setData(res);
+        if (!cancelled) setState({ groupId, data: res, error: "" });
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(
-          err?.message === "NETWORK_ERROR"
-            ? "Network error. Check your connection and try again."
-            : "Failed to load insights.",
-        );
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        setState({
+          groupId,
+          data: null,
+          error:
+            err?.message === "NETWORK_ERROR"
+              ? "Network error. Check your connection and try again."
+              : "Failed to load insights.",
+        });
       });
 
     return () => {
@@ -36,5 +37,11 @@ export function useGroupInsights(groupId: string) {
     };
   }, [groupId]);
 
-  return { data, loading, error };
+  const current = state && state.groupId === groupId ? state : null;
+
+  return {
+    data: current?.data ?? null,
+    loading: current === null,
+    error: current?.error ?? "",
+  };
 }

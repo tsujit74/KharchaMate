@@ -16,7 +16,7 @@ export default function SettlementCard({ settlement, onOpen }: Props) {
 
       {settled ? (
         <p className="mt-3 text-lg font-semibold text-slate-900">
-          You're settled up
+          You&apos;re settled up
         </p>
       ) : (
         <>
