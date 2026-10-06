@@ -42,7 +42,12 @@ export function useDashboardData(
 
     const fetchAll = async () => {
       try {
-        const groupsData = await getMyGroups();
+        const [groupsData, recentExpensesData, pendingSettlementsData] =
+          await Promise.all([
+            getMyGroups(),
+            getRecentExpenses(),
+            getPendingSettlements(),
+          ]);
 
         const sortedGroups = groupsData.sort(
           (a: Group, b: Group) =>
@@ -50,8 +55,8 @@ export function useDashboardData(
         );
 
         setGroups(sortedGroups);
-        setRecentExpenses(await getRecentExpenses());
-        setPendingSettlements(await getPendingSettlements());
+        setRecentExpenses(recentExpensesData);
+        setPendingSettlements(pendingSettlementsData);
       } catch (err: any) {
         const message = err.message || "Failed to load dashboard data";
         setError(message);
