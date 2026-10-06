@@ -81,6 +81,7 @@ export default function GroupDetailsPage() {
 
   return (
     <GroupWorkspace
+      groupId={groupId}
       membersData={{
         balances: settlement.balances,
         currentUserId: user?.id,
@@ -94,6 +95,7 @@ export default function GroupDetailsPage() {
         groupId,
         isActive,
         onInfoClick: () => setInfoOpen(true),
+        onAdd: () => setIsModalOpen(true),
       }}
       expensesData={{
         expenses,

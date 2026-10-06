@@ -1,35 +1,91 @@
 "use client";
 
-import { BarChart3 } from "lucide-react";
+import { useAuth } from "@/app/context/authContext";
+import { useGroupInsights } from "../../../hooks/useGroupInsights";
 
-export default function GroupInsightsSection() {
+import InsightsEmptyState from "../../insights/InsightsEmptyState";
+import InsightsSkeleton from "../../insights/InsightsSkeleton";
+import InsightsKpis from "../../insights/InsightsKpis";
+import SpendingTrendChart from "../../insights/SpendingTrendChart";
+import CategoryBreakdown from "../../insights/CategoryBreakdown";
+import MemberContribution from "../../insights/MemberContribution";
+import TopExpenses from "../../insights/TopExpenses";
+import BudgetCard from "../../insights/BudgetCard";
+import SettlementCard from "../../insights/SettlementCard";
+
+type Props = {
+  groupId: string;
+  onOpenSettlement: () => void;
+};
+
+export default function GroupInsightsSection({
+  groupId,
+  onOpenSettlement,
+}: Props) {
+  const { user } = useAuth();
+  const { data, loading, error } = useGroupInsights(groupId);
+
+  const isOngoing = data?.group.type === "ONGOING";
+
   return (
-    <section className="px-4 py-6 md:px-8 lg:px-10">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">
-          Insights
-        </h1>
+    <section className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl">
+        {loading && <InsightsSkeleton />}
 
-        <p className="mt-1 text-sm text-slate-500">
-          Understand spending patterns and group activity.
-        </p>
-      </div>
-
-      <div className="flex min-h-[360px] w-full max-w-4xl items-center justify-center rounded-xl border bg-white p-6">
-        <div className="max-w-md text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100">
-            <BarChart3 className="h-6 w-6 text-slate-500" />
+        {!loading && error && (
+          <div
+            role="alert"
+            className="mt-4 rounded-2xl border border-slate-200 bg-white p-8 text-center"
+          >
+            <p className="text-sm font-medium text-red-500">{error}</p>
           </div>
+        )}
 
-          <h2 className="mt-4 text-lg font-semibold text-slate-900">
-            Group Insights are coming soon
-          </h2>
+        {!loading && data && data.summary.expenseCount === 0 && (
+          <InsightsEmptyState />
+        )}
 
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Spending trends, category breakdowns, member analysis,
-            and other group insights will be available here.
-          </p>
-        </div>
+        {!loading && data && data.summary.expenseCount > 0 && (
+          <div className="space-y-4">
+            <InsightsKpis
+              summary={data.summary}
+              type={data.group.type}
+              memberCount={data.group.memberCount}
+            />
+
+            <SpendingTrendChart trend={data.trend} isOngoing={isOngoing} />
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <CategoryBreakdown categories={data.categories} />
+
+              {data.group.memberCount > 1 && (
+                <MemberContribution
+                  members={data.members}
+                  currentUserId={user?.id}
+                />
+              )}
+            </div>
+
+            {data.topExpenses.length > 0 && (
+              <TopExpenses
+                expenses={data.topExpenses}
+                totalSpent={data.summary.totalSpent}
+                expenseCount={data.summary.expenseCount}
+              />
+            )}
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <BudgetCard budget={data.budget} isOngoing={isOngoing} />
+
+              {data.group.memberCount > 1 && (
+                <SettlementCard
+                  settlement={data.settlement}
+                  onOpen={onOpenSettlement}
+                />
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

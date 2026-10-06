@@ -23,7 +23,6 @@ type Props = {
   onAdd: () => void;
   onLoadMore: () => void;
   onRefresh: () => void;
-
   period: Period;
   onPeriodChange: (period: Period) => void;
   customStart: string;
@@ -51,17 +50,9 @@ export default function GroupExpensesSection({
   onCustomEndChange,
 }: Props) {
   return (
-    <section className="px-4 py-6 sm:px-6 lg:px-8">
+    <section className="px-4 py-1 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-7xl">
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
-          Expenses
-        </h1>
-
-        <p className="mt-1 text-sm text-slate-500">
-          View and manage group expenses.
-        </p>
-
-        <div className="mt-6">
+        <div className="mt-4">
           <GroupExpenseFilter
             period={period}
             onPeriodChange={onPeriodChange}
@@ -72,7 +63,7 @@ export default function GroupExpensesSection({
           />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-4">
           <GroupExpenseSection
             expenses={expenses}
             totalExpenses={totalExpenses}

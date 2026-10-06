@@ -94,17 +94,17 @@ export default function DownloadGroupPDF({
           ? "Generating settlement report"
           : "Download settlement report"
       }
-      className="inline-flex items-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-60 sm:h-9 sm:w-auto sm:gap-2 sm:px-3 sm:text-sm"
     >
       {isDownloading ? (
         <>
           <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-          Generating...
+          <span className="hidden sm:inline">Generating...</span>
         </>
       ) : (
         <>
           <Download size={16} aria-hidden="true" />
-          Download Report
+          <span className="hidden sm:inline">Download Report</span>
         </>
       )}
     </button>

@@ -135,6 +135,25 @@ export const toggleGroupStatus = async (groupId: string) => {
   }
 };
 
+export const getGroupInsights = async (groupId: string) => {
+  if (!groupId) throw new Error("INVALID_GROUP");
+
+  try {
+    const res = await api.get(`/groups/${groupId}/insights`);
+    return res.data;
+  } catch (err: any) {
+    if (!err.response) throw new Error("NETWORK_ERROR");
+
+    if (err.response.status === 401) throw new Error("UNAUTHORIZED");
+
+    if (err.response.status === 403) throw new Error("FORBIDDEN");
+
+    if (err.response.status === 404) throw new Error("GROUP_NOT_FOUND");
+
+    throw new Error("FAILED_GROUP_INSIGHTS");
+  }
+};
+
 export const getGroupExpenses = async (
   groupId: string,
   page: number = 1,

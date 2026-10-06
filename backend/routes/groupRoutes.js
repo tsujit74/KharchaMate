@@ -22,6 +22,7 @@ import {
 } from "../controllers/groupController.js";
 import { downloadGroupSettlementPDF } from "../controllers/groupReportController.js";
 import { checkGroupSettled } from "../middleware/checkGroupSettled.js";
+import { getGroupInsights } from "../controllers/groupInsightsController.js";
 
 const router = express.Router();
 
@@ -78,6 +79,13 @@ router.patch(
   checkGroupActive,
   isAdmin,
   updateGroupBudget,
+);
+
+router.get(
+  "/:groupId/insights",
+  authMiddleware,
+  groupContext,
+  getGroupInsights,
 );
 
 router.delete(
