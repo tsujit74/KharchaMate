@@ -57,6 +57,8 @@ type Props = {
 
 type GroupNavigationProps = Props & {
   groupName?: string;
+  groupType?: "NORMAL" | "ONGOING";
+  typeConfigured?: boolean;
 };
 
 type ButtonProps = Props & {
@@ -90,6 +92,8 @@ function SidebarButton({ item, activeSection, onSectionChange }: ButtonProps) {
 
 export default function GroupNavigation({
   groupName = "Group",
+  groupType,
+  typeConfigured = false,
   activeSection,
   onSectionChange,
 }: GroupNavigationProps) {
@@ -105,12 +109,31 @@ export default function GroupNavigation({
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               Group workspace
             </p>
-            <h2
-              title={groupName}
-              className="truncate text-sm font-semibold text-slate-900"
-            >
-              {groupName}
-            </h2>
+
+            <div className="flex min-w-0 items-center gap-2">
+              <h2
+                title={groupName}
+                className="min-w-0 truncate text-sm font-semibold text-slate-900"
+              >
+                {groupName}
+              </h2>
+
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                  !typeConfigured
+                    ? "bg-amber-50 text-amber-700"
+                    : groupType === "ONGOING"
+                      ? "bg-blue-50 text-blue-700"
+                      : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {!typeConfigured
+                  ? "Not set"
+                  : groupType === "ONGOING"
+                    ? "Ongoing"
+                    : "Normal"}
+              </span>
+            </div>
           </div>
         </div>
 

@@ -73,6 +73,8 @@ type Props = {
   moreData?: {
     groupId: string;
     groupName: string;
+    groupType?: "NORMAL" | "ONGOING";
+    typeConfigured?: boolean;
     onInfoClick: () => void;
   };
 };
@@ -131,6 +133,8 @@ export default function GroupWorkspace({
     <div className="flex min-h-screen bg-slate-50/50 pb-20 md:pb-0">
       <GroupNavigation
         groupName={overviewData?.settlement.group ?? ""}
+        groupType={moreData?.groupType}
+        typeConfigured={moreData?.typeConfigured}
         activeSection={activeSection}
         onSectionChange={setActiveSection}
       />
@@ -155,6 +159,8 @@ export default function GroupWorkspace({
                             : "Manage your group"
                 }
                 isActive={overviewData.isActive}
+                groupType={moreData?.groupType}
+                typeConfigured={moreData?.typeConfigured}
                 onInfoClick={overviewData.onInfoClick}
                 onAdd={overviewData.onAdd}
               >

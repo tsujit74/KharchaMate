@@ -7,6 +7,8 @@ type Props = {
   title: string;
   subtitle: string;
   isActive: boolean;
+  groupType?: "NORMAL" | "ONGOING";
+  typeConfigured?: boolean;
   onInfoClick: () => void;
   onAdd: () => void;
   children?: ReactNode;
@@ -16,6 +18,8 @@ export default function GroupHeader({
   title,
   subtitle,
   isActive,
+  groupType,
+  typeConfigured,
   onInfoClick,
   onAdd,
   children,
@@ -46,6 +50,22 @@ export default function GroupHeader({
                 }`}
               />
               {isActive ? "Active" : "Closed"}
+            </span>
+
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                !typeConfigured
+                  ? "bg-amber-50 text-amber-700"
+                  : groupType === "ONGOING"
+                    ? "bg-blue-50 text-blue-700"
+                    : "bg-slate-100 text-slate-700"
+              }`}
+            >
+              {!typeConfigured
+                ? "Not set"
+                : groupType === "ONGOING"
+                  ? "Ongoing"
+                  : "Normal"}
             </span>
           </div>
 

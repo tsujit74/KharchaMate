@@ -141,6 +141,7 @@ export default function GroupDetailsPage() {
       moreData={{
         groupId,
         groupName: settlement.group,
+        typeConfigured: group?.typeConfigured === true,
         onInfoClick: () => setInfoOpen(true),
       }}
     />
