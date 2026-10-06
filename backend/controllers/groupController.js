@@ -153,7 +153,8 @@ export const getMyGroups = async (req, res) => {
           isDeleted: { $ne: true },
         },
       },
-      // member fields
+
+      // Member fields
       {
         $lookup: {
           from: "users",
@@ -200,14 +201,21 @@ export const getMyGroups = async (req, res) => {
         },
       },
 
-      // Add totals
+      // Add totals + type configuration
       {
         $addFields: {
           totalExpenses: {
-            $ifNull: [{ $arrayElemAt: ["$expenseStats.total", 0] }, 0],
+            $ifNull: [
+              { $arrayElemAt: ["$expenseStats.total", 0] },
+              0,
+            ],
           },
+
           expenseCount: {
-            $ifNull: [{ $arrayElemAt: ["$expenseStats.count", 0] }, 0],
+            $ifNull: [
+              { $arrayElemAt: ["$expenseStats.count", 0] },
+              0,
+            ],
           },
 
           remainingBudget: {
@@ -217,15 +225,27 @@ export const getMyGroups = async (req, res) => {
                 $subtract: [
                   "$budget",
                   {
-                    $ifNull: [{ $arrayElemAt: ["$expenseStats.total", 0] }, 0],
+                    $ifNull: [
+                      { $arrayElemAt: ["$expenseStats.total", 0] },
+                      0,
+                    ],
                   },
                 ],
               },
               null,
             ],
           },
+
+          // True only when type actually exists in db
+          typeConfigured: {
+            $ne: [
+              { $type: "$type" },
+              "missing",
+            ],
+          },
         },
       },
+
       {
         $project: {
           expenseStats: 0,
@@ -236,7 +256,9 @@ export const getMyGroups = async (req, res) => {
     res.json(groups);
   } catch (error) {
     console.error("getMyGroups error:", error);
-    res.status(500).json({ message: "Failed to fetch groups" });
+    res.status(500).json({
+      message: "Failed to fetch groups",
+    });
   }
 };
 

@@ -8,7 +8,7 @@ export type Member = {
 export type Group = {
   expenseCount: number;
   budget?: number | null;
-  remainingBudget:number;
+  remainingBudget: number;
   totalExpenses: number;
   _id: string;
   name: string;
@@ -19,6 +19,9 @@ export type Group = {
   updatedAt: string;
   isActive?: boolean;
   isBlocked?: boolean;
+
+  type?: "NORMAL" | "ONGOING";
+  typeConfigured: boolean;
 };
 
 export type RecentExpense = {

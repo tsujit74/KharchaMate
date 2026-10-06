@@ -7,9 +7,11 @@ import {
   ArrowRight,
   Lock,
   Users,
+  Info,
 } from "lucide-react";
 
 import { Group } from "../types/dashboard.types";
+import { useState } from "react";
 
 type Props = {
   group: Group;
@@ -21,7 +23,7 @@ type Props = {
   onEdit: () => void;
   onSetBudget: () => void;
   onAddMember: () => void;
-  onDelete:()=>void;
+  onDelete: () => void;
 };
 
 export default function GroupCard({
@@ -44,6 +46,8 @@ export default function GroupCard({
     members,
     name,
     updatedAt,
+    type,
+    typeConfigured,
   } = group;
 
   const hasBudget = typeof budget === "number" && budget > 0;
@@ -53,6 +57,8 @@ export default function GroupCard({
   const progressWidth = Math.min(percentage, 100);
 
   const isOverBudget = hasBudget && remainingBudget < 0;
+
+  const [showTypeInfo, setShowTypeInfo] = useState(false);
 
   const progressColor =
     percentage <= 50
@@ -123,6 +129,79 @@ export default function GroupCard({
               Creator
             </span>
           )}
+          <div className="relative flex items-center justify-end gap-1.5">
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                !typeConfigured
+                  ? "bg-amber-50 text-amber-700"
+                  : type === "ONGOING"
+                    ? "bg-blue-50 text-blue-700"
+                    : "bg-slate-100 text-slate-700"
+              }`}
+            >
+              {!typeConfigured
+                ? "Not set"
+                : type === "ONGOING"
+                  ? "Ongoing"
+                  : "Normal"}
+            </span>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowTypeInfo((prev) => !prev);
+              }}
+              className="flex h-5 w-5 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              aria-label="Group type information"
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
+
+            {showTypeInfo && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-7 z-40 w-64 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl"
+              >
+                <p className="text-xs font-bold text-slate-800">Group Types</p>
+
+                <div className="mt-3 space-y-2.5">
+                  {/* Normal */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-slate-700">
+                      Normal
+                    </p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+                      For one-time activities like trips, events, or temporary
+                      expense sharing.
+                    </p>
+                  </div>
+
+                  {/* Ongoing */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-blue-700">
+                      Ongoing
+                    </p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+                      For long-term or recurring expenses like rent, flat
+                      expenses, subscriptions, or monthly expenses.
+                    </p>
+                  </div>
+
+                  {/* Not Set */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-amber-700">
+                      Not set
+                    </p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+                      The group type has not been configured yet. An admin can
+                      choose Normal or Ongoing.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {!isClosed && !isBlocked && (
@@ -218,17 +297,17 @@ export default function GroupCard({
                       <span>{hasBudget ? "Update Budget" : "Set Budget"}</span>
                     </button>
 
- {isCreator && (
-          <>
-            <div className="my-1.5 border-t border-slate-100" />
+                    {isCreator && (
+                      <>
+                        <div className="my-1.5 border-t border-slate-100" />
 
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete();
+                          }}
+                          className="
                 flex w-full items-center gap-2.5
                 rounded-lg px-3 py-2.5
                 text-left text-xs font-medium
@@ -237,16 +316,15 @@ export default function GroupCard({
                 hover:bg-red-50 hover:text-red-700
                 focus:outline-none focus:ring-2 focus:ring-red-100
               "
-            >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-500">
-                <Lock className="h-3.5 w-3.5" />
-              </span>
+                        >
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-500">
+                            <Lock className="h-3.5 w-3.5" />
+                          </span>
 
-              <span>Delete Group</span>
-            </button>
-          </>
-        )}
-
+                          <span>Delete Group</span>
+                        </button>
+                      </>
+                    )}
                   </>
                 ) : (
                   <div className="px-3 py-3">
