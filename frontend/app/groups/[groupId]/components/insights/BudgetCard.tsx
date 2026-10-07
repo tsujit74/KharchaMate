@@ -1,18 +1,21 @@
-    import type { GroupInsights } from "../../types/insights.types";
-import { cardClass, cardTitleClass, formatAmount } from "../insights/shared";
+import type { GroupInsights } from "../../types/insights.types";
+import {
+  cardClass,
+  cardTitleClass,
+  formatAmount,
+  formatPercent,
+} from "../insights/shared";
 
 type Props = {
   budget: GroupInsights["budget"];
-  isOngoing: boolean;
+  projection?: { amount: number; daysLeft: number } | null;
 };
 
-export default function BudgetCard({ budget, isOngoing }: Props) {
-  const title = isOngoing ? "Budget (all-time)" : "Budget";
-
+export default function BudgetCard({ budget, projection }: Props) {
   if (!budget) {
     return (
       <div className={cardClass}>
-        <h2 className={cardTitleClass}>{title}</h2>
+        <h2 className={cardTitleClass}>Budget</h2>
         <p className="mt-3 text-sm text-slate-500">
           No budget has been set for this group.
         </p>
@@ -20,8 +23,10 @@ export default function BudgetCard({ budget, isOngoing }: Props) {
     );
   }
 
-  const percent = Math.round((budget.spent / budget.amount) * 100);
+  const title = budget.scope === "MONTH" ? "Budget (this month)" : "Budget";
+  const percent = budget.percentageUsed;
   const over = budget.remaining < 0;
+  const projectedOver = projection != null && projection.amount > budget.amount;
 
   const barColor = over
     ? "bg-red-400"
@@ -47,8 +52,17 @@ export default function BudgetCard({ budget, isOngoing }: Props) {
       <p className="mt-2 text-sm text-slate-500">
         {over
           ? `Over by ${formatAmount(-budget.remaining)}`
-          : `${formatAmount(budget.remaining)} remaining (${percent}% used)`}
+          : `${formatAmount(budget.remaining)} remaining (${formatPercent(percent)} used)`}
       </p>
+
+      {projection && (
+        <p
+          className={`mt-3 text-xs ${projectedOver ? "text-amber-600" : "text-slate-400"}`}
+        >
+          On track for {formatAmount(projection.amount)} by month end ·{" "}
+          {projection.daysLeft} days left
+        </p>
+      )}
     </div>
   );
 }

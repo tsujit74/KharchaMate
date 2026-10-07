@@ -7,6 +7,7 @@ import InsightsEmptyState from "../../insights/InsightsEmptyState";
 import InsightsSkeleton from "../../insights/InsightsSkeleton";
 import InsightsKpis from "../../insights/InsightsKpis";
 import SpendingTrendChart from "../../insights/SpendingTrendChart";
+import WeekdayBreakdown from "../../insights/WeekBreakdown";
 import CategoryBreakdown from "../../insights/CategoryBreakdown";
 import MemberContribution from "../../insights/MemberContribution";
 import TopExpenses from "../../insights/TopExpenses";
@@ -26,6 +27,15 @@ export default function GroupInsightsSection({
   const { data, loading, error } = useGroupInsights(groupId);
 
   const isOngoing = data?.group.type === "ONGOING";
+  const isActive = data?.group.isActive ?? false;
+
+  const projection =
+    data && isActive && data.summary.projectedMonthEnd != null
+      ? {
+          amount: data.summary.projectedMonthEnd,
+          daysLeft: data.summary.daysLeftInMonth ?? 0,
+        }
+      : null;
 
   return (
     <section className="px-4 py-6 sm:px-6 lg:px-8">
@@ -50,10 +60,13 @@ export default function GroupInsightsSection({
             <InsightsKpis
               summary={data.summary}
               type={data.group.type}
+              isActive={isActive}
               memberCount={data.group.memberCount}
             />
 
             <SpendingTrendChart trend={data.trend} isOngoing={isOngoing} />
+
+            {isOngoing && <WeekdayBreakdown data={data.byWeekday} />}
 
             <div className="grid gap-4 lg:grid-cols-2">
               <CategoryBreakdown categories={data.categories} />
@@ -75,11 +88,12 @@ export default function GroupInsightsSection({
             )}
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <BudgetCard budget={data.budget} isOngoing={isOngoing} />
+              <BudgetCard budget={data.budget} projection={projection} />
 
               {data.group.memberCount > 1 && (
                 <SettlementCard
                   settlement={data.settlement}
+                  currentUserId={user?.id}
                   onOpen={onOpenSettlement}
                 />
               )}

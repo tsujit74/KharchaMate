@@ -1,15 +1,35 @@
 import type { GroupInsights } from "../../types/insights.types";
-import { cardClass, formatAmount } from "../insights/shared";
+import {
+  cardClass,
+  formatAmount,
+  formatPercent,
+  trendLabel,
+} from "../insights/shared";
 
 type Props = {
   summary: GroupInsights["summary"];
   type: GroupInsights["group"]["type"];
+  isActive: boolean;
   memberCount: number;
 };
 
 type Kpi = { label: string; value: string; note: string };
 
-export default function InsightsKpis({ summary, type, memberCount }: Props) {
+const changeNote = (summary: GroupInsights["summary"]) => {
+  const { monthlyChange, monthlyChangeDirection } = summary;
+  if (monthlyChange == null || monthlyChangeDirection === "FLAT") {
+    return "spent so far";
+  }
+  const word = monthlyChangeDirection === "UP" ? "higher" : "lower";
+  return `${formatPercent(Math.abs(monthlyChange))} ${word} than last month`;
+};
+
+export default function InsightsKpis({
+  summary,
+  type,
+  isActive,
+  memberCount,
+}: Props) {
   const sharePercent = summary.totalSpent
     ? Math.round((summary.yourShare / summary.totalSpent) * 100)
     : 0;
@@ -26,18 +46,27 @@ export default function InsightsKpis({ summary, type, memberCount }: Props) {
     {
       label: "Your Share",
       value: formatAmount(summary.yourShare),
-      note: `${sharePercent}% of total`,
+      note: `${sharePercent}% of total · you paid ${formatAmount(summary.yourPaid)}`,
     },
   ];
+
+  const first: Kpi =
+    isActive || !summary.highestMonth
+      ? {
+          label: "This Month",
+          value: formatAmount(summary.thisMonth ?? 0),
+          note: changeNote(summary),
+        }
+      : {
+          label: "Highest Month",
+          value: formatAmount(summary.highestMonth.amount),
+          note: trendLabel(`${summary.highestMonth.month}-01`, "month"),
+        };
 
   const byType: Kpi[] =
     type === "ONGOING"
       ? [
-          {
-            label: "This Month",
-            value: formatAmount(summary.thisMonth ?? 0),
-            note: "spent so far",
-          },
+          first,
           {
             label: "Avg / Month",
             value:
