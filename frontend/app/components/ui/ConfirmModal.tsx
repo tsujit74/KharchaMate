@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Info, Loader2, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type ConfirmModalVariant = "default" | "warning" | "danger";
+type Phase = "open" | "closing" | "closed";
 
 type ConfirmModalProps = {
   isOpen: boolean;
@@ -48,6 +56,10 @@ const VARIANTS: Record<ConfirmModalVariant, VariantConfig> = {
 };
 
 const ANIMATION_MS = 250;
+const ENTER_EASING = "cubic-bezier(0.16, 1, 0.3, 1)";
+const EXIT_EASING = "ease-in";
+const DESKTOP_QUERY = "(min-width: 640px)";
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 const FOCUSABLE_SELECTOR = [
   "button:not([disabled])",
@@ -57,6 +69,13 @@ const FOCUSABLE_SELECTOR = [
   "textarea:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
+
+const subscribeNoop = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
+const prefersReducedMotion = () =>
+  window.matchMedia(REDUCED_MOTION_QUERY).matches;
 
 export default function ConfirmModal({
   isOpen,
@@ -70,10 +89,12 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
-  const [isMounted, setIsMounted] = useState(false);
-  const [isEntered, setIsEntered] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
-  const wasOpenRef = useRef(false);
+  const isMounted = useSyncExternalStore(
+    subscribeNoop,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const [phase, setPhase] = useState<Phase>(isOpen ? "open" : "closed");
   const overlayRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
@@ -84,9 +105,58 @@ export default function ConfirmModal({
   const { Icon, iconWrapper, confirmButton } = VARIANTS[variant];
   const isDestructive = variant !== "default";
 
+  if (isOpen && phase !== "open") {
+    setPhase("open");
+  } else if (!isOpen && phase === "open") {
+    setPhase("closing");
+  }
+
+  useLayoutEffect(() => {
+    if (!isMounted || phase === "closed") return;
+
+    const overlay = overlayRef.current;
+    const panel = panelRef.current;
+    if (!overlay || !panel) return;
+    if (typeof panel.animate !== "function" || prefersReducedMotion()) return;
+
+    const isDesktop = window.matchMedia(DESKTOP_QUERY).matches;
+    const isEntering = phase === "open";
+
+    const panelFrames: Keyframe[] = isDesktop
+      ? [
+          { opacity: 0, transform: "scale(0.95)" },
+          { opacity: 1, transform: "scale(1)" },
+        ]
+      : [
+          { transform: "translateY(100%)" },
+          { transform: "translateY(0)" },
+        ];
+    const overlayFrames: Keyframe[] = [{ opacity: 0 }, { opacity: 1 }];
+
+    const options: KeyframeAnimationOptions = {
+      duration: ANIMATION_MS,
+      easing: isEntering ? ENTER_EASING : EXIT_EASING,
+      direction: isEntering ? "normal" : "reverse",
+      fill: isEntering ? "none" : "forwards",
+    };
+
+    const animations = [
+      panel.animate(panelFrames, options),
+      overlay.animate(overlayFrames, options),
+    ];
+
+    return () => {
+      animations.forEach((animation) => animation.cancel());
+    };
+  }, [phase, isMounted]);
+
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (phase !== "closing") return;
+
+    const delay = prefersReducedMotion() ? 0 : ANIMATION_MS;
+    const timer = window.setTimeout(() => setPhase("closed"), delay);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
 
   useEffect(() => {
     if (!isOpen || !isMounted) return;
@@ -107,26 +177,8 @@ export default function ConfirmModal({
   }, [isOpen, isMounted, isDestructive]);
 
   useEffect(() => {
-    if (isOpen) {
-      wasOpenRef.current = true;
-      setIsExiting(false);
-      void overlayRef.current?.offsetHeight;
-      setIsEntered(true);
-      return;
-    }
-
-    if (!wasOpenRef.current) return;
-
-    wasOpenRef.current = false;
-    setIsEntered(false);
-    setIsExiting(true);
-    const timer = window.setTimeout(() => setIsExiting(false), ANIMATION_MS);
-    return () => window.clearTimeout(timer);
-  }, [isOpen]);
-
-  useEffect(() => {
     if (isOpen && loading) {
-      panelRef.current?.focus();
+      panelRef.current?.focus({ preventScroll: true });
     }
   }, [isOpen, loading]);
 
@@ -174,14 +226,14 @@ export default function ConfirmModal({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, loading, onCancel]);
 
-  if (!isMounted || (!isOpen && !isExiting)) return null;
+  if (!isMounted || phase === "closed") return null;
 
   return createPortal(
     <div
       ref={overlayRef}
-      className={`fixed inset-0 z-[200] flex items-end justify-center bg-slate-950/40 backdrop-blur-[2px] transition-opacity duration-[250ms] ease-out motion-reduce:transition-none sm:items-center sm:p-4 ${
-        isEntered ? "opacity-100" : "opacity-0"
-      } ${isOpen ? "" : "pointer-events-none"}`}
+      className={`fixed inset-0 z-[200] flex items-end justify-center bg-slate-950/40 backdrop-blur-[2px] sm:items-center sm:p-4 ${
+        isOpen ? "" : "pointer-events-none"
+      }`}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !loading) {
           onCancel();
@@ -196,11 +248,7 @@ export default function ConfirmModal({
         aria-describedby={messageId}
         aria-busy={loading}
         tabIndex={-1}
-        className={`relative max-h-[calc(100dvh-1rem)] w-full overflow-y-auto rounded-t-2xl border border-slate-200 bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_24px_64px_-12px_rgba(15,23,42,0.28)] outline-none transition-all duration-[250ms] ease-out motion-reduce:transition-none sm:max-h-[calc(100dvh-2rem)] sm:max-w-md sm:rounded-2xl sm:p-6 ${
-          isEntered
-            ? "translate-y-0 opacity-100 sm:scale-100"
-            : "translate-y-full opacity-100 sm:translate-y-0 sm:scale-95 sm:opacity-0"
-        }`}
+        className="relative max-h-[calc(100dvh-1rem)] w-full overflow-y-auto rounded-t-2xl border border-slate-200 bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_24px_64px_-12px_rgba(15,23,42,0.28)] outline-none sm:max-h-[calc(100dvh-2rem)] sm:max-w-md sm:rounded-2xl sm:p-6"
       >
         <button
           type="button"
