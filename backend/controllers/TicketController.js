@@ -74,6 +74,13 @@ export const getTicketById = async (req, res) => {
       });
     }
 
+    if (ticket.user.toString() !== req.user.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view this ticket",
+      });
+    }
+
     res.json({
       success: true,
       ticket,
@@ -96,6 +103,13 @@ export const replyToTicket = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Ticket not found",
+      });
+    }
+
+    if (ticket.user.toString() !== req.user.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to reply to this ticket",
       });
     }
 
