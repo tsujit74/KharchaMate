@@ -2,38 +2,41 @@
 
 import { AuthProvider } from "@/app/context/authContext";
 import { Toaster } from "react-hot-toast";
+import { ConfirmProvider } from "./context/ConfirmContext";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      {children}
-      <Toaster
-        position="top-right"
-        reverseOrder={false}
-        containerStyle={{ top: 80 }}
-        toastOptions={{
-          duration: 3500,
-          style: {
-            background: "#0f172a",
-            color: "#ffffff",
-            borderRadius: "14px",
-            padding: "12px 16px",
-            fontSize: "14px",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-          },
-          success: {
+      <ConfirmProvider>
+        {children}
+        <Toaster
+          position="top-right"
+          reverseOrder={false}
+          containerStyle={{ top: 80 }}
+          toastOptions={{
+            duration: 3500,
             style: {
-              background: "#065f46",
+              background: "#0f172a",
+              color: "#ffffff",
+              borderRadius: "14px",
+              padding: "12px 16px",
+              fontSize: "14px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
             },
-          },
-          error: {
-            style: {
-              background: "#7f1d1d",
+            success: {
+              style: {
+                background: "#065f46",
+              },
             },
-            duration: 4500,
-          },
-        }}
-      />
+            error: {
+              style: {
+                background: "#7f1d1d",
+              },
+              duration: 4500,
+            },
+          }}
+        />
+      </ConfirmProvider>
     </AuthProvider>
   );
 }

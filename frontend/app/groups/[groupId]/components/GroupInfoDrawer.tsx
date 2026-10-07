@@ -17,6 +17,7 @@ import {
   updateGroupType,
 } from "@/app/services/group.service";
 import toast from "react-hot-toast";
+import { useConfirm } from "@/app/context/ConfirmContext";
 
 const roleBadgeStyle: Record<string, string> = {
   CREATOR: "bg-purple-50 text-purple-700 ring-purple-200",
@@ -39,6 +40,8 @@ export default function GroupInfoDrawer({
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [typeLoading, setTypeLoading] = useState(false);
+
+  const { confirm } = useConfirm();
 
   const [selectedType, setSelectedType] = useState<"NORMAL" | "ONGOING" | "">(
     group?.typeConfigured === true ? (group?.type ?? "") : "",
@@ -121,11 +124,16 @@ export default function GroupInfoDrawer({
     if (!isAdmin || statusLoading) return;
 
     if (isActive) {
-      const ok = window.confirm(
-        "Closing this group will disable all actions.\nContinue?",
-      );
+      const confirmed = await confirm({
+        title: "Close Group",
+        message:
+          "Closing this group will disable all actions and put it in view-only mode. Continue?",
+        confirmText: "Close Group",
+        cancelText: "Cancel",
+        variant: "warning",
+      });
 
-      if (!ok) return;
+      if (!confirmed) return;
     }
 
     try {
@@ -144,11 +152,22 @@ export default function GroupInfoDrawer({
 
   const handleRemove = async (userId: string) => {
     if (!isActive) return toast.error("Group is closed");
+
     if (hasExpenses) {
       return toast.error("Cannot remove members after expenses");
     }
 
-    if (!window.confirm("Remove this member?")) return;
+    const member = members.find((m: any) => m._id === userId);
+
+    const confirmed = await confirm({
+      title: "Remove Member",
+      message: `Are you sure you want to remove "${member?.name ?? "this member"}" from the group?`,
+      confirmText: "Remove Member",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+
+    if (!confirmed) return;
 
     try {
       setLoadingUserId(userId);

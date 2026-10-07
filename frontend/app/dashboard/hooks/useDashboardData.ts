@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { deleteGroup, getMyGroups } from "@/app/services/group.service";
 import { getRecentExpenses } from "@/app/services/expense.service";
 import { getPendingSettlements } from "@/app/services/settlement.service";
+import { useConfirm } from "@/app/context/ConfirmContext";
 
 import {
   Group,
@@ -19,6 +20,7 @@ export function useDashboardData(
   authLoading: boolean,
 ) {
   const router = useRouter();
+  const { confirm } = useConfirm();
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [recentExpenses, setRecentExpenses] = useState<RecentExpense[]>([]);
@@ -76,6 +78,20 @@ export function useDashboardData(
   }, [isAuthenticated, authLoading, router]);
 
   const handleDeleteGroup = async (groupId: string) => {
+    const group = groups.find((item) => item._id === groupId);
+
+    if (!group) return;
+
+    const confirmed = await confirm({
+      title: "Delete Group",
+      message: `Are you sure you want to delete "${group.name}"? This action cannot be undone.`,
+      confirmText: "Delete Group",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+
+    if (!confirmed) return;
+
     try {
       await deleteGroup(groupId);
 

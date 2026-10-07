@@ -1,17 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  Trash2,
-  Edit,
-  Receipt,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2, Edit, Receipt } from "lucide-react";
 import { formatDateTime } from "@/app/utils/formatDateTime";
 import { deleteExpense } from "@/app/services/expense.service";
 import EditExpenseModal from "../EditExpenseModal";
 import toast from "react-hot-toast";
+import { useConfirm } from "@/app/context/ConfirmContext";
 
 function formatAmount(amount: number | string) {
   return `₹${Number(amount).toLocaleString("en-IN", {
@@ -37,12 +32,18 @@ export default function ExpenseCard({
   const { dateLabel } = formatDateTime(expense.createdAt);
   const isOwner = expense.paidBy?._id === currentUserId;
 
+  const { confirm } = useConfirm();
+
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this expense?"
-    );
+    const confirmed = await confirm({
+      title: "Delete Expense",
+      message: `Are you sure you want to delete "${expense.description}"? This action cannot be undone.`,
+      confirmText: "Delete Expense",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
 
     if (!confirmed) return;
 
