@@ -9,6 +9,7 @@ import { useDashboardData } from "./hooks/useDashboardData";
 import AppSkeleton from "../components/ui/AppSkeleton";
 import Announcements from "./components/Announcements";
 import DashboardContent from "./components/DashboardContent";
+import CreateGroupModal from "./components/CreateGroupModal";
 import EditGroupNameModal from "./components/EditGroupNameModal";
 import SetBudgetModal from "./components/SetBudgetModal";
 
@@ -18,11 +19,11 @@ export default function DashboardPage() {
 
   const dashboard = useDashboardData(isAuthenticated, loading);
 
-  // Edit group state
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
+
   const [editGroupId, setEditGroupId] = useState<string | null>(null);
   const [editGroupName, setEditGroupName] = useState("");
 
-  // Budget state
   const [budgetGroupId, setBudgetGroupId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function DashboardPage() {
           pendingLoading={dashboard.pendingLoading}
           setEditGroupId={setEditGroupId}
           setEditGroupName={setEditGroupName}
+          onCreateGroup={() => setCreateGroupOpen(true)}
           onSetBudget={(groupId) => {
             setBudgetGroupId(groupId);
           }}
@@ -71,7 +73,14 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Edit Group Name Modal */}
+      <CreateGroupModal
+        isOpen={createGroupOpen}
+        onClose={() => setCreateGroupOpen(false)}
+        onCreated={(groupId) => {
+          router.push(`/groups/${groupId}`);
+        }}
+      />
+
       <EditGroupNameModal
         isOpen={!!editGroupId}
         groupId={editGroupId || ""}

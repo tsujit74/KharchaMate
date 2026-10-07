@@ -26,6 +26,7 @@ type Props = {
   setEditGroupId: (id: string | null) => void;
   setEditGroupName: (name: string) => void;
 
+  onCreateGroup: () => void;
   onSetBudget: (groupId: string) => void;
   onDelete: (groupId: string) => void;
 };
@@ -40,20 +41,17 @@ export default function DashboardContent({
   pendingLoading,
   setEditGroupId,
   setEditGroupName,
+  onCreateGroup,
   onSetBudget,
   onDelete,
 }: Props) {
-  const activeGroups = groups.filter(
-    (g) => g.isActive && !g.isBlocked
-  ).length;
+  const activeGroups = groups.filter((g) => g.isActive && !g.isBlocked).length;
 
   const archivedGroups = groups.filter(
-    (g) => !g.isActive && !g.isBlocked
+    (g) => !g.isActive && !g.isBlocked,
   ).length;
 
-  const blockedGroups = groups.filter(
-    (g) => g.isBlocked
-  ).length;
+  const blockedGroups = groups.filter((g) => g.isBlocked).length;
 
   const handleEdit = (id: string, name: string) => {
     setEditGroupId(id);
@@ -62,17 +60,14 @@ export default function DashboardContent({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Header */}
-      <DashboardHeader firstName={firstName} />
+      <DashboardHeader firstName={firstName} onCreateGroup={onCreateGroup} />
 
-      {/* Stats */}
       <DashboardStats
         groups={groups}
         recentExpenses={recentExpenses}
         pendingSettlements={pendingSettlements}
       />
 
-      {/* Groups */}
       <GroupsSection
         groups={groups}
         userId={userId}
@@ -84,7 +79,6 @@ export default function DashboardContent({
         blockedGroups={blockedGroups}
       />
 
-      {/* Bottom Sections */}
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
         <RecentExpensesSection
           expenses={recentExpenses}

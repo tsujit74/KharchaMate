@@ -5,12 +5,15 @@ import { TrendingUp, Plus } from "lucide-react";
 
 type Props = {
   firstName: string;
+  onCreateGroup: () => void;
 };
 
-export default function DashboardHeader({ firstName }: Props) {
+export default function DashboardHeader({
+  firstName,
+  onCreateGroup,
+}: Props) {
   return (
     <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
-      {/* Left Side */}
       <div className="min-w-0 flex-1">
         <p className="text-[10px] sm:text-xs font-semibold text-blue-600 uppercase tracking-wider">
           Dashboard
@@ -25,7 +28,6 @@ export default function DashboardHeader({ firstName }: Props) {
         </p>
       </div>
 
-      {/* Right Side Actions */}
       <div className="flex items-center gap-2 shrink-0 ml-auto">
         <Link
           href="/dashboard/insights"
@@ -35,13 +37,14 @@ export default function DashboardHeader({ firstName }: Props) {
           <span className="hidden sm:inline ml-1">Insights</span>
         </Link>
 
-        <Link
-          href="/groups/create"
+        <button
+          type="button"
+          onClick={onCreateGroup}
           className="inline-flex items-center justify-center h-10 w-10 sm:w-auto sm:px-4 rounded-xl bg-slate-950 text-white text-sm font-medium hover:bg-slate-800 transition shadow"
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline ml-1">New Group</span>
-        </Link>
+        </button>
       </div>
     </div>
   );
