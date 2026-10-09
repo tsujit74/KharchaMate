@@ -4,8 +4,61 @@ import mongoose from "mongoose";
 import { notifyUser } from "../service/notify.js";
 import { getDateRanges } from "../service/dateRange.js";
 
-const round = (n) => Math.round(n * 100) / 100;
 const FIVE_HOURS = 5 * 60 * 60 * 1000;
+const INVALID_CUSTOM_SPLIT_MESSAGE =
+  "Invalid custom split: use unique group members with non-negative paise-precision shares totaling the expense amount";
+
+export const createCustomSplit = (splitBetween, members, amountInCents) => {
+  if (!Array.isArray(splitBetween) || splitBetween.length === 0) {
+    return null;
+  }
+
+  const membersById = new Map(
+    members.map((memberId) => [String(memberId).toLowerCase(), memberId]),
+  );
+  const seenMembers = new Set();
+  let totalInCents = 0;
+  const normalizedSplit = [];
+
+  for (const split of splitBetween) {
+    if (!split || typeof split !== "object" || Array.isArray(split)) {
+      return null;
+    }
+
+    if (!mongoose.isObjectIdOrHexString(split.user)) {
+      return null;
+    }
+
+    const memberKey = String(split.user).toLowerCase();
+    const memberId = membersById.get(memberKey);
+    if (!memberId || seenMembers.has(memberKey)) {
+      return null;
+    }
+    seenMembers.add(memberKey);
+
+    if (typeof split.amount !== "number" || !Number.isFinite(split.amount)) {
+      return null;
+    }
+
+    const shareInCents = Math.round(split.amount * 100);
+    if (
+      split.amount < 0 ||
+      !Number.isSafeInteger(shareInCents) ||
+      split.amount !== shareInCents / 100
+    ) {
+      return null;
+    }
+
+    totalInCents += shareInCents;
+    if (!Number.isSafeInteger(totalInCents)) {
+      return null;
+    }
+
+    normalizedSplit.push({ user: memberId, amount: shareInCents / 100 });
+  }
+
+  return totalInCents === amountInCents ? normalizedSplit : null;
+};
 
 export const getExpenseAmountInCents = (amount) => {
   const numericAmount = Number(amount);
@@ -77,19 +130,13 @@ export const addExpense = async (req, res) => {
     let finalSplit = [];
 
     // CUSTOM SPLIT
-    if (Array.isArray(splitBetween) && splitBetween.length > 0) {
-      const totalSplit = splitBetween.reduce(
-        (sum, s) => sum + Number(s.amount),
-        0,
-      );
-
-      if (round(totalSplit) !== round(amountInCents / 100)) {
+    if (splitBetween !== undefined) {
+      finalSplit = createCustomSplit(splitBetween, group.members, amountInCents);
+      if (!finalSplit) {
         return res.status(400).json({
-          message: "Split total must equal amount",
+          message: INVALID_CUSTOM_SPLIT_MESSAGE,
         });
       }
-
-      finalSplit = splitBetween;
     }
     // EQUAL SPLIT
     else {
@@ -370,28 +417,52 @@ export const updateExpense = async (req, res) => {
       });
     }
 
-    const newAmount =
-      amount !== undefined ? Number(amount) : Number(expense.amount);
+    const requestedAmount = amount !== undefined ? amount : expense.amount;
+    const numericAmount = Number(requestedAmount);
 
-    if (!Number.isFinite(newAmount) || newAmount <= 0) {
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return res.status(400).json({
         message: "Amount must be greater than 0",
       });
     }
 
-    if (Array.isArray(splitBetween) && splitBetween.length > 0) {
-      const totalSplit = splitBetween.reduce(
-        (sum, s) => sum + Number(s.amount),
-        0,
+    const amountInCents = getExpenseAmountInCents(requestedAmount);
+    if (amountInCents === null) {
+      return res.status(400).json({
+        message: "Amount must have at most two decimal places and fit within safe paise precision",
+      });
+    }
+
+    const newAmount = amountInCents / 100;
+    if (splitBetween !== undefined) {
+      const group = await Group.findById(expense.group).select("members");
+      const normalizedSplit = createCustomSplit(
+        splitBetween,
+        group?.members || [],
+        amountInCents,
       );
 
-      if (round(totalSplit) !== round(newAmount)) {
+      if (!normalizedSplit) {
         return res.status(400).json({
-          message: "Split total must equal amount",
+          message: INVALID_CUSTOM_SPLIT_MESSAGE,
         });
       }
 
-      expense.splitBetween = splitBetween;
+      expense.splitBetween = normalizedSplit;
+    } else if (amount !== undefined) {
+      let participants = (expense.splitBetween || []).map((split) => split.user);
+      if (participants.length === 0) {
+        const group = await Group.findById(expense.group).select("members");
+        participants = group?.members || [];
+      }
+
+      if (participants.length === 0) {
+        return res.status(400).json({
+          message: "Expense must have at least one split participant",
+        });
+      }
+
+      expense.splitBetween = createEqualSplit(participants, amountInCents);
     }
 
     if (description !== undefined) {
