@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { Download, Loader2 } from "lucide-react";
 
 import { downloadGroupSettlementPDF } from "@/app/services/group.service";
+import { useConfirm } from "@/app/context/ConfirmContext";
 
 interface DownloadGroupPDFProps {
   groupId: string;
@@ -15,14 +16,20 @@ export default function DownloadGroupPDF({
   groupId,
   groupName,
 }: DownloadGroupPDFProps) {
+  const { confirm } = useConfirm();
+
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
     if (isDownloading) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to download this group settlement report?",
-    );
+    const confirmed = await confirm({
+      title: "Download Settlement Report",
+      message: `Generate and download the settlement report for "${groupName}"?`,
+      confirmText: "Download Report",
+      cancelText: "Cancel",
+      variant: "default",
+    });
 
     if (!confirmed) return;
 
