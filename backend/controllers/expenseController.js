@@ -7,6 +7,42 @@ import { getDateRanges } from "../service/dateRange.js";
 const round = (n) => Math.round(n * 100) / 100;
 const FIVE_HOURS = 5 * 60 * 60 * 1000;
 
+export const getExpenseAmountInCents = (amount) => {
+  const numericAmount = Number(amount);
+  const amountInCents = Math.round(numericAmount * 100);
+
+  if (
+    !Number.isFinite(numericAmount) ||
+    numericAmount <= 0 ||
+    !Number.isSafeInteger(amountInCents) ||
+    Math.abs(numericAmount * 100 - amountInCents) > 1e-7
+  ) {
+    return null;
+  }
+
+  return amountInCents;
+};
+
+export const createEqualSplit = (members, amountInCents) => {
+  const baseShareInCents = Math.floor(amountInCents / members.length);
+  const remainderInCents = amountInCents - baseShareInCents * members.length;
+  const remainderRecipient = members.reduce(
+    (lowestId, memberId) =>
+      String(memberId) < String(lowestId) ? memberId : lowestId,
+    members[0],
+  );
+
+  return members.map((memberId) => ({
+    user: memberId,
+    amount:
+      (baseShareInCents +
+        (String(memberId) === String(remainderRecipient)
+          ? remainderInCents
+          : 0)) /
+      100,
+  }));
+};
+
 const canModifyExpense = (expense) => {
   const now = Date.now();
   const createdAt = new Date(expense.createdAt).getTime();
@@ -16,6 +52,14 @@ const canModifyExpense = (expense) => {
 export const addExpense = async (req, res) => {
   try {
     const { groupId, description, amount, splitBetween, category } = req.body;
+    const amountInCents = getExpenseAmountInCents(amount);
+
+    if (amountInCents === null) {
+      return res.status(400).json({
+        message:
+          "Expense amount must be a finite positive amount with at most two decimal places",
+      });
+    }
 
     const group = await Group.findById(groupId);
 
@@ -39,7 +83,7 @@ export const addExpense = async (req, res) => {
         0,
       );
 
-      if (round(totalSplit) !== round(Number(amount))) {
+      if (round(totalSplit) !== round(amountInCents / 100)) {
         return res.status(400).json({
           message: "Split total must equal amount",
         });
@@ -50,12 +94,7 @@ export const addExpense = async (req, res) => {
     // EQUAL SPLIT
     else {
       const members = group.members;
-      const perHead = round(amount / members.length);
-
-      finalSplit = members.map((memberId) => ({
-        user: memberId,
-        amount: perHead,
-      }));
+      finalSplit = createEqualSplit(members, amountInCents);
     }
 
     const expense = await Expense.create({
