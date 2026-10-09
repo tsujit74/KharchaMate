@@ -6,3 +6,4 @@ node_modules
 test_patment.js
 test_patment
 test_shared_creditor_race.js
+test_expense_split_validation.js
