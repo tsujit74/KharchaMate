@@ -24,6 +24,11 @@ import {
 import { downloadGroupSettlementPDF } from "../controllers/groupReportController.js";
 import { checkGroupSettled } from "../middleware/checkGroupSettled.js";
 import { getGroupInsights } from "../controllers/groupInsightsController.js";
+import {
+  createMonthlySnapshot,
+  getMonthlySnapshotByMonth,
+  getMonthlySnapshots,
+} from "../controllers/monthlySnapshotController.js";
 
 const router = express.Router();
 
@@ -97,6 +102,29 @@ router.get(
   authMiddleware,
   groupContext,
   getGroupInsights,
+);
+
+router.post(
+  "/:groupId/monthly-snapshots",
+  authMiddleware,
+  groupContext,
+  checkGroupBlocked,
+  isAdmin,
+  createMonthlySnapshot,
+);
+
+router.get(
+  "/:groupId/monthly-snapshots",
+  authMiddleware,
+  groupContext,
+  getMonthlySnapshots,
+);
+
+router.get(
+  "/:groupId/monthly-snapshots/:month",
+  authMiddleware,
+  groupContext,
+  getMonthlySnapshotByMonth,
 );
 
 router.delete(
