@@ -61,6 +61,14 @@ export default function AddExpenseForm({
       .catch(() => toast.error("Failed to load members"));
   }, [groupId]);
 
+  const resetForm = () => {
+    setDescription("");
+    setAmount("");
+    setCategory("");
+    setSplitType("EQUAL");
+    setCustomSplit({});
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -126,6 +134,7 @@ export default function AddExpenseForm({
 
       toast.success("Expense added");
 
+      resetForm();
       onSuccess();
     } catch (err: any) {
       toast.error(err.message || "Failed");
@@ -241,6 +250,7 @@ export default function AddExpenseForm({
                 type="number"
                 min="0"
                 step="0.01"
+                value={customSplit[m._id] ?? ""}
                 className="w-24 rounded border px-2 py-2"
                 onChange={(e) =>
                   setCustomSplit((prev) => ({
