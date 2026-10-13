@@ -5,29 +5,17 @@ import Settlement from "../models/Settlement.js";
 import User from "../models/User.js";
 
 const IST_OFFSET = 5.5 * 60 * 60 * 1000;
-const CATEGORIES = [
-  "FOOD",
-  "TRAVEL",
-  "RENT",
-  "SHOPPING",
-  "RECHARGE",
-  "OTHER",
-];
+const CATEGORIES = ["FOOD", "TRAVEL", "RENT", "SHOPPING", "RECHARGE", "OTHER"];
 
 const isValidMonth = (month) =>
-  typeof month === "string" &&
-  /^\d{4}-(0[1-9]|1[0-2])$/.test(month);
+  typeof month === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(month);
 
 const getMonthRange = (month) => {
   const [year, monthNumber] = month.split("-").map(Number);
 
-  const start = new Date(
-    Date.UTC(year, monthNumber - 1, 1) - IST_OFFSET,
-  );
+  const start = new Date(Date.UTC(year, monthNumber - 1, 1) - IST_OFFSET);
 
-  const end = new Date(
-    Date.UTC(year, monthNumber, 1) - IST_OFFSET,
-  );
+  const end = new Date(Date.UTC(year, monthNumber, 1) - IST_OFFSET);
 
   return { start, end };
 };
@@ -38,8 +26,7 @@ const getCurrentISTMonth = () =>
 const roundMoney = (amount) =>
   Math.round((amount + Number.EPSILON) * 100) / 100;
 
-const getUserName = (user) =>
-  user?.name?.trim() || "Unknown member";
+const getUserName = (user) => user?.name?.trim() || "Unknown member";
 
 export const createMonthlySnapshot = async (req, res, next) => {
   try {
@@ -53,9 +40,9 @@ export const createMonthlySnapshot = async (req, res, next) => {
       });
     }
 
-    if (month > getCurrentISTMonth()) {
+    if (month >= getCurrentISTMonth()) {
       return res.status(400).json({
-        message: "Future months cannot be closed.",
+        message: "Only completed months can be closed.",
       });
     }
 
@@ -84,25 +71,17 @@ export const createMonthlySnapshot = async (req, res, next) => {
         $expr: {
           $and: [
             {
-              $gte: [
-                { $ifNull: ["$settledAt", "$updatedAt"] },
-                start,
-              ],
+              $gte: [{ $ifNull: ["$settledAt", "$updatedAt"] }, start],
             },
             {
-              $lt: [
-                { $ifNull: ["$settledAt", "$updatedAt"] },
-                end,
-              ],
+              $lt: [{ $ifNull: ["$settledAt", "$updatedAt"] }, end],
             },
           ],
         },
       }).lean(),
     ]);
 
-    const categoryTotals = new Map(
-      CATEGORIES.map((category) => [category, 0]),
-    );
+    const categoryTotals = new Map(CATEGORIES.map((category) => [category, 0]));
 
     const memberTotals = new Map();
 
@@ -190,9 +169,7 @@ export const createMonthlySnapshot = async (req, res, next) => {
       .filter(([, amount]) => amount > 0)
       .sort((a, b) => b[1] - a[1])[0];
 
-    const userIds = [...memberTotals.values()].map(
-      (member) => member.userId,
-    );
+    const userIds = [...memberTotals.values()].map((member) => member.userId);
 
     const users = await User.find({
       _id: { $in: userIds },
@@ -210,9 +187,7 @@ export const createMonthlySnapshot = async (req, res, next) => {
         category,
         amount: roundMoney(amount),
         percentage:
-          totalExpenses > 0
-            ? roundMoney((amount / totalExpenses) * 100)
-            : 0,
+          totalExpenses > 0 ? roundMoney((amount / totalExpenses) * 100) : 0,
       }));
 
     const members = [...memberTotals.values()].map((member) => ({
