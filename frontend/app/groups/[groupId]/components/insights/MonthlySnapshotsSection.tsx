@@ -51,6 +51,12 @@ const getCurrentMonth = () => {
   return `${year}-${month}`;
 };
 
+const getPreviousMonth = () => {
+  const [year, month] = getCurrentMonth().split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 2, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+};
+
 const formatMonth = (month: string) => {
   const [year, value] = month.split("-").map(Number);
 
@@ -129,9 +135,10 @@ function MonthPicker({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const maxYear = Number(max.split("-")[0]);
+  const isOpen = open && !disabled;
 
   useEffect(() => {
-    if (!open) return;
+    if (!isOpen) return;
 
     const handlePointer = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) {
@@ -150,16 +157,12 @@ function MonthPicker({
       document.removeEventListener("mousedown", handlePointer);
       document.removeEventListener("keydown", handleKey);
     };
-  }, [open]);
-
-  useEffect(() => {
-    if (disabled) setOpen(false);
-  }, [disabled]);
+  }, [isOpen]);
 
   const toggle = () => {
     if (disabled) return;
 
-    if (!open) {
+    if (!isOpen) {
       setYear(Number(value.split("-")[0]) || maxYear);
     }
 
@@ -173,7 +176,7 @@ function MonthPicker({
         onClick={toggle}
         disabled={disabled}
         aria-haspopup="dialog"
-        aria-expanded={open}
+        aria-expanded={isOpen}
         className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-left text-sm font-medium text-slate-900 transition hover:border-slate-300 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="flex min-w-0 items-center gap-2.5">
@@ -182,12 +185,12 @@ function MonthPicker({
         </span>
         <ChevronRight
           className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${
-            open ? "rotate-90" : ""
+            isOpen ? "rotate-90" : ""
           }`}
         />
       </button>
 
-      {open && (
+      {isOpen && (
         <div
           role="dialog"
           aria-label="Select month"
@@ -261,7 +264,7 @@ function MonthPicker({
 export default function MonthlySnapshotsSection({ groupId, canCreate }: Props) {
   const [snapshots, setSnapshots] = useState<MonthlySnapshot[]>([]);
   const [selectedMonth, setSelectedMonth] = useState("");
-  const [month, setMonth] = useState(getCurrentMonth);
+  const [month, setMonth] = useState(getPreviousMonth);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
@@ -306,10 +309,8 @@ export default function MonthlySnapshotsSection({ groupId, canCreate }: Props) {
   const handleCreate = async () => {
     if (!canCreate || creating || !month) return;
 
-    const currentMonth = getCurrentMonth();
-
-    if (month > currentMonth) {
-      setError("Future months cannot be closed.");
+    if (month > getPreviousMonth()) {
+      setError("Only completed months can be closed.");
       return;
     }
 
@@ -386,7 +387,7 @@ export default function MonthlySnapshotsSection({ groupId, canCreate }: Props) {
             </label>
             <MonthPicker
               value={month}
-              max={getCurrentMonth()}
+              max={getPreviousMonth()}
               closedMonths={closedMonths}
               disabled={creating}
               onChange={(next) => {
@@ -400,7 +401,7 @@ export default function MonthlySnapshotsSection({ groupId, canCreate }: Props) {
           <button
             type="button"
             onClick={() => void handleCreate()}
-            disabled={creating || loading || !month}
+            disabled={creating || loading || !month || closedMonths.has(month)}
             className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Lock className="h-4 w-4" />
