@@ -355,7 +355,6 @@ export const deleteGroup = async (groupId: string) => {
   }
 };
 
-
 export const updateGroupType = async (
   groupId: string,
   type: "NORMAL" | "ONGOING",
@@ -401,5 +400,124 @@ export const updateGroupType = async (
     }
 
     throw new Error("FAILED_UPDATE_GROUP_TYPE");
+  }
+};
+
+//Monthly
+
+export type MonthlySnapshotMember = {
+  userId: string;
+  name: string;
+  paid: number;
+  share: number;
+};
+
+export type MonthlySnapshotCategory = {
+  category: "FOOD" | "TRAVEL" | "RENT" | "SHOPPING" | "RECHARGE" | "OTHER";
+  amount: number;
+  percentage: number;
+};
+
+export type MonthlySnapshot = {
+  _id: string;
+  group: string;
+  groupName: string;
+  month: string;
+  totalExpenses: number;
+  transactionCount: number;
+  totalSettlements: number;
+  settlementCount: number;
+  topCategory: string | null;
+  categories: MonthlySnapshotCategory[];
+  members: MonthlySnapshotMember[];
+  closedBy: string;
+  closedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type MonthlySnapshotResponse = {
+  snapshot: MonthlySnapshot;
+};
+
+type MonthlySnapshotsResponse = {
+  snapshots: MonthlySnapshot[];
+};
+
+const handleMonthlySnapshotError = (err: any, fallback: string): never => {
+  if (!err.response) {
+    throw new Error("NETWORK_ERROR");
+  }
+
+  const status = err.response.status;
+
+  if (status === 400 || status === 403 || status === 404 || status === 409) {
+    throw new Error(err.response.data?.message || fallback);
+  }
+
+  if (status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  throw new Error(fallback);
+};
+
+export const createMonthlySnapshot = async (
+  groupId: string,
+  month: string,
+): Promise<MonthlySnapshotResponse> => {
+  if (!groupId?.trim()) {
+    throw new Error("INVALID_GROUP");
+  }
+
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    throw new Error("INVALID_MONTH");
+  }
+
+  try {
+    const res = await api.post(`/groups/${groupId}/monthly-snapshots`, {
+      month,
+    });
+
+    return res.data;
+  } catch (err: any) {
+    return handleMonthlySnapshotError(err, "FAILED_CREATE_MONTHLY_SNAPSHOT");
+  }
+};
+
+export const getMonthlySnapshots = async (
+  groupId: string,
+): Promise<MonthlySnapshotsResponse> => {
+  if (!groupId?.trim()) {
+    throw new Error("INVALID_GROUP");
+  }
+
+  try {
+    const res = await api.get(`/groups/${groupId}/monthly-snapshots`);
+
+    return res.data;
+  } catch (err: any) {
+    return handleMonthlySnapshotError(err, "FAILED_GET_MONTHLY_SNAPSHOTS");
+  }
+};
+
+export const getMonthlySnapshotByMonth = async (
+  groupId: string,
+  month: string,
+): Promise<MonthlySnapshotResponse> => {
+  if (!groupId?.trim()) {
+    throw new Error("INVALID_GROUP");
+  }
+
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    throw new Error("INVALID_MONTH");
+  }
+
+  try {
+    const res = await api.get(`/groups/${groupId}/monthly-snapshots/${month}`);
+
+    return res.data;
+  } catch (err: any) {
+    return handleMonthlySnapshotError(err, "FAILED_GET_MONTHLY_SNAPSHOT");
   }
 };

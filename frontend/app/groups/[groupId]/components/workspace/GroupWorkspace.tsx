@@ -116,6 +116,7 @@ export default function GroupWorkspace({
           <GroupInsightsSection
             groupId={groupId}
             onOpenSettlement={() => setActiveSection("settlement")}
+            canCreateSnapshots={true}
           />
         );
       case "members":

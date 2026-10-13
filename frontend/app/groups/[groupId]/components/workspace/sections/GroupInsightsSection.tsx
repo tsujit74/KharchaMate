@@ -13,15 +13,18 @@ import MemberContribution from "../../insights/MemberContribution";
 import TopExpenses from "../../insights/TopExpenses";
 import BudgetCard from "../../insights/BudgetCard";
 import SettlementCard from "../../insights/SettlementCard";
+import MonthlySnapshotsSection from "../../insights/MonthlySnapshotsSection";
 
 type Props = {
   groupId: string;
   onOpenSettlement: () => void;
+  canCreateSnapshots?: boolean;
 };
 
 export default function GroupInsightsSection({
   groupId,
   onOpenSettlement,
+  canCreateSnapshots = false,
 }: Props) {
   const { user } = useAuth();
   const { data, loading, error } = useGroupInsights(groupId);
@@ -100,6 +103,10 @@ export default function GroupInsightsSection({
             </div>
           </div>
         )}
+        <MonthlySnapshotsSection
+          groupId={groupId}
+          canCreate={canCreateSnapshots}
+        />
       </div>
     </section>
   );
