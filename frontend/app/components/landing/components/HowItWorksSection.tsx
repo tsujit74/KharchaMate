@@ -126,7 +126,8 @@ function AddExpenseVisual() {
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-slate-500">
-        Split the cost fairly, without calculating everyone's share yourself.
+        Split the cost fairly, without calculating everyone&apos;s share
+        yourself.
       </p>
     </div>
   );
@@ -241,8 +242,8 @@ function SettleVisual() {
             Settlement recorded
           </p>
           <p className="mt-1 text-xs leading-relaxed text-emerald-700">
-            Once the payment is confirmed in the app, the group's outstanding
-            balance is updated.
+            Once the payment is confirmed in the app, the group&apos;s
+            outstanding balance is updated.
           </p>
         </div>
       </div>
