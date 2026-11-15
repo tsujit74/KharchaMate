@@ -1,46 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/app/context/authContext";
 
 export default function CTASection() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <section className="py-28 px-6 md:px-16 bg-gray-50 text-center">
-      <ShieldCheck className="mx-auto mb-6 text-green-500 w-14 h-14" />
+    <section className="bg-white px-6 py-24 md:px-16">
+      <div className="mx-auto max-w-3xl rounded-3xl bg-[#F1ECE3] px-8 py-14 text-center md:px-14">
+        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+          Make the next rent day boring.
+        </h2>
 
-      <h2 className="text-4xl font-bold mb-4">
-        Built for real people, not just mockups
-      </h2>
-
-      <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-10">
-        KharchaMate focuses on solving one problem exceptionally well:
-        shared expenses between friends, couples, and flatmates.
-      </p>
-
-      <div className="mt-10 flex flex-wrap justify-center gap-4">
-        <Link
-          href={isAuthenticated ? "/dashboard" : "/signup"}
-          className="group px-8 py-4 bg-black text-white font-semibold shadow-xl shadow-black/10 hover:shadow-black/20 hover:-translate-y-1 transition-all flex items-center gap-2"
-        >
-          Start Free
-
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </Link>
+        <p className="mx-auto mt-4 max-w-md text-base text-slate-600">
+          Create a group, add your flatmates, and put the first expense in. It
+          takes about a minute.
+        </p>
 
         <Link
-          href="/demo"
-          className="group px-8 py-4 border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 hover:-translate-y-1 transition-all flex items-center gap-2"
+          href={isAuthenticated ? "/dashboard" : "/auth"}
+          className="group mt-8 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
-          View Product Demo
+          {isAuthenticated ? "Open dashboard" : "Start your first group"}
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </Link>
+
+        <p className="mt-4 text-xs text-slate-500">Free. No card needed.</p>
       </div>
-
-      <p className="text-sm text-gray-500 mt-6">
-        No card required. No long onboarding. Just login and start tracking.
-      </p>
     </section>
   );
 }

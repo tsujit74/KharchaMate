@@ -17,7 +17,7 @@ export default function LayoutWrapper({
     <>
       {!isAdminRoute && <Navbar />}
 
-      <main className={!isAdminRoute ? "min-h-screen pt-16" : "min-h-screen"}>
+      <main className={!isAdminRoute ? "min-h-screen bg-[#FAF8F4]" : "min-h-screen bg-[#FAF8F4]"}>
         {children}
       </main>
 

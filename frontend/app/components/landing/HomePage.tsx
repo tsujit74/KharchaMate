@@ -1,18 +1,18 @@
-import SolutionSection from "./components/SolutionSection";
-import HowItWorksSection from "./components/HowItWorksSection";
-import TestimonialsSection from "./components/TestimonialsSection";
 import HeroSection from "./components/Hero";
-import ProblemSection from "./components/ProblemSection";
+import HowItWorksSection from "./components/HowItWorksSection";
+import FAQSection from "./components/FAQSection";
+import FounderNote from "./components/Foundernote";
 import CTASection from "./components/CTASection";
+import SolutionSection from "./components/SolutionSection";
 
 export default function HomePage() {
   return (
-    <main className="bg-[#FCFCFD] text-[#1A1A1E] overflow-x-hidden">
+    <main className="overflow-x-hidden bg-[#FAF8F4] text-[#1A1A1E]">
       <HeroSection />
-      <ProblemSection />
-      <SolutionSection />
       <HowItWorksSection />
-      <TestimonialsSection />
+      <SolutionSection />
+      <FAQSection />
+      <FounderNote />
       <CTASection />
     </main>
   );

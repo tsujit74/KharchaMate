@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const firstName = user?.name?.split(" ")[0] || "User";
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 px-4 sm:px-6 lg:px-10 py-5 sm:py-8">
+    <main className="min-h-screen bg-[#FAF8F4] px-4 sm:px-6 lg:px-10 py-5 sm:py-8">
       <div className="max-w-7xl mx-auto">
         <Announcements />
 
